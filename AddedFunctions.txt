@@ -1,0 +1,26 @@
+I have added the following functions to my Minima GitHub Repository:
+
+    o Tuning by 2500Hz Steps (mode set via button 7)
+    o Re-Center Tuning Knob while any button is pressed, without changing the Freq
+
+    See: https://github.com/wa0uwh/radiono_erb
+
+I now have working, but not officially published:
+
+    o RIT is working (but very little testing)
+    o Limit TX to within the Ham Bands
+
+    See: https://github.com/wa0uwh/radiono_erb/tree/Experimental
+
+The above new functions are added to the current list:
+
+    o High resolution, plus/minus 1Hz Tuning (thanks to Jeff - KO7M).
+    o Near Normal Dial Tuning Method as found on most Dial Radio system.
+    o Tuning Cursor positioning via Left/Right push buttons.
+    o Automatic (original) or Manual Selection of Sideband via push button.
+    o Ham Band Switching via Up and Down push buttons
+    o Nine Ham Band Memories, with Frequency and Sideband Saved
+    o RF386 Power Amplifier Filter Selection via generated clock pulses (Note: Not a lot of testing has been done on this yet)
+
+
+--

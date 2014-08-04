@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CD.02.02"           // Incremental Rev Code
+#define INC_REV "CD.02.03"           // Incremental Rev Code
 
 
 /*
@@ -101,7 +101,7 @@ Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
-unsigned long vfoA = frequency, vfoB = frequency, ritA, ritB;
+unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
@@ -870,7 +870,7 @@ void loop(){
   checkButton();
 
   freq = frequency;
-  if (!inTx & ritOn) freq += ritVal;
+  if (!inTx && ritOn) freq += ritVal;
   vfo->setFrequency(freq + IF_FREQ);
   
   setSideband();
