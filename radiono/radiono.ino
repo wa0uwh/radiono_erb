@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CD"           // Incremental Rev Code
+#define INC_REV "CD.02.03.01"           // Incremental Rev Code
 
 
 /*
@@ -44,6 +44,7 @@
 #include <avr/io.h>
 #include "Si570.h"
 #include "debug.h"
+#include "Rf386.h"
 
 /*
  The 16x2 LCD is connected as follows:
@@ -101,7 +102,7 @@ Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
-unsigned long vfoA = frequency, vfoB = frequency, ritA, ritB;
+unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
@@ -149,12 +150,12 @@ unsigned char locked = 0; //the tuning can be locked: wait until Freq Stable bef
 char inTx = 0;
 char keyDown = 0;
 char isLSB = 0;
-char isRIT = 0;
 char vfoActive = VFO_A;
 
 /* modes */
 unsigned char isManual = 1;
 unsigned ritOn = 0;
+int ritVal = 0;
 
 // ###############################################################################
 // ###############################################################################
@@ -191,25 +192,30 @@ void printLine2CEL(char const *c){
 // ###############################################################################
 void updateDisplay(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
-   
+  char d[6]; // Buffer for RIT Display Value
+  
   if (refreshDisplay) {
       refreshDisplay = false;
       cursorOff();
         
-      // Top Line of LCD    
+      // Top Line of LCD
+      sprintf(d, P("%+03.3d"), ritVal);  
       sprintf(b, P("%08ld"), frequency);
-      sprintf(c, P("%1s:%.2s.%.6s %3.3s%s"),
+      sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"),
           vfoActive == VFO_A ? "A" : "B" ,
           b,  b+2,
-          ritOn ? "RIT" : " ",
-          tune2500Mode ? "K": " ");
+          inTx ? " " : ritOn ? d : " ",
+          tune2500Mode ? "*": " "
+          );
       printLine1CEL(c);
       
+
       sprintf(c, P("%3s%1s %2s %3.3s"),
           isLSB ? "LSB" : "USB",
           sideBandMode > 0 ? "*" : " ",
           inTx ? "TX" : "RX",
-          freqUnStable ? " " : vfoStatus[vfo->status]);
+          freqUnStable ? " " : vfoStatus[vfo->status]
+          );
       printLine2CEL(c);
       
       
@@ -292,46 +298,7 @@ void setSideband(){
   digitalWrite(LSB, isLSB);
 }
 
-
-// ###############################################################################
-void setRf386BandSignal(unsigned long freq){
-  // This setup is compatable with the Minima RF386 RF Power Amplifier
-  // See: http://www.hfsignals.org/index.php/RF386
-
-  // Bitbang Clock Pulses to Change PA Band Filter
-  int band;
-  static int prevBand;
-  static unsigned long prevFreq;
-
-  if (freq == prevFreq) return;
-  prevFreq = freq;
-   
-  if      (freq <  4000000UL) band = 4; //   3.5 MHz
-  else if (freq < 10200000UL) band = 3; //  7-10 MHz
-  else if (freq < 18200000UL) band = 2; // 14-18 MHz
-  else if (freq < 30000000UL) band = 1; // 21-28 MHz
-  else band = 1;
-
-  //debug("Band Index = %d", band);
-  
-  if (band == prevBand) return;
-  prevBand = band;
-  
-  debug(P("BandI = %d"), band);
-
-  digitalWrite(PA_BAND_CLK, 1);  // Output Reset Pulse for PA Band Filter
-  delay(500);
-  digitalWrite(PA_BAND_CLK, 0);
-
-  while (band-- > 1) { // Output Clock Pulse to Change PA Band Filter
-     delay(50);
-     digitalWrite(PA_BAND_CLK, 1);
-     delay(50);
-     digitalWrite(PA_BAND_CLK, 0);
-  }
-}
-
-
+ 
 // ###############################################################################
 void setBandswitch(unsigned long freq){
   
@@ -390,6 +357,17 @@ void checkTuning() {
   tuningDir = tuningPositionDelta < 0 ? -1 : tuningPositionDelta > 0 ? +1 : 0;  
   if (!tuningDir) return;  // If Neather Direction, Abort
   
+  // Decode and implement RIT Tuning
+  if (ritOn) {
+      ritVal += tuningDir * 10;
+      ritVal = max(ritVal, -990);
+      ritVal = min(ritVal, 990);
+      tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
+      refreshDisplay++;
+      updateDisplay();
+      return;
+  }
+  
   if (cursorDigitPosition < 1) return; // Nothing to do here, Abort, Cursor is in Park position
 
   // Select Tuning Mode; Digit or 2500 Step Mode
@@ -422,14 +400,29 @@ void checkTuning() {
 }
 
 
-// ########################################################################-v #######
+// ###############################################################################
+int inBandLimits(unsigned long freq){
+    int upper, lower = 0;
+    
+       for (int i = 0; i < BANDS; i++) {
+         lower = i * 2;
+         upper = lower + 1;
+         if (frequency >= pgm_read_dword(&bandLimits[lower]) &&
+             frequency <= pgm_read_dword(&bandLimits[upper]) ) return i;
+       }
+       return 0;
+}
+    
+    
+// ###############################################################################
 void checkTX(){
   
   if (freqUnStable) return;
 
   //we don't check for ptt when transmitting cw
-  if (cwTimeout > 0)
-    return;
+  if (cwTimeout > 0) return;
+    
+  if(!inBandLimits(frequency)) return;
     
   if (digitalRead(TX_RX) == 0 && inTx == 0){
     refreshDisplay++;
@@ -452,6 +445,8 @@ void checkCW(){
 
   if (freqUnStable) return;
 
+  if(!inBandLimits(frequency)) return;
+  
   if (keyDown == 0 && analogRead(ANALOG_KEYER) < 50){
     //switch to transmit mode if we are not already in it
     if (inTx == 0){
@@ -717,6 +712,7 @@ void decodeFN(int btn) {
   switch (getButtonPushMode(btn)) { 
     case MOMENTARY_PRESS:
       ritOn = !ritOn;
+      ritVal = 0;
       break;
       
     case DOUBLE_PRESS:
@@ -825,6 +821,7 @@ void setup() {
 // ###############################################################################
 // ###############################################################################
 void loop(){
+    unsigned long freq;
   
   readTuningPot();
   checkTuning();
@@ -834,7 +831,9 @@ void loop(){
   checkTX();
   checkButton();
 
-  vfo->setFrequency(frequency + IF_FREQ);
+  freq = frequency;
+  if (!inTx && ritOn) freq += ritVal;
+  vfo->setFrequency(freq + IF_FREQ);
   
   setSideband();
   setBandswitch(frequency);
