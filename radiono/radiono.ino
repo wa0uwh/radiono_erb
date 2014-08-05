@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CD.02.03"           // Incremental Rev Code
+#define INC_REV "CD.02.03.01"           // Incremental Rev Code
 
 
 /*
@@ -44,6 +44,7 @@
 #include <avr/io.h>
 #include "Si570.h"
 #include "debug.h"
+#include "Rf386.h"
 
 /*
  The 16x2 LCD is connected as follows:
@@ -297,46 +298,7 @@ void setSideband(){
   digitalWrite(LSB, isLSB);
 }
 
-
-// ###############################################################################
-void setRf386BandSignal(unsigned long freq){
-  // This setup is compatable with the Minima RF386 RF Power Amplifier
-  // See: http://www.hfsignals.org/index.php/RF386
-
-  // Bitbang Clock Pulses to Change PA Band Filter
-  int band;
-  static int prevBand;
-  static unsigned long prevFreq;
-
-  if (freq == prevFreq) return;
-  prevFreq = freq;
-   
-  if      (freq <  4000000UL) band = 4; //   3.5 MHz
-  else if (freq < 10200000UL) band = 3; //  7-10 MHz
-  else if (freq < 18200000UL) band = 2; // 14-18 MHz
-  else if (freq < 30000000UL) band = 1; // 21-28 MHz
-  else band = 1;
-
-  //debug("Band Index = %d", band);
-  
-  if (band == prevBand) return;
-  prevBand = band;
-  
-  debug(P("BandI = %d"), band);
-
-  digitalWrite(PA_BAND_CLK, 1);  // Output Reset Pulse for PA Band Filter
-  delay(500);
-  digitalWrite(PA_BAND_CLK, 0);
-
-  while (band-- > 1) { // Output Clock Pulse to Change PA Band Filter
-     delay(50);
-     digitalWrite(PA_BAND_CLK, 1);
-     delay(50);
-     digitalWrite(PA_BAND_CLK, 0);
-  }
-}
-
-
+ 
 // ###############################################################################
 void setBandswitch(unsigned long freq){
   
