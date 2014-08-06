@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CE"           // Incremental Rev Code
+#define INC_REV "CF"           // Incremental Rev Code
 
 
 /*
@@ -122,12 +122,15 @@ int winkOn;
 char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 int sideBandMode = 0;
 
-// ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
-char buf[64+2];
-// ERB - Force format stings into FLASH Memory
-#define  P(x) strcpy_P(buf, PSTR(x))
-// FLASH2 can be used where Two small (1/2 size) Buffers are needed.
-#define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
+unsigned char locked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
+char inTx = 0;
+char keyDown = 0;
+char isLSB = 0;
+char vfoActive = VFO_A;
+
+/* modes */
+unsigned ritOn = 0;
+int ritVal = 0;
 
 
 // PROGMEM is used to avoid using the small available variable space
@@ -141,21 +144,34 @@ const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
      21000000UL, 21450000UL, //  15m
      24890000UL, 24990000UL, //  12m
      28000000UL, 29700000UL, //  10m
+     //50000000UL, 54000000UL, //   6m - Will need New Low Pass Filter Support
    };
    
 #define BANDS (sizeof(bandLimits)/sizeof(prog_uint32_t)/2)
 
+unsigned long freqCache[] = { // Set Default Values for Cache
+      1825000UL, // 160m - QRP SSB Calling Freq
+      3985000UL, //  80m - QRP SSB Calling Freq
+      7285000UL, //  40m - QRP SSB Calling Freq
+     10138700UL, //  30m - QRP QRSS and WSPR
+     14285000UL, //  20m - QRP SSB Calling Freq
+     18130000UL, //  17m - QRP SSB Calling Freq
+     21385000UL, //  15m - QRP SSB Calling Freq
+     24950000UL, //  12m - QRP SSB Calling Freq
+     28385000UL, //  10m - QRP SSB Calling Freq
+     //50200000UL, //   6m - QRP SSB Calling Freq
+   };
+  
+byte sideBandModeCache[BANDS];
+  
 
-unsigned char locked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
-char inTx = 0;
-char keyDown = 0;
-char isLSB = 0;
-char vfoActive = VFO_A;
+// ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
+char buf[64+2];
+// ERB - Force format stings into FLASH Memory
+#define  P(x) strcpy_P(buf, PSTR(x))
+// FLASH2 can be used where Two small (1/2 size) Buffers are needed.
+#define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
 
-/* modes */
-unsigned char isManual = 1;
-unsigned ritOn = 0;
-int ritVal = 0;
 
 // ###############################################################################
 // ###############################################################################
@@ -209,7 +225,6 @@ void updateDisplay(){
           );
       printLine1CEL(c);
       
-
       sprintf(c, P("%3s%1s %2s %3.3s"),
           isLSB ? "LSB" : "USB",
           sideBandMode > 0 ? "*" : " ",
@@ -217,7 +232,6 @@ void updateDisplay(){
           freqUnStable ? " " : vfoStatus[vfo->status]
           );
       printLine2CEL(c);
-      
       
       setCursorCRM(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0, CURSOR_MODE);
   }
@@ -562,20 +576,7 @@ void decodeTune2500Mode() {
 
 // ###############################################################################
 void decodeBandUpDown(int dir) {
-  static unsigned long freqCache[] = { // Set Default Values for Cache
-      1825000UL, // 160m - QRP SSB Calling Freq
-      3985000UL, //  80m - QRP SSB Calling Freq
-      7285000UL, //  40m - QRP SSB Calling Freq
-     10138700UL, //  30m - QRP QRSS and WSPR
-     14285000UL, //  20m - QRP SSB Calling Freq
-     18130000UL, //  17m - QRP SSB Calling Freq
-     21385000UL, //  15m - QRP SSB Calling Freq
-     24950000UL, //  12m - QRP SSB Calling Freq
-     28385000UL, //  10m - QRP SSB Calling Freq
-   };
-  
-   static byte sideBandModeCache[BANDS];
-   
+    
    switch (dir) {  // Decode Direction of Band Change
      
      case +1:  // For Band Change, Up
@@ -611,7 +612,7 @@ void decodeBandUpDown(int dir) {
        }
        break;
      
-   }
+   } // Switch End
    
    freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
    ritOn = 0;
@@ -619,7 +620,6 @@ void decodeBandUpDown(int dir) {
    refreshDisplay++;
    updateDisplay();
    deDounceBtnRelease(); // Wait for Release
-   //refreshDisplay++;
 }
 
 
@@ -633,13 +633,14 @@ void decodeSideBandMode(int btn) {
   refreshDisplay++;
   updateDisplay();
   deDounceBtnRelease(); // Wait for Release
-  
 }
 
 
 // ###############################################################################
 void decodeMoveCursor(int btn) {
   
+      if(tune2500Mode) return; // Do not Move Cursor in this mode
+    
       tuningPositionPrevious = tuningPosition;
       switch (btn) {
         case 2: cursorDigitPosition++; break;
