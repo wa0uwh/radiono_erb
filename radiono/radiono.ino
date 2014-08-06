@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CF"           // Incremental Rev Code
+#define INC_REV "CG"           // Incremental Rev Code
 
 
 /*
@@ -102,6 +102,7 @@ Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
+int dialFreqCal = 0;
 unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
 
@@ -556,12 +557,28 @@ void checkButton() {
     case 4: decodeSideBandMode(btn); break;
     case 5: decodeBandUpDown(+1); break; // Band Up
     case 6: decodeBandUpDown(-1); break; // Band Down
-    case 7: decodeTune2500Mode(); break; // 
+    case 7: decodeBtn7(btn); break; // 
     //case 7: decodeAux(7); break; // Report Un-Used as AUX Buttons
     default: return;
   }
 }
 
+
+// ###############################################################################
+void decodeBtn7(int btn) {
+      
+  switch (getButtonPushMode(btn)) { 
+    case MOMENTARY_PRESS:
+      decodeTune2500Mode();
+      break;
+    case DOUBLE_PRESS:
+      decodeDialFreqCal();
+      break;   
+    default:
+      return; // Do Nothing
+  }
+  refreshDisplay++;
+}
 
 // ###############################################################################
 void decodeTune2500Mode() {
@@ -571,6 +588,19 @@ void decodeTune2500Mode() {
     refreshDisplay++;
     updateDisplay();
     deDounceBtnRelease(); // Wait for Release
+}
+
+
+// ###############################################################################
+void decodeDialFreqCal() {
+    if(!ritOn) return;
+    dialFreqCal += ritVal;
+    ritVal = 0;
+    cursorOff();
+    printLine2CEL(P("Dial CAL"));
+    deDounceBtnRelease(); // Wait for Button Release      
+    refreshDisplay++;
+    updateDisplay();
 }
 
 
@@ -696,6 +726,7 @@ int getButtonPushMode(int btn) {
 }
 
 
+
 // ###############################################################################
 void decodeFN(int btn) {
   //if the btn is down while tuning pot is not centered, then lock the tuning
@@ -743,7 +774,7 @@ void decodeFN(int btn) {
       printLine2CEL(P("VFO reset!"));
       break;
     default:
-      return;
+      return; // Do Nothing
   }
 
   refreshDisplay++;
@@ -832,7 +863,7 @@ void loop(){
   checkTX();
   checkButton();
 
-  freq = frequency;
+  freq = frequency + dialFreqCal;
   if (!inTx && ritOn) freq += ritVal;
   vfo->setFrequency(freq + IF_FREQ);
   
