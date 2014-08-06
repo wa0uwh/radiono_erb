@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CE.04"           // Incremental Rev Code
+#define INC_REV "CF"           // Incremental Rev Code
 
 
 /*
