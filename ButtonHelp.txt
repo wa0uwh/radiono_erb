@@ -16,5 +16,6 @@ Button Operations
     Btn6 = Down, Change HAM Band (save current Freq and SSB Mode)
     Btn7 Single Press = Toggle Tune 2500Hz Mode
     Btn7 Double Press = Set Dial Calibration, from RIT value
+    Btn7 Long Press = Display IF Frequency, Set IF when RIT Mode is ON
 
 --
