@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CI"           // Incremental Rev Code
+#define INC_REV "CH"              // Incremental Rev Code
 
 
 /*
@@ -102,6 +102,7 @@ Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
+unsigned long iFreq = IF_FREQ;
 int dialFreqCal = 0;
 unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
@@ -573,7 +574,10 @@ void decodeBtn7(int btn) {
       break;
     case DOUBLE_PRESS:
       decodeDialFreqCal();
-      break;   
+      break;
+    case LONG_PRESS:
+      decodeSetIf();
+      break;    
     default:
       return; // Do Nothing
   }
@@ -581,7 +585,22 @@ void decodeBtn7(int btn) {
 }
 
 // ###############################################################################
+void decodeSetIf() {  // Set the IF Frequency
+
+    if(ritOn) iFreq = frequency + ritVal;   // if we are in RIT Mode Set IF, else just report the IF Frequency
+    cursorOff();
+    sprintf(b, P("%08ld"), iFreq);
+    sprintf(c, P("I:%.2s.%.6s"), b, b+2);
+    printLine2CEL(c);
+    deDounceBtnRelease(); // Wait for Button Release      
+    refreshDisplay++;
+    updateDisplay();
+}
+
+
+// ###############################################################################
 void decodeTune2500Mode() {
+    
     if(ritOn) return; // Do Nothing if in RIT Mode
     cursorDigitPosition = 3; // Set default Tuning Digit
     tune2500Mode = !tune2500Mode;
@@ -868,7 +887,7 @@ void loop(){
 
   freq = frequency + dialFreqCal;
   if (!inTx && ritOn) freq += ritVal;
-  vfo->setFrequency(freq + IF_FREQ);
+  vfo->setFrequency(freq + iFreq);
   
   setSideband();
   setBandswitch(frequency);
