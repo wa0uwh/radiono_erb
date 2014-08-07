@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CG"           // Incremental Rev Code
+#define INC_REV "CH"           // Incremental Rev Code
 
 
 /*
@@ -593,11 +593,13 @@ void decodeTune2500Mode() {
 
 // ###############################################################################
 void decodeDialFreqCal() {
-    if(!ritOn) return;
-    dialFreqCal += ritVal;
-    ritVal = 0;
+    if(ritOn) {
+        dialFreqCal += ritVal;
+        ritVal = 0;
+    }
     cursorOff();
-    printLine2CEL(P("Dial CAL"));
+    sprintf(c, P("Dial CAL: %+04.4d"), dialFreqCal);
+    printLine2CEL(c);
     deDounceBtnRelease(); // Wait for Button Release      
     refreshDisplay++;
     updateDisplay();
