@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CH"           // Incremental Rev Code
+#define INC_REV "CI"           // Incremental Rev Code
 
 
 /*
@@ -582,6 +582,7 @@ void decodeBtn7(int btn) {
 
 // ###############################################################################
 void decodeTune2500Mode() {
+    if(ritOn) return; // Do Nothing if in RIT Mode
     cursorDigitPosition = 3; // Set default Tuning Digit
     tune2500Mode = !tune2500Mode;
     if(tune2500Mode) frequency = (frequency / 2500) * 2500;
