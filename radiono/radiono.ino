@@ -102,7 +102,8 @@ Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
-int dialFreqCal = 0;
+int dialFreqCalUSB = 0;
+int dialFreqCalLSB = 0;
 unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
 
@@ -595,11 +596,17 @@ void decodeTune2500Mode() {
 // ###############################################################################
 void decodeDialFreqCal() {
     if(ritOn) {
-        dialFreqCal += ritVal;
+        switch(isLSB) {
+        case 0: dialFreqCalUSB += ritVal; break;
+        case 1: dialFreqCalLSB += ritVal; break;
+        }
         ritVal = 0;
     }
     cursorOff();
-    sprintf(c, P("Dial CAL: %+04.4d"), dialFreqCal);
+    sprintf(c, P("%3.3s CAL: %+04.4d"),
+      isLSB ? P("LSB") : P("USB"),
+      isLSB ? dialFreqCalLSB : dialFreqCalUSB
+    );
     printLine2CEL(c);
     deDounceBtnRelease(); // Wait for Button Release      
     refreshDisplay++;
@@ -866,7 +873,7 @@ void loop(){
   checkTX();
   checkButton();
 
-  freq = frequency + dialFreqCal;
+  freq = frequency + isLSB ? dialFreqCalLSB : dialFreqCalUSB;
   if (!inTx && ritOn) freq += ritVal;
   vfo->setFrequency(freq + IF_FREQ);
   
