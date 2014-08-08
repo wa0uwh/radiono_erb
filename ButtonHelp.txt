@@ -1,0 +1,21 @@
+Tuning Knob Operations, used for both Frequency and RIT
+
+    Tuning POT = Incremental Near Center
+    Tuning POT = Auto Near Extremes
+    Tuning POT = Faster Auto At Extremes 
+
+Button Operations
+
+    Btn1 Single Press = Toggle RIT Mode ON/OFF
+    Btn1 Double Press = Swap A/B VFO's
+    Btn1 Long Press = VFO Reset
+    Btn2 = Left, Move Frequency Cursor
+    Btn3 = Right, Move Frequency Cursor
+    Btn4 = Select: USB, LSB, or Auto USB (default)
+    Btn5 = Up, Change HAM Band (save current Freq and SSB Mode)
+    Btn6 = Down, Change HAM Band (save current Freq and SSB Mode)
+    Btn7 Single Press = Toggle Tune 2500Hz Mode
+    Btn7 Double Press = Set Dial Calibration, from RIT value
+    Btn7 Long Press = Display IF Frequency, Set IF when RIT Mode is ON
+
+--
