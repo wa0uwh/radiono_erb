@@ -603,9 +603,9 @@ void decodeDialFreqCal() {
         ritVal = 0;
     }
     cursorOff();
-    sprintf(c, P("%3.3s CAL: %+04.4d"),
-      isLSB ? P("LSB") : P("USB"),
-      isLSB ? dialFreqCalLSB : dialFreqCalUSB
+    sprintf(c, P("%3.3s  CAL: %+04.4d"),
+        isLSB ? "LSB" : "USB",
+        isLSB ? dialFreqCalLSB : dialFreqCalUSB
     );
     printLine2CEL(c);
     deDounceBtnRelease(); // Wait for Button Release      
