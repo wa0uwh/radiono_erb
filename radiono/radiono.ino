@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "CH"              // Incremental Rev Code
+#define INC_REV "CJ"              // Incremental Rev Code
 
 
 /*
@@ -94,8 +94,8 @@
 #define ANALOG_TUNING (A2)
 #define ANALOG_KEYER (A1)
 
-#define VFO_A 0
-#define VFO_B 1
+#define VFO_A (0)
+#define VFO_B (1)
 
 
 Si570 *vfo;
@@ -103,9 +103,12 @@ LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
 unsigned long iFreq = IF_FREQ;
-int dialFreqCal = 0;
+int dialFreqCalUSB = 0;
+int dialFreqCalLSB = 0;
+
 unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
+int editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
 
@@ -220,7 +223,7 @@ void updateDisplay(){
       sprintf(d, P("%+03.3d"), ritVal);  
       sprintf(b, P("%08ld"), frequency);
       sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"),
-          vfoActive == VFO_A ? "A" : "B" ,
+          editIfMode ? "I" : vfoActive == VFO_A ? "A" : "B" ,
           b,  b+2,
           inTx ? " " : ritOn ? d : " ",
           tune2500Mode ? "*": " "
@@ -437,7 +440,9 @@ void checkTX(){
 
   //we don't check for ptt when transmitting cw
   if (cwTimeout > 0) return;
-    
+  
+  if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
+  
   if(!inBandLimits(frequency)) return;
     
   if (digitalRead(TX_RX) == 0 && inTx == 0){
@@ -462,6 +467,8 @@ void checkCW(){
   if (freqUnStable) return;
 
   if(!inBandLimits(frequency)) return;
+      
+  if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
   
   if (keyDown == 0 && analogRead(ANALOG_KEYER) < 50){
     //switch to transmit mode if we are not already in it
@@ -576,7 +583,7 @@ void decodeBtn7(int btn) {
       decodeDialFreqCal();
       break;
     case LONG_PRESS:
-      decodeSetIf();
+      decodeEditIf();
       break;    
     default:
       return; // Do Nothing
@@ -585,23 +592,40 @@ void decodeBtn7(int btn) {
 }
 
 // ###############################################################################
-void decodeSetIf() {  // Set the IF Frequency
+void decodeEditIf() {  // Set the IF Frequency
+    static int vfoActivePrev = VFO_A;
 
-    if(ritOn) iFreq = frequency + ritVal;   // if we are in RIT Mode Set IF, else just report the IF Frequency
-    cursorOff();
-    sprintf(b, P("%08ld"), iFreq);
-    sprintf(c, P("I:%.2s.%.6s"), b, b+2);
-    printLine2CEL(c);
-    deDounceBtnRelease(); // Wait for Button Release      
+    if (editIfMode) {  // Save IF Freq, Reload Previous VFO
+        iFreq = frequency + ritVal;
+        switch (vfoActivePrev) {
+        case VFO_B: frequency = vfoB; break;
+        default:    frequency = vfoA; break;
+        }
+    }
+    else {  // Save Current VFO, Load IF Freq
+        switch (vfoActive) {
+        case VFO_B: vfoB = frequency; break;
+        default:    vfoA = frequency; break;
+        }
+        frequency = iFreq;
+        vfoActivePrev = vfoActive;
+    }
+    editIfMode = !editIfMode;  // Toggle Edit IF Mode
+    ritOn = false;
+    ritVal = 0;     
     refreshDisplay++;
     updateDisplay();
+    deDounceBtnRelease(); // Wait for Button Release 
 }
 
 
 // ###############################################################################
 void decodeTune2500Mode() {
     
+    if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
+    
     if(ritOn) return; // Do Nothing if in RIT Mode
+    
     cursorDigitPosition = 3; // Set default Tuning Digit
     tune2500Mode = !tune2500Mode;
     if(tune2500Mode) frequency = (frequency / 2500) * 2500;
@@ -614,11 +638,17 @@ void decodeTune2500Mode() {
 // ###############################################################################
 void decodeDialFreqCal() {
     if(ritOn) {
-        dialFreqCal += ritVal;
+        switch(isLSB) {
+        case 0: dialFreqCalUSB += ritVal; break;
+        case 1: dialFreqCalLSB += ritVal; break;
+        }
         ritVal = 0;
     }
     cursorOff();
-    sprintf(c, P("Dial CAL: %+04.4d"), dialFreqCal);
+    sprintf(c, P("%3.3s  CAL: %+04.4d"),
+        isLSB ? "LSB" : "USB",
+        isLSB ? dialFreqCalLSB : dialFreqCalUSB
+    );
     printLine2CEL(c);
     deDounceBtnRelease(); // Wait for Button Release      
     refreshDisplay++;
@@ -628,6 +658,8 @@ void decodeDialFreqCal() {
 
 // ###############################################################################
 void decodeBandUpDown(int dir) {
+    
+   if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
     
    switch (dir) {  // Decode Direction of Band Change
      
@@ -770,25 +802,34 @@ void decodeFN(int btn) {
       break;
       
     case DOUBLE_PRESS:
-      if (vfoActive == VFO_B) {
-        vfoActive = VFO_A;
-        vfoB = frequency;
-        frequency = vfoA;
-      }
-      else {
-        vfoActive = VFO_B;
-        vfoA = frequency;
-        frequency = vfoB;
+      if (editIfMode) { // Abort Edit IF Mode, Reload Active VFO
+          editIfMode = false;
+          switch (vfoActive) {
+          case VFO_B: frequency = vfoB; break;
+          default:    frequency = vfoA; break;
+          }
+      } 
+      else { // Save Current VFO, Load Other VFO
+          if (vfoActive == VFO_A) {
+            vfoA = frequency;
+            vfoActive = VFO_B;
+            frequency = vfoB;
+          } 
+          else {
+            vfoB = frequency;
+            vfoActive = VFO_A;
+            frequency = vfoA;
+          }
       }
       ritOn = 0;
+      ritVal = 0;
       refreshDisplay++;
       updateDisplay();
-      //cursorOff();
-      //printLine2CEL(P("VFO swap!"));
       break;
       
     case LONG_PRESS:
       vfoA = vfoB = frequency;
+      vfoActive = VFO_A;
       ritOn = 0;
       refreshDisplay++;
       updateDisplay();
@@ -885,7 +926,14 @@ void loop(){
   checkTX();
   checkButton();
 
-  freq = frequency + dialFreqCal;
+
+  if (editIfMode) {  // Set freq to Curent VFO + Trail IF Freq
+      switch (vfoActive) {
+          case VFO_B: freq = vfoB - iFreq + frequency; break;
+          default:    freq = vfoA - iFreq + frequency; break;
+      }
+  } else freq = frequency;
+  freq += isLSB ? dialFreqCalLSB : dialFreqCalUSB;
   if (!inTx && ritOn) freq += ritVal;
   vfo->setFrequency(freq + iFreq);
   
