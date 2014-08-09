@@ -12,6 +12,8 @@ Button Operations
     Btn2 Single Press = Left,  Move Frequency Cursor
     Btn3 Single Press = Right, Move Frequency Cursor
     Btn4 Single Press = Select: USB, LSB, or Auto USB (default)
+    Btn4 Double Press = Saves User-Preferences to Non-Volatile Memory
+    Btn4   Long Press = Loads User-Preferences from Non-Volatile Memory
     Btn5 Single Press = Up,   Change HAM Band (save current Freq and SSB Mode)
     Btn6 Single Press = Down, Change HAM Band (save current Freq and SSB Mode)
     Btn7 Single Press = Toggle Tune 2500Hz Mode
