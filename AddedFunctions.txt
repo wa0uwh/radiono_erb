@@ -15,6 +15,7 @@ The following functions are inplemented
     o Display, Edit, and Saves IF-Freq
     o On demand Save/Load User-Preferences to/from Non-Volatile Memory
     o User-Preferences are Loaded Power-ON and Reset
+    o Factory Reset - Hold any Button at Power-ON or Processor Reset
 
 	
     See: https://github.com/wa0uwh/radiono_erb

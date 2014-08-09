@@ -20,4 +20,6 @@ Button Operations
     Btn7 Double Press = Set Dial Calibration, from RIT value
     Btn7   Long Press = Display, Edit, and Saves IF-Freq
 
+Factory Reset = Holding any Button at Power-ON or Processor Reset
+
 --
