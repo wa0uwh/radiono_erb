@@ -74,6 +74,8 @@ Si570::Si570(uint8_t si570_address, uint32_t calibration_frequency)
 
   // We are about the reset the Si570, so set the current and center frequency to the calibration frequency.
   f_center = frequency = calibration_frequency;
+  
+  max_delta = ((uint64_t) f_center * 10035LL / 10000LL) - f_center;
 
   // Force Si570 to reset to initial freq
   debug(P("Resetting Si570"));
@@ -325,13 +327,8 @@ Si570_Status Si570::setFrequency(uint32_t newfreq)
   if (frequency == newfreq)
     return status;
     
-    //debug("\n\nStart: %lu", newfreq); // DEBUG ###
-
   // Check how far we have moved the frequency
-  uint32_t delta_freq = abs(newfreq - f_center);
-
-  // Calculate a 3500 ppm frequency change
-  uint32_t max_delta = f_center * 10035 / 10000;
+  uint32_t delta_freq = newfreq < f_center ? f_center - newfreq : newfreq - f_center;
 
   // If the jump is small enough, we don't have to fiddle with the dividers
   if (delta_freq < max_delta) 
@@ -346,6 +343,8 @@ Si570_Status Si570::setFrequency(uint32_t newfreq)
     int err = findDivisors(newfreq);
     setRFREQ(newfreq);
     f_center = frequency = newfreq;
+    // Calculate the new 3500 ppm delta
+    max_delta = ((uint64_t) f_center * 10035LL / 10000LL) - f_center;
     write_si570();
   }
   
