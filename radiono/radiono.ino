@@ -1027,17 +1027,22 @@ void setup() {
   digitalWrite(ANALOG_TUNING, 1);
   digitalWrite(FBUTTON, 0); // Use an external pull-up of 47K ohm to AREF
   
-  // Check EEPROM User Saved Preference, Load if available
-  eePromIO(R0,&Id, sizeof(Id));
-  if(Id == ID_FLAG) {
-      loadEEPROM();
-      delay(500);
+  // Check EEPROM for User Saved Preference, Load if available
+  // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
+  if(!btnDown()) {
+      eePromIO(R0,&Id, sizeof(Id));
+      if(Id == ID_FLAG) {
+          loadEEPROM();
+          delay(500);
+      }
+  }
+  else {
+      printLine2CEL(P("Factory Reset"));
+      deDounceBtnRelease(); // Wait for Button Release 
   }
     
   tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
   refreshDisplay = +1;
-  
-  // eeprom_read_block((void*)&settings, (void*)0, sizeof(settings));
   
 }
 
