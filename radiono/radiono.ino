@@ -46,6 +46,9 @@
 #include "debug.h"
 #include "Rf386.h"
 
+#include <avr/eeprom.h>
+
+
 /*
  The 16x2 LCD is connected as follows:
     LCD's PIN   Raduino's PIN  PURPOSE      ATMEGA328's PIN
@@ -96,6 +99,8 @@
 
 #define VFO_A (0)
 #define VFO_B (1)
+
+#define ID_FLAG (20140808)  //Used for EEPROM Flag
 
 
 Si570 *vfo;
@@ -154,6 +159,12 @@ const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
    
 #define BANDS (sizeof(bandLimits)/sizeof(prog_uint32_t)/2)
 
+
+
+int idFlag = ID_FLAG;
+char* revCode[] = {"M001"};
+int eepromCheckSum = 0;
+
 unsigned long freqCache[] = { // Set Default Values for Cache
       1825000UL, // 160m - QRP SSB Calling Freq
       3985000UL, //  80m - QRP SSB Calling Freq
@@ -166,9 +177,8 @@ unsigned long freqCache[] = { // Set Default Values for Cache
      28385000UL, //  10m - QRP SSB Calling Freq
      //50200000UL, //   6m - QRP SSB Calling Freq
    };
-  
-byte sideBandModeCache[BANDS];
-  
+byte sideBandModeCache[BANDS] = {0};
+
 
 // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
 char buf[64+2];
@@ -562,7 +572,7 @@ void checkButton() {
     case 1: decodeFN(btn); break;  
     case 2: decodeMoveCursor(btn); break;    
     case 3: decodeMoveCursor(btn); break;
-    case 4: decodeSideBandMode(btn); break;
+    case 4: decodeBtn4(btn); break;
     case 5: decodeBandUpDown(+1); break; // Band Up
     case 6: decodeBandUpDown(-1); break; // Band Down
     case 7: decodeBtn7(btn); break; // 
@@ -707,16 +717,151 @@ void decodeBandUpDown(int dir) {
 }
 
 
+
+// ###############################################################################
+void decodeBtn4(int btn) {
+        
+  switch (getButtonPushMode(btn)) { 
+    case MOMENTARY_PRESS: decodeSideBandMode(btn); break;
+    case DOUBLE_PRESS: saveEEPROM(); break;
+    case LONG_PRESS: loadEEPROM(); break;
+  }
+}
+
 // ###############################################################################
 void decodeSideBandMode(int btn) {
-  sideBandMode++;
-  sideBandMode %= 3; // Limit to Three Modes
-  setSideband();
-  cursorOff();
-  printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
-  refreshDisplay++;
-  updateDisplay();
-  deDounceBtnRelease(); // Wait for Release
+        
+       sideBandMode++;
+       sideBandMode %= 3; // Limit to Three Modes
+       setSideband();
+       //cursorOff();
+       //printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
+       deDounceBtnRelease(); // Wait for Release
+       refreshDisplay++;
+       updateDisplay();
+}
+
+// ###############################################################################
+int eeblock(int opt, void* item, int n) { 
+      static int p = 0;
+ 
+#define W0 (0)  // Reset, Write at Zero
+#define WC (1)  // Write Continue, (i.e., Append)
+#define R0 (2)  // Reset, Read from Zero
+#define RC (3)  // Read Continue     
+
+      switch(opt) {
+      case W0: p=0; eeprom_write_block(item, (void*)p, n); p+=n; return p; // Write at ZERO
+      case WC:      eeprom_write_block(item, (void*)p, n); p+=n; return p; // Write Continue (i.e., Append)
+      case R0: p=0;  eeprom_read_block(item, (void*)p, n); p+=n; return p; // Read at ZERO
+      default:       eeprom_read_block(item, (void*)p, n); p+=n; return p; // Read Continue
+      } 
+       
+}
+       
+// ###############################################################################
+void saveEEPROM() { 
+       int p = 0; 
+       
+      // Note: eepromCheckSum NOT implemented yet
+      
+// Mpte: This would be a lot cleaner with "structures" but I did not want to change the original Sketch layout      
+/*       
+struct config_t
+{
+    int idFlag;
+    unsigned long frequency, iFreq;
+    int dialFreqCalUSB, dialFreqCalLSB;
+    unsigned long vfoA, vfoB;
+    char isLSB;
+    char vfoActive;
+    unsigned long freqCache[];
+    byte sideBandModeCache[];   
+    int eepromCheckSum;
+} settings;       
+
+eeprom_write_block((const void*)&settings, (void*)0, sizeof(settings));
+ eeprom_read_block((      void*)&settings, (void*)0, sizeof(settings));
+
+*/
+       eeblock(W0,&idFlag,            sizeof(idFlag));
+       eeblock(WC,&frequency,         sizeof(frequency));
+       eeblock(WC,&iFreq    ,         sizeof(iFreq));
+       eeblock(WC,&dialFreqCalUSB,    sizeof(dialFreqCalUSB));
+       eeblock(WC,&dialFreqCalLSB,    sizeof(dialFreqCalLSB));
+       eeblock(WC,&vfoA,              sizeof(vfoA));
+       eeblock(WC,&vfoB,              sizeof(vfoB));
+       eeblock(WC,&isLSB,             sizeof(isLSB));
+       eeblock(WC,&vfoActive,         sizeof(vfoActive));
+       eeblock(WC,&freqCache,         sizeof(freqCache));
+       eeblock(WC,&sideBandModeCache, sizeof(sideBandModeCache));
+   p = eeblock(WC,&eepromCheckSum,    sizeof(eepromCheckSum));
+
+
+/*
+       //eeprom_write_block((const void*)&settings, (void*)0, sizeof(settings));
+       s = sizeof(idFlag);            eeprom_write_block((const void*)&idFlag,            (void*)p, s); p += s;
+       s = sizeof(frequency);         eeprom_write_block((const void*)&frequency,         (void*)p, s); p += s;
+       s = sizeof(iFreq);             eeprom_write_block((const void*)&iFreq,             (void*)p, s); p += s;
+       s = sizeof(dialFreqCalUSB);    eeprom_write_block((const void*)&dialFreqCalUSB,    (void*)p, s); p += s;
+       s = sizeof(dialFreqCalLSB);    eeprom_write_block((const void*)&dialFreqCalLSB,    (void*)p, s); p += s;
+       s = sizeof(vfoA);              eeprom_write_block((const void*)&vfoA,              (void*)p, s); p += s;
+       s = sizeof(vfoB);              eeprom_write_block((const void*)&vfoB,              (void*)p, s); p += s;
+       s = sizeof(isLSB);             eeprom_write_block((const void*)&isLSB,             (void*)p, s); p += s;
+       s = sizeof(vfoActive);         eeprom_write_block((const void*)&vfoActive,         (void*)p, s); p += s;
+       s = sizeof(freqCache);         eeprom_write_block((const void*)&freqCache,         (void*)p, s); p += s;
+       s = sizeof(sideBandModeCache); eeprom_write_block((const void*)&sideBandModeCache, (void*)p, s); p += s;
+       s = sizeof(eepromCheckSum);    eeprom_write_block((const void*)&eepromCheckSum,    (void*)p, s); p += s;
+       
+       */
+       
+       cursorOff();
+       sprintf(c, P("Saved: %d bytes"), p);
+       printLine2CEL(c);
+       deDounceBtnRelease(); // Wait for Release
+       refreshDisplay++;
+}
+
+// ###############################################################################
+void loadEEPROM() { 
+      int p = 0; 
+   
+      // Note: eepromCheckSum NOT implemented yet 
+      
+ /*
+       //eeprom_read_block((void*)&settings, (void*)0, sizeof(settings));
+       s = sizeof(idFlag);            eeprom_read_block((void*)&idFlag,            (void*)p, s); p += s;
+       s = sizeof(frequency);         eeprom_read_block((void*)&frequency,         (void*)p, s); p += s;
+       s = sizeof(iFreq);             eeprom_read_block((void*)&iFreq,             (void*)p, s); p += s;
+       s = sizeof(dialFreqCalUSB);    eeprom_read_block((void*)&dialFreqCalUSB,    (void*)p, s); p += s;
+       s = sizeof(dialFreqCalLSB);    eeprom_read_block((void*)&dialFreqCalLSB,    (void*)p, s); p += s;
+       s = sizeof(vfoA);              eeprom_read_block((void*)&vfoA,              (void*)p, s); p += s;
+       s = sizeof(vfoB);              eeprom_read_block((void*)&vfoB,              (void*)p, s); p += s;
+       s = sizeof(isLSB);             eeprom_read_block((void*)&isLSB,             (void*)p, s); p += s;
+       s = sizeof(vfoActive);         eeprom_read_block((void*)&vfoActive,         (void*)p, s); p += s;
+       s = sizeof(freqCache);         eeprom_read_block((void*)&freqCache,         (void*)p, s); p += s;
+       s = sizeof(sideBandModeCache); eeprom_read_block((void*)&sideBandModeCache, (void*)p, s); p += s;
+       s = sizeof(eepromCheckSum);    eeprom_read_block((void*)&eepromCheckSum,    (void*)p, s); p += s;
+ */ 
+ 
+       eeblock(R0,&idFlag,            sizeof(idFlag));
+       eeblock(RC,&frequency,         sizeof(frequency));
+       eeblock(RC,&iFreq    ,         sizeof(iFreq));
+       eeblock(RC,&dialFreqCalUSB,    sizeof(dialFreqCalUSB));
+       eeblock(RC,&dialFreqCalLSB,    sizeof(dialFreqCalLSB));
+       eeblock(RC,&vfoA,              sizeof(vfoA));
+       eeblock(RC,&vfoB,              sizeof(vfoB));
+       eeblock(RC,&isLSB,             sizeof(isLSB));
+       eeblock(RC,&vfoActive,         sizeof(vfoActive));
+       eeblock(RC,&freqCache,         sizeof(freqCache));
+       eeblock(RC,&sideBandModeCache, sizeof(sideBandModeCache));
+   p = eeblock(RC,&eepromCheckSum,    sizeof(eepromCheckSum));
+   
+       cursorOff();
+       sprintf(c, P("Load: %d bytes"), p);
+       printLine2CEL(c);
+       deDounceBtnRelease(); // Wait for Release
+       refreshDisplay++;
 }
 
 
@@ -910,6 +1055,9 @@ void setup() {
   
   tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
   refreshDisplay = +1;
+  
+  // eeprom_read_block((void*)&settings, (void*)0, sizeof(settings));
+  
 }
 
 
