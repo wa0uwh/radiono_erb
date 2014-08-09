@@ -18,3 +18,12 @@ Copyright (C)2014  Ashhar Farhan
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+--------------------
+Some Modifcations, By: Eldon R. Brown - WA0UWH
+
+    An Aternate Tuning Method
+    Button to Support Alternate Tuning Method
+
+--

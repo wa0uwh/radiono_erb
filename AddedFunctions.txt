@@ -12,7 +12,11 @@ The following functions are inplemented
     o RIT Toggled ON/OFF
     o Limit TX to within the Ham Bands
     o Dial Calibration 
+    o Display, Edit, and Saves IF-Freq
+    o On demand Save/Load User-Preferences to/from Non-Volatile Memory
+    o User-Preferences are Loaded Power-ON and Reset
 
-    See: https://github.com/wa0uwh/radiono_erb/tree/Experimental
+	
+    See: https://github.com/wa0uwh/radiono_erb
 
 --
