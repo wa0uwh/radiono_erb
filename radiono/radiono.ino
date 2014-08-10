@@ -1020,6 +1020,7 @@ void setup() {
   pinMode(CW_KEY, OUTPUT);
   pinMode(ANALOG_TUNING, INPUT);
   pinMode(FBUTTON, INPUT);
+  pinMode(PA_BAND_CLK, OUTPUT);
 
   //set the side-tone off, put the transceiver to receive mode
   digitalWrite(CW_KEY, 0);
