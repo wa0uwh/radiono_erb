@@ -38,15 +38,16 @@ void setRf386BandSignal(unsigned long freq){
   prevBand = band;
   
   debug(P("BandI = %d"), band);
-
+  pinMode(PA_BAND_CLK, OUTPUT);
+  
   digitalWrite(PA_BAND_CLK, 1);  // Output Reset Pulse for PA Band Filter
-  delay(500);
+  delay(10);
   digitalWrite(PA_BAND_CLK, 0);
 
-  while (band-- > 1) { // Output Clock Pulse to Change PA Band Filter
-     delay(50);
+  while (band > 1) { // Output Selector Pulses to Change PA Band Filter
+     delay(2);
      digitalWrite(PA_BAND_CLK, 1);
-     delay(50);
+     band--;
      digitalWrite(PA_BAND_CLK, 0);
   }
 }
