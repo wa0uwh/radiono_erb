@@ -62,7 +62,9 @@
 
 #define SI570_I2C_ADDRESS 0x55
 //#define IF_FREQ   (0)  // FOR DEBUG ONLY
-#define IF_FREQ   (19997000L) //this is for usb, we should probably have the USB and LSB frequencies separately
+#define IF_FREQ   (19997000L) // this is for usb, we should probably have the USB and LSB frequencies separately
+#defome SB_OFFSET (3000L)     // this is used as a +/- Value for Sideband Offset
+
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
 #define MAX_FREQ (30000000UL)
@@ -733,8 +735,9 @@ void decodeSideBandMode(int btn) {
        sideBandMode++;
        sideBandMode %= 3; // Limit to Three Modes
        setSideband();
-       //cursorOff();
-       //printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
+       cursorOff();
+       printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
+       delay(500);
        deDounceBtnRelease(); // Wait for Release
        refreshDisplay++;
        updateDisplay();
@@ -1070,7 +1073,7 @@ void loop(){
   } else freq = frequency;
   freq += isLSB ? dialFreqCalLSB : dialFreqCalUSB;
   if (!inTx && ritOn) freq += ritVal;
-  vfo->setFrequency(freq + iFreq);
+  vfo->setFrequency(freq + iFreq + isLSB ? -SB_OFFSET : SB_OFFSET);
   
   setSideband();
   setBandswitch(frequency);
