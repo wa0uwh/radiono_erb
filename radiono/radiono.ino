@@ -164,10 +164,7 @@ const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
    
 #define BANDS (sizeof(bandLimits)/sizeof(prog_uint32_t)/2)
 
-
-
 long idFlag = ID_FLAG;
-int eepromCheckSum = 0;
 
 unsigned long freqCache[] = { // Set Default Values for Cache
       1825000UL, // 160m - QRP SSB Calling Freq
