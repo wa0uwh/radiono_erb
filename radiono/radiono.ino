@@ -100,7 +100,10 @@
 #define VFO_A (0)
 #define VFO_B (1)
 
-#define ID_FLAG (1408091429L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1408111546L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+    
+#define EEP_LOAD (0)
+#define EEP_SAVE (1)
 
 
 Si570 *vfo;
@@ -722,8 +725,8 @@ void decodeBtn4(int btn) {
         
   switch (getButtonPushMode(btn)) { 
     case MOMENTARY_PRESS: decodeSideBandMode(btn); break;
-    case DOUBLE_PRESS: saveEEPROM(); break;
-    case LONG_PRESS: loadEEPROM(); break;
+    case DOUBLE_PRESS: eePromIO(EEP_SAVE); break;
+    case LONG_PRESS:   eePromIO(EEP_LOAD); break;
   }
 }
 
@@ -740,102 +743,90 @@ void decodeSideBandMode(int btn) {
        updateDisplay();
 }
 
-// ###############################################################################
-int eePromIO(int opt, void* item, int n) { 
-      static int p = 0;
- 
-#define W0 (0)  // Reset, Write at Zero
-#define WC (1)  // Write Continue, (i.e., Append)
-#define R0 (2)  // Reset, Read from Zero
-#define RC (3)  // Read Continue     
-
-// Note: This syntax was constructed to be easy to Cut-n-Paste, for Read and Write
-
-      switch(opt) {
-      case W0: p=0; eeprom_write_block(item, (void*)p, n); p+=n; return p; // Write at ZERO
-      case WC:      eeprom_write_block(item, (void*)p, n); p+=n; return p; // Write Continue (i.e., Append)
-      case R0: p=0;  eeprom_read_block(item, (void*)p, n); p+=n; return p; // Read at ZERO
-      default:       eeprom_read_block(item, (void*)p, n); p+=n; return p; // Read Continue
-      } 
-       
-}
-       
-// ###############################################################################
-void saveEEPROM() { 
-       int p = 0; 
-       
-      // Note: eepromCheckSum NOT implemented yet
-      
-// Note: This would be a lot cleaner with "structures",
-//       but I did not want to change the original Sketch layout      
-
-
-        /*       
-        struct config_t
-        {
-            int idFlag;
-            unsigned long frequency, iFreq;
-            int dialFreqCalUSB, dialFreqCalLSB;
-            unsigned long vfoA, vfoB;
-            char isLSB;
-            char vfoActive;
-            unsigned long freqCache[];
-            byte sideBandModeCache[];   
-            int eepromCheckSum;
-        } settings;       
-        
-        eeprom_write_block((const void*)&settings, (void*)0, sizeof(settings));
-         eeprom_read_block((      void*)&settings, (void*)0, sizeof(settings));
-        
-        */
-
-       eePromIO(W0,&idFlag,            sizeof(idFlag));
-       eePromIO(WC,&frequency,         sizeof(frequency));
-       eePromIO(WC,&iFreq    ,         sizeof(iFreq));
-       eePromIO(WC,&editIfMode,        sizeof(editIfMode));
-       eePromIO(WC,&dialFreqCalUSB,    sizeof(dialFreqCalUSB));
-       eePromIO(WC,&dialFreqCalLSB,    sizeof(dialFreqCalLSB));
-       eePromIO(WC,&vfoA,              sizeof(vfoA));
-       eePromIO(WC,&vfoB,              sizeof(vfoB));
-       eePromIO(WC,&vfoActive,         sizeof(vfoActive));
-       eePromIO(WC,&isLSB,             sizeof(isLSB));
-       eePromIO(WC,&freqCache,         sizeof(freqCache));
-       eePromIO(WC,&sideBandModeCache, sizeof(sideBandModeCache));
-   p = eePromIO(WC,&eepromCheckSum,    sizeof(eepromCheckSum));
- 
-       cursorOff();
-       sprintf(c, P("Saved: %d Bytes"), p);
-       printLine2CEL(c);
-       deDounceBtnRelease(); // Wait for Release
-       refreshDisplay++;
-}
 
 // ###############################################################################
-void loadEEPROM() { 
-      int p = 0; 
+void eePromIO(int mode) {
+    byte checkSum = 0;
+    byte *pb;
    
-      // Note: eepromCheckSum NOT implemented yet 
- 
-       eePromIO(R0,&idFlag,            sizeof(idFlag));
-       eePromIO(RC,&frequency,         sizeof(frequency));
-       eePromIO(RC,&iFreq    ,         sizeof(iFreq));
-       eePromIO(RC,&editIfMode,        sizeof(editIfMode));
-       eePromIO(RC,&dialFreqCalUSB,    sizeof(dialFreqCalUSB));
-       eePromIO(RC,&dialFreqCalLSB,    sizeof(dialFreqCalLSB));
-       eePromIO(RC,&vfoA,              sizeof(vfoA));
-       eePromIO(RC,&vfoB,              sizeof(vfoB));
-       eePromIO(RC,&vfoActive,         sizeof(vfoActive));
-       eePromIO(RC,&isLSB,             sizeof(isLSB));
-       eePromIO(RC,&freqCache,         sizeof(freqCache));
-       eePromIO(RC,&sideBandModeCache, sizeof(sideBandModeCache));
-   p = eePromIO(RC,&eepromCheckSum,    sizeof(eepromCheckSum));
+struct config_t {
+        long idFlag;
+        unsigned long frequency;
+        int editIfMode;
+        unsigned long iFreq;
+        int dialFreqCalUSB;
+        int dialFreqCalLSB;
+        unsigned long vfoA;
+        unsigned long vfoB;
+        char isLSB;
+        char vfoActive;
+        unsigned long freqCache[BANDS];
+        byte sideBandModeCache[BANDS];
+        byte checkSum;
+    } E;
+    
+    cursorOff();
    
-       cursorOff();
-       sprintf(c, P("Load: %d Bytes"), p);
-       printLine2CEL(c);
-       deDounceBtnRelease(); // Wait for Release
-       refreshDisplay++;
-}
+    switch(mode) {
+    case EEP_LOAD:
+        eeprom_read_block((void*)&E, (void*)0, sizeof(E));
+        
+        if (E.idFlag == ID_FLAG) {          
+            pb = (byte *) &E;
+            for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
+            
+            if(checkSum == 0) {         
+                idFlag = E.idFlag; 
+                frequency = E.frequency;
+                editIfMode = E.editIfMode;
+                dialFreqCalUSB = E.dialFreqCalUSB;
+                dialFreqCalLSB = E.dialFreqCalLSB;
+                vfoA = E.vfoA;
+                vfoB = E.vfoB;
+                isLSB = E.isLSB;
+                vfoActive = E.vfoActive;
+                freqCache[BANDS] = E.freqCache[BANDS];
+                sideBandModeCache[BANDS] = E.sideBandModeCache[BANDS];
+                checkSum = E.checkSum;
+                
+                sprintf(c, P("Loading %d Bytes"), sizeof(E));
+            }
+            else sprintf(c, P("Load Failed CSum"));
+        }
+        else sprintf(c, P("Load Failed"));      
+        break;
+        
+    case EEP_SAVE :
+        checkSum = 0;
+        
+        E.idFlag = ID_FLAG;
+        E.frequency = frequency;
+        E.editIfMode = editIfMode;
+        E.dialFreqCalUSB = dialFreqCalUSB;
+        E.dialFreqCalLSB = dialFreqCalLSB;
+        E.vfoA = vfoA;
+        E.vfoB = vfoB;
+        E.isLSB = isLSB;
+        E.vfoActive = vfoActive;
+        E.freqCache[BANDS] = freqCache[BANDS];
+        E.sideBandModeCache[BANDS] = sideBandModeCache[BANDS];
+        E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
+                
+        pb = (byte *) &E; 
+        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
+        E.checkSum = -checkSum;
+        
+        eeprom_write_block((const void*)&E, (void*)0, sizeof(E));
+        
+        sprintf(c, P("Storing %d Bytes"), sizeof(E));
+        break;
+    }
+   
+    printLine2CEL(c);
+    delay(500);
+    deDounceBtnRelease(); // Wait for Release
+    refreshDisplay++;
+} 
 
 
 // ###############################################################################
@@ -1030,11 +1021,7 @@ void setup() {
   // Check EEPROM for User Saved Preference, Load if available
   // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
   if(!btnDown()) {
-      eePromIO(R0,&Id, sizeof(Id));
-      if(Id == ID_FLAG) {
-          loadEEPROM();
-          delay(500);
-      }
+          eePromIO(EEP_LOAD);
   }
   else {
       printLine2CEL(P("Factory Reset"));
