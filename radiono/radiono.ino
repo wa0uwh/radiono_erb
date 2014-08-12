@@ -100,7 +100,7 @@
 #define VFO_A (0)
 #define VFO_B (1)
 
-#define ID_FLAG (1408111546L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1408112014L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
     
 #define EEP_LOAD (0)
 #define EEP_SAVE (1)
@@ -133,7 +133,7 @@ int tuningPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
 int winkOn;
 char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
-int sideBandMode = 0;
+byte sideBandMode = 0;
 
 unsigned char locked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
 char inTx = 0;
@@ -761,6 +761,7 @@ struct config_t {
         char isLSB;
         char vfoActive;
         unsigned long freqCache[BANDS];
+        byte sideBandMode;
         byte sideBandModeCache[BANDS];
         byte checkSum;
     } E;
@@ -772,7 +773,7 @@ struct config_t {
         eeprom_read_block((void*)&E, (void*)0, sizeof(E));
         
         if (E.idFlag == ID_FLAG) {          
-            pb = (byte *) &E;
+            pb = (byte *)&E;
             for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
             
             if(checkSum == 0) {         
@@ -785,8 +786,9 @@ struct config_t {
                 vfoB = E.vfoB;
                 isLSB = E.isLSB;
                 vfoActive = E.vfoActive;
-                freqCache[BANDS] = E.freqCache[BANDS];
-                sideBandModeCache[BANDS] = E.sideBandModeCache[BANDS];
+                memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
+                sideBandMode = E.sideBandMode;
+                memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
                 checkSum = E.checkSum;
                 
                 sprintf(c, P("Loading %d Bytes"), sizeof(E));
@@ -808,11 +810,12 @@ struct config_t {
         E.vfoB = vfoB;
         E.isLSB = isLSB;
         E.vfoActive = vfoActive;
-        E.freqCache[BANDS] = freqCache[BANDS];
-        E.sideBandModeCache[BANDS] = sideBandModeCache[BANDS];
+        memcpy(E.freqCache, freqCache, sizeof(freqCache));
+        E.sideBandMode = sideBandMode;
+        memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(sideBandModeCache));
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
                 
-        pb = (byte *) &E; 
+        pb = (byte *)&E; 
         for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
         E.checkSum = -checkSum;
         
