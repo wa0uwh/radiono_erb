@@ -24,7 +24,7 @@
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "DD"              // Incremental Rev Code
+#define INC_REV "DE"              // Incremental Rev Code
 
 
 /*
@@ -63,7 +63,7 @@
 #define SI570_I2C_ADDRESS 0x55
 //#define IF_FREQ   (0)  // FOR DEBUG ONLY
 #define IF_FREQ   (19997000L) // this is for usb, we should probably have the USB and LSB frequencies separately
-#define SB_OFFSET (1000L)     // this is used as a +/- Value for Sideband Offset
+#define SB_OFFSET (1200L)     // this is used as a +/- Value for Sideband Offset
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
@@ -1063,7 +1063,7 @@ void loop(){
           default:    freq = vfoA - iFreq + frequency; break;
       }
   } else freq = frequency;
-  freq += isLSB ? -SB_OFFSET : SB_OFFSET;
+  freq += isLSB ? SB_OFFSET : -SB_OFFSET;
   freq += isLSB ? dialFreqCalLSB : dialFreqCalUSB;
   if (!inTx && ritOn) freq += ritVal;
   vfo->setFrequency(freq + iFreq);
