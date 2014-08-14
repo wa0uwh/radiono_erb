@@ -745,11 +745,8 @@ void decodeSideBandMode(int btn) {
 
 
 // ###############################################################################
-void eePromIO(int mode) {
-    byte checkSum = 0;
-    byte *pb;
-   
-struct config_t {
+void eePromIO(int mode) {   
+   struct config_t {
         long idFlag;
         unsigned long frequency;
         int editIfMode;
@@ -765,42 +762,41 @@ struct config_t {
         byte sideBandModeCache[BANDS];
         byte checkSum;
     } E;
+    byte checkSum = 0;
+    byte *pb = (byte *)&E;   
     
     cursorOff();
    
     switch(mode) {
     case EEP_LOAD:
+        // Read from Non-Volatile Memory and check for the correct ID
         eeprom_read_block((void*)&E, (void*)0, sizeof(E));
+        if (E.idFlag != ID_FLAG) { sprintf(c, P("Load Failed")); break; }
         
-        if (E.idFlag == ID_FLAG) {          
-            pb = (byte *)&E;
-            for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
-            
-            if(checkSum == 0) {         
-                idFlag = E.idFlag; 
-                frequency = E.frequency;
-                editIfMode = E.editIfMode;
-                dialFreqCalUSB = E.dialFreqCalUSB;
-                dialFreqCalLSB = E.dialFreqCalLSB;
-                vfoA = E.vfoA;
-                vfoB = E.vfoB;
-                isLSB = E.isLSB;
-                vfoActive = E.vfoActive;
-                memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
-                sideBandMode = E.sideBandMode;
-                memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
-                checkSum = E.checkSum;
-                
-                sprintf(c, P("Loading %d Bytes"), sizeof(E));
-            }
-            else sprintf(c, P("Load Failed CSum"));
-        }
-        else sprintf(c, P("Load Failed"));      
+        // Compute and Check the CheckSum
+        for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
+        if(checkSum != 0) { sprintf(c, P("Load Failed CSum")); break; }
+        
+        // Assign Values to Working Variables from eeProm Structure
+        idFlag = E.idFlag; 
+        frequency = E.frequency;
+        editIfMode = E.editIfMode;
+        dialFreqCalUSB = E.dialFreqCalUSB;
+        dialFreqCalLSB = E.dialFreqCalLSB;
+        vfoA = E.vfoA;
+        vfoB = E.vfoB;
+        isLSB = E.isLSB;
+        vfoActive = E.vfoActive;
+        memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
+        sideBandMode = E.sideBandMode;
+        memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
+        checkSum = E.checkSum;
+       
+        sprintf(c, P("Loading %d Bytes"), sizeof(E));      
         break;
         
     case EEP_SAVE :
-        checkSum = 0;
-        
+        // Assign Working Variables to the eeProm Structure
         E.idFlag = ID_FLAG;
         E.frequency = frequency;
         E.editIfMode = editIfMode;
@@ -814,11 +810,12 @@ struct config_t {
         E.sideBandMode = sideBandMode;
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(sideBandModeCache));
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
-                
-        pb = (byte *)&E; 
-        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
-        E.checkSum = -checkSum;
         
+        // Compute and save the new Checksum of eeProm Struture
+        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
+        E.checkSum = -checkSum; // Apply CheckSum to Structure
+        
+        // Write the eeProm Strcture to Non-Volatile Memory
         eeprom_write_block((const void*)&E, (void*)0, sizeof(E));
         
         sprintf(c, P("Storing %d Bytes"), sizeof(E));
