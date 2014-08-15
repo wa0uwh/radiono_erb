@@ -102,7 +102,7 @@
 #define VFO_A (0)
 #define VFO_B (1)
 
-#define ID_FLAG (1408112014L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1408141747L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
     
 #define EEP_LOAD (0)
 #define EEP_SAVE (1)
@@ -159,26 +159,27 @@ const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
      21000000UL, 21450000UL, //  15m
      24890000UL, 24990000UL, //  12m
      28000000UL, 29700000UL, //  10m
-     //50000000UL, 54000000UL, //   6m - Will need New Low Pass Filter Support
+   //50000000UL, 54000000UL, //   6m - Will need New Low Pass Filter Support
    };
    
 #define BANDS (sizeof(bandLimits)/sizeof(prog_uint32_t)/2)
 
 long idFlag = ID_FLAG;
 
+// An Array to save: A-VFO & B-VFO
 unsigned long freqCache[] = { // Set Default Values for Cache
-      1825000UL, // 160m - QRP SSB Calling Freq
-      3985000UL, //  80m - QRP SSB Calling Freq
-      7285000UL, //  40m - QRP SSB Calling Freq
-     10138700UL, //  30m - QRP QRSS and WSPR
-     14285000UL, //  20m - QRP SSB Calling Freq
-     18130000UL, //  17m - QRP SSB Calling Freq
-     21385000UL, //  15m - QRP SSB Calling Freq
-     24950000UL, //  12m - QRP SSB Calling Freq
-     28385000UL, //  10m - QRP SSB Calling Freq
-     //50200000UL, //   6m - QRP SSB Calling Freq
+      1825000UL, 1825000UL,  // 160m - QRP SSB Calling Freq
+      3985000UL, 3985000UL,  //  80m - QRP SSB Calling Freq
+      7285000UL, 7285000UL,  //  40m - QRP SSB Calling Freq
+     10138700UL, 10138700UL, //  30m - QRP QRSS and WSPR
+     14285000UL, 14285000UL, //  20m - QRP SSB Calling Freq
+     18130000UL, 18130000UL, //  17m - QRP SSB Calling Freq
+     21385000UL, 21385000UL, //  15m - QRP SSB Calling Freq
+     24950000UL, 24950000UL, //  12m - QRP SSB Calling Freq
+     28385000UL, 28385000UL, //  10m - QRP SSB Calling Freq
+   //50200000UL, 50200000UL, //   6m - QRP SSB Calling Freq
    };
-byte sideBandModeCache[BANDS] = {0};
+byte sideBandModeCache[BANDS*2] = {0};
 
 
 // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
@@ -669,6 +670,7 @@ void decodeDialFreqCal() {
 
 // ###############################################################################
 void decodeBandUpDown(int dir) {
+    int j;
     
    if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
     
@@ -676,16 +678,17 @@ void decodeBandUpDown(int dir) {
      
      case +1:  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
+         j = i*2 + vfoActive;
          if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
            if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
              // Save Current Ham frequency and sideBandMode
-             freqCache[i] = frequency;
-             sideBandModeCache[i] = sideBandMode;
-             i++;
+             freqCache[j] = frequency;
+             sideBandModeCache[j] = sideBandMode;
            }
-           // Load From Next Cache
-           frequency = freqCache[min(i,BANDS-1)];
-           sideBandMode = sideBandModeCache[min(i,BANDS-1)];
+           // Load From Next Cache Up Band
+           j += 2;
+           frequency = freqCache[min(j,BANDS*2-1)];
+           sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
            break;
          }
        }
@@ -693,15 +696,17 @@ void decodeBandUpDown(int dir) {
      
      case -1:  // For Band Change, Down
        for (int i = BANDS-1; i > 0; i--) {
+         j = i*2 + vfoActive;
          if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
            if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
              // Save Current Ham frequency and sideBandMode
-             freqCache[i] = frequency;
-             sideBandModeCache[i] = sideBandMode;
-             i--;
+             freqCache[j] = frequency;
+             sideBandModeCache[j] = sideBandMode;
            }
-           frequency = freqCache[max(i,0)];
-           sideBandMode = sideBandModeCache[max(i,0)];
+           // Load From Next Cache Down Band
+           j -= 2;
+           frequency = freqCache[max(j,vfoActive)];
+           sideBandMode = sideBandModeCache[max(j,vfoActive)];
            break;
          }
        }
@@ -745,11 +750,8 @@ void decodeSideBandMode(int btn) {
 
 
 // ###############################################################################
-void eePromIO(int mode) {
-    byte checkSum = 0;
-    byte *pb;
-   
-struct config_t {
+void eePromIO(int mode) {   
+   struct config_t {
         long idFlag;
         unsigned long frequency;
         int editIfMode;
@@ -760,47 +762,46 @@ struct config_t {
         unsigned long vfoB;
         char isLSB;
         char vfoActive;
-        unsigned long freqCache[BANDS];
+        unsigned long freqCache[BANDS*2];
         byte sideBandMode;
-        byte sideBandModeCache[BANDS];
+        byte sideBandModeCache[BANDS*2];
         byte checkSum;
     } E;
+    byte checkSum = 0;
+    byte *pb = (byte *)&E;   
     
     cursorOff();
    
     switch(mode) {
     case EEP_LOAD:
+        // Read from Non-Volatile Memory and check for the correct ID
         eeprom_read_block((void*)&E, (void*)0, sizeof(E));
+        if (E.idFlag != ID_FLAG) { sprintf(c, P("Load Failed")); break; }
         
-        if (E.idFlag == ID_FLAG) {          
-            pb = (byte *)&E;
-            for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
-            
-            if(checkSum == 0) {         
-                idFlag = E.idFlag; 
-                frequency = E.frequency;
-                editIfMode = E.editIfMode;
-                dialFreqCalUSB = E.dialFreqCalUSB;
-                dialFreqCalLSB = E.dialFreqCalLSB;
-                vfoA = E.vfoA;
-                vfoB = E.vfoB;
-                isLSB = E.isLSB;
-                vfoActive = E.vfoActive;
-                memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
-                sideBandMode = E.sideBandMode;
-                memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
-                checkSum = E.checkSum;
-                
-                sprintf(c, P("Loading %d Bytes"), sizeof(E));
-            }
-            else sprintf(c, P("Load Failed CSum"));
-        }
-        else sprintf(c, P("Load Failed"));      
+        // Compute and Check the CheckSum
+        for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
+        if(checkSum != 0) { sprintf(c, P("Load Failed CSum")); break; }
+        
+        // Assign Values to Working Variables from eeProm Structure
+        idFlag = E.idFlag; 
+        frequency = E.frequency;
+        editIfMode = E.editIfMode;
+        dialFreqCalUSB = E.dialFreqCalUSB;
+        dialFreqCalLSB = E.dialFreqCalLSB;
+        vfoA = E.vfoA;
+        vfoB = E.vfoB;
+        isLSB = E.isLSB;
+        vfoActive = E.vfoActive;
+        memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
+        sideBandMode = E.sideBandMode;
+        memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
+        checkSum = E.checkSum;
+       
+        sprintf(c, P("Loading %dB"), sizeof(E));      
         break;
         
     case EEP_SAVE :
-        checkSum = 0;
-        
+        // Assign Working Variables to the eeProm Structure
         E.idFlag = ID_FLAG;
         E.frequency = frequency;
         E.editIfMode = editIfMode;
@@ -814,11 +815,12 @@ struct config_t {
         E.sideBandMode = sideBandMode;
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(sideBandModeCache));
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
-                
-        pb = (byte *)&E; 
-        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
-        E.checkSum = -checkSum;
         
+        // Compute and save the new Checksum of eeProm Struture
+        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
+        E.checkSum = -checkSum; // Apply CheckSum to Structure
+        
+        // Write the eeProm Strcture to Non-Volatile Memory
         eeprom_write_block((const void*)&E, (void*)0, sizeof(E));
         
         sprintf(c, P("Storing %d Bytes"), sizeof(E));
