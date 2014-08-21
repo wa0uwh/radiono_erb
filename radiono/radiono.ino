@@ -22,9 +22,11 @@
  *
  */
 
+void setup(); // #fix Hack
+
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "DE"              // Incremental Rev Code
+#define INC_REV "EB"              // Incremental Rev Code
 
 
 /*
@@ -61,7 +63,7 @@
 */
 
 #define SI570_I2C_ADDRESS 0x55
-//#define IF_FREQ   (0)  // FOR DEBUG ONLY
+//#define IF_FREQ   (0)  // FOR debug ONLY
 #define IF_FREQ   (19997000L) // this is for usb, we should probably have the USB and LSB frequencies separately
 #define SB_OFFSET (1200L)     // this is used as a +/- Value for Sideband Offset
 
@@ -82,6 +84,11 @@
 #define MOMENTARY_PRESS (1)
 #define DOUBLE_PRESS (2)
 #define LONG_PRESS (3)
+#define ALT_PRESS (4)
+
+#define FN_BTN (1)
+#define LEFT_BTN (2)
+#define RIGHT_BTN (3)
 
 #define AUTO_SIDEBAND_MODE (0)
 #define UPPER_SIDEBAND_MODE (1)
@@ -95,14 +102,14 @@
 #define BAND_HI (5)
 #define PA_BAND_CLK (7)
 
-#define FBUTTON (A3)
+#define FN_PIN (A3)
 #define ANALOG_TUNING (A2)
 #define ANALOG_KEYER (A1)
 
 #define VFO_A (0)
 #define VFO_B (1)
 
-#define ID_FLAG (1408112014L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1408141747L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
     
 #define EEP_LOAD (0)
 #define EEP_SAVE (1)
@@ -117,13 +124,13 @@ int dialFreqCalUSB = 0;
 int dialFreqCalLSB = 0;
 
 unsigned long vfoA = frequency, vfoB = frequency;
-unsigned long cwTimeout = 0;
+unsigned long cwTimeout = 0, pttTimeout = 0;
 int editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
 
 /* tuning pot stuff */
-unsigned char refreshDisplay = 0;
+byte refreshDisplay = 0;
 
 int tuningDir = 0;
 int tuningPosition = 0;
@@ -137,16 +144,17 @@ int winkOn;
 char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 byte sideBandMode = 0;
 
-unsigned char locked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
-char inTx = 0;
-char keyDown = 0;
-char isLSB = 0;
-char vfoActive = VFO_A;
+byte tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
+byte inTx = 0, inPtt = 0;
+byte keyDown = 0;
+byte isLSB = 0;
+byte vfoActive = VFO_A;
 
 /* modes */
-unsigned ritOn = 0;
+byte ritOn = 0;
 int ritVal = 0;
-
+byte AltTxVFO = 0;
+byte isAltVFO = 0;
 
 // PROGMEM is used to avoid using the small available variable space
 const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
@@ -159,26 +167,27 @@ const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
      21000000UL, 21450000UL, //  15m
      24890000UL, 24990000UL, //  12m
      28000000UL, 29700000UL, //  10m
-     //50000000UL, 54000000UL, //   6m - Will need New Low Pass Filter Support
+   //50000000UL, 54000000UL, //   6m - Will need New Low Pass Filter Support
    };
    
 #define BANDS (sizeof(bandLimits)/sizeof(prog_uint32_t)/2)
 
 long idFlag = ID_FLAG;
 
+// An Array to save: A-VFO & B-VFO
 unsigned long freqCache[] = { // Set Default Values for Cache
-      1825000UL, // 160m - QRP SSB Calling Freq
-      3985000UL, //  80m - QRP SSB Calling Freq
-      7285000UL, //  40m - QRP SSB Calling Freq
-     10138700UL, //  30m - QRP QRSS and WSPR
-     14285000UL, //  20m - QRP SSB Calling Freq
-     18130000UL, //  17m - QRP SSB Calling Freq
-     21385000UL, //  15m - QRP SSB Calling Freq
-     24950000UL, //  12m - QRP SSB Calling Freq
-     28385000UL, //  10m - QRP SSB Calling Freq
-     //50200000UL, //   6m - QRP SSB Calling Freq
+      1825000UL, 1825000UL,  // 160m - QRP SSB Calling Freq
+      3985000UL, 3985000UL,  //  80m - QRP SSB Calling Freq
+      7285000UL, 7285000UL,  //  40m - QRP SSB Calling Freq
+     10138700UL, 10138700UL, //  30m - QRP QRSS and WSPR
+     14285000UL, 14285000UL, //  20m - QRP SSB Calling Freq
+     18130000UL, 18130000UL, //  17m - QRP SSB Calling Freq
+     21385000UL, 21385000UL, //  15m - QRP SSB Calling Freq
+     24950000UL, 24950000UL, //  12m - QRP SSB Calling Freq
+     28385000UL, 28385000UL, //  10m - QRP SSB Calling Freq
+   //50200000UL, 50200000UL, //   6m - QRP SSB Calling Freq
    };
-byte sideBandModeCache[BANDS] = {0};
+byte sideBandModeCache[BANDS*2] = {0};
 
 
 // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
@@ -188,6 +197,7 @@ char buf[64+2];
 // FLASH2 can be used where Two small (1/2 size) Buffers are needed.
 #define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
 
+#define DEBUG(x ...)  // Default to NO debug
 
 // ###############################################################################
 // ###############################################################################
@@ -234,17 +244,17 @@ void updateDisplay(){
       sprintf(d, P("%+03.3d"), ritVal);  
       sprintf(b, P("%08ld"), frequency);
       sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"),
-          editIfMode ? "I" : vfoActive == VFO_A ? "A" : "B" ,
+          editIfMode ? "I" : (vfoActive == VFO_A ? (AltTxVFO ? "a": "A") : (AltTxVFO ? "b" : "B")) ,
           b,  b+2,
           inTx ? " " : ritOn ? d : " ",
           tune2500Mode ? "*": " "
           );
       printLine1CEL(c);
       
-      sprintf(c, P("%3s%1s %2s %3.3s"),
+      sprintf(c, P("%3s%1s %-3s %3.3s"),
           isLSB ? "LSB" : "USB",
           sideBandMode > 0 ? "*" : " ",
-          inTx ? "TX" : "RX",
+          inTx ? (inPtt ? "PTT" : "CW") : "RX",
           freqUnStable ? " " : vfoStatus[vfo->status]
           );
       printLine2CEL(c);
@@ -332,12 +342,8 @@ void setSideband(){
 // ###############################################################################
 void setBandswitch(unsigned long freq){
   
-  if (freq >= 15000000UL) {
-    digitalWrite(BAND_HI, 1);
-  }
-  else {
-    digitalWrite(BAND_HI, 0);
-  }
+  if (freq >= 15000000UL) digitalWrite(BAND_HI, 1);
+  else digitalWrite(BAND_HI, 0);
 }
 
 
@@ -355,14 +361,17 @@ void readTuningPot(){
 void checkTuning() {
   long deltaFreq;
   unsigned long newFreq;
-  
-  if (!freqUnStable) {
-    //we are Stable, so, Set to Non-lock
-      locked = 0;
-  }
+
   // Count Down to Freq Stable, i.e. Freq has not changed recently
   if (freqUnStable == 1) refreshDisplay = true;
   freqUnStable = max(--freqUnStable, 0);
+  
+  // Do Not Change Freq while in Transmit or button opperation
+  // Allow Tuning knob to be recentered without changing Frequency
+  if (tuningLocked) {
+      tuningPositionPrevious = tuningPosition;
+      return;
+  }
   
   // Compute tuningDaltaPosition from tuningPosition
   tuningPositionDelta = tuningPosition - tuningPositionPrevious;
@@ -391,7 +400,7 @@ void checkTuning() {
   if (ritOn) {
       ritVal += tuningDir * 10;
       ritVal = max(ritVal, -990);
-      ritVal = min(ritVal, 990);
+      ritVal = min(ritVal, +990);
       tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
       refreshDisplay++;
       updateDisplay();
@@ -421,8 +430,9 @@ void checkTuning() {
       // Update frequency if within range of limits, 
       // Avoiding Nagative underRoll of UnSigned Long, and over-run MAX_FREQ  
       if (newFreq <= MAX_FREQ) {
-        frequency = newFreq;  
-        refreshDisplay = true;
+        frequency = newFreq;
+        vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;  
+        refreshDisplay++;
       }
       freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
       tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
@@ -432,113 +442,152 @@ void checkTuning() {
 
 // ###############################################################################
 int inBandLimits(unsigned long freq){
+#define DEBUG(x...)
+//#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
+    static unsigned long freqPrev = 0;
+    static byte bandPrev = 0;
     int upper, lower = 0;
     
-       for (int i = 0; i < BANDS; i++) {
-         lower = i * 2;
+       if (AltTxVFO) freq = (vfoActive == VFO_A) ? vfoB : vfoA;
+       DEBUG(P("%s %d: A,B: %lu, %lu, %lu"), __func__, __LINE__, freq, vfoA, vfoB);
+       
+       //if (freq == freqPrev) return bandPrev;
+       freqPrev = freq;
+       
+       for (int band = 0; band < BANDS; band++) {
+         lower = band * 2;
          upper = lower + 1;
-         if (frequency >= pgm_read_dword(&bandLimits[lower]) &&
-             frequency <= pgm_read_dword(&bandLimits[upper]) ) return i;
+         if (freq >= pgm_read_dword(&bandLimits[lower]) &&
+             freq <= pgm_read_dword(&bandLimits[upper]) ) {
+             bandPrev = ++band;
+             DEBUG(P("In Band %d"), band);
+             return bandPrev;
+             }
        }
+       DEBUG(P("Out Of Band"));
        return 0;
 }
-    
-    
+
+  
 // ###############################################################################
-void checkTX(){
-  
-  if (freqUnStable) return;
-
-  //we don't check for ptt when transmitting cw
-  if (cwTimeout > 0) return;
-  
-  if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
-  
-  if(!inBandLimits(frequency)) return;
+void toggleAltVfo(int mode) {
+#define DEBUG(x...)
+//#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
     
-  if (digitalRead(TX_RX) == 0 && inTx == 0){
+    DEBUG(P("%s %d: A,B: %lu, %lu"), __func__, __LINE__, vfoA, vfoB);
+    vfoActive = (vfoActive == VFO_A) ? VFO_B : VFO_A;
+    frequency = (vfoActive == VFO_A) ? vfoA : vfoB;
+    DEBUG(P("%s %d: %s %lu"), __func__, __LINE__, vfoActive == VFO_A ? "A:": "B:", frequency);
     refreshDisplay++;
-    inTx = 1;
-  }
-
-  if (digitalRead(TX_RX) == 1 && inTx == 1){
-    refreshDisplay++;
-    inTx = 0;
-  }
-  
 }
-
-
-// ###############################################################################
-void checkCW(){
-/* CW is generated by keying the bias of a side-tone oscillator.
- *   nonzero cwTimeout denotes that we are in cw transmit mode.
- */
-
-  if (freqUnStable) return;
-
-  if(!inBandLimits(frequency)) return;
       
-  if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
-  
-  if (keyDown == 0 && analogRead(ANALOG_KEYER) < 50){
-    //switch to transmit mode if we are not already in it
-    if (inTx == 0){
-      //put the  TX_RX line to transmit
-      pinMode(TX_RX, OUTPUT);
-      digitalWrite(TX_RX, 0);
-      //give the relays a few ms to settle the T/R relays
-      delay(50);
+// ###############################################################################
+void checkTX() {
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+
+    if (freqUnStable) return;  // Do Nothing if Freq is UnStable
+    if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+    
+    // DEBUG(P("%s %d:  Start Loop"), __func__, __LINE__);
+    
+    //if we have keyup for a longish time while in CW and PTT tx mode
+    if (inTx && cwTimeout < millis()) {
+        DEBUG(P("%s %d: TX to RX"), __func__, __LINE__);
+        //Change the radio back to receive
+        pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
+        pinMode(TX_RX, INPUT);  digitalWrite(TX_RX, 1); // With pull-up!
+        inTx = inPtt = cwTimeout = tuningLocked = 0;
+        if (AltTxVFO) toggleAltVfo(inTx);  // Clear Alt VFO if needed
+        refreshDisplay++;
+        return;
     }
-    inTx = 1;
-    keyDown = 1;
-    digitalWrite(CW_KEY, 1); //start the side-tone
-    refreshDisplay++;
-  }
-
-  //reset the timer as long as the key is down
-  if (keyDown == 1){
-     cwTimeout = CW_TIMEOUT + millis();
-  }
-
-  //if we have a keyup
-  if (keyDown == 1 && analogRead(ANALOG_KEYER) > 150){
-    keyDown = 0;
-    digitalWrite(CW_KEY, 0);
-    cwTimeout = millis() + CW_TIMEOUT;
-  }
-
-  //if we have keyuup for a longish time while in cw tx mode
-  if (inTx == 1 && cwTimeout < millis()){
-    //move the radio back to receive
-    digitalWrite(TX_RX, 1);
-    //set the TX_RX pin back to input mode
-    pinMode(TX_RX, INPUT);
-    digitalWrite(TX_RX, 1); //pull-up!
-    inTx = 0;
-    cwTimeout = 0;
-    refreshDisplay++;
-  }
+  
+    if (!keyDown && analogRead(ANALOG_KEYER) < 50) { // New KeyDown
+        DEBUG(P("\n%s %d: KEY Dn"), __func__, __LINE__);
+        if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
+        if (!inTx){
+            //put the  TX_RX line to transmit
+            pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 0);
+            //give the T/R relays a few ms to settle
+            inTx = keyDown = tuningLocked = 1;
+            if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFI if Needed
+            refreshDisplay++;
+            delay(50);
+        }
+        digitalWrite(CW_KEY, 1); //start the side-tone
+        //Start the timer the key is down
+        cwTimeout = CW_TIMEOUT + millis();
+        return;
+    }
+    
+    if (keyDown && analogRead(ANALOG_KEYER) > 150) { //if we have a keyup
+        DEBUG(P("%s %d: KEY Up"), __func__, __LINE__);
+        keyDown = 0;
+        digitalWrite(CW_KEY, 0); // stop the side-tone
+        cwTimeout = CW_TIMEOUT + millis(); // Start timer for KeyUp Holdoff
+        return;
+    } 
+    
+    if (keyDown) {
+        DEBUG(P("%s %d: KEY On"), __func__, __LINE__);
+        cwTimeout = CW_TIMEOUT + millis(); // Restat timer
+        return;
+    } 
+      
+    if (inPtt && inTx) { // Check PTT
+        DEBUG(P("%s %d: PTT"), __func__, __LINE__);
+        cwTimeout = CW_TIMEOUT + millis(); // Restat timer
+        // It is OK, to stop TX
+        pinMode(TX_RX, INPUT); digitalWrite(TX_RX, 1); // With pull-up!
+        if (digitalRead(TX_RX)) { // Is PTT Not pushed, then end PTT
+            DEBUG(P("%s %d: Stop PTT"), __func__, __LINE__);
+            inPtt = cwTimeout = 0;
+        }
+        return;       
+    } 
+    
+    if (cwTimeout < millis() && !inTx) { // Check PTT
+        DEBUG(P("%s %d: RX Idle"), __func__, __LINE__);
+        // It is OK, to go into TX
+        pinMode(TX_RX, INPUT); digitalWrite(TX_RX, 1); // With pull-up!
+        if (!digitalRead(TX_RX)) { // Is PTT pushed  
+            if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds 
+            DEBUG(P("\n%s %d: Start PTT"), __func__, __LINE__); 
+            if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFO if Needed
+            inTx = inPtt = tuningLocked = 1;
+            delay(50);
+            cwTimeout = CW_TIMEOUT + millis(); // Restat timer
+            refreshDisplay++;
+        }
+        return;      
+    }
+    // Else, must be running out the cwTimeout
+    DEBUG(P("%s %d: Holdiing"), __func__, __LINE__);
 }
 
 
 // ###############################################################################
 int btnDown(){
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int val = -1, val2 = -2;
   
-  val = analogRead(FBUTTON);
+  val = analogRead(FN_PIN);
   while (val != val2) { // DeBounce Button Press
-    delay(10);
-    val2 = val;
-    val = analogRead(FBUTTON);
+      delay(10);
+      val2 = val;
+      val = analogRead(FN_PIN);
   }
-  //debug("Val= %d", val);
+  
   if (val>1000) return 0;
+  
+  tuningLocked = 1; // Holdoff Tuning until button is processed
   // 47K Pull-up, and 4.7K switch resistors,
   // Val should be approximately = (btnN×4700)÷(47000+4700)×1023
-  
-  debug(P("btn Val= %d"), val);
-  
+
+  DEBUG(P("%s %d: btn Val= %d"), __func__, __LINE__, val);
+
   if (val > 350) return 7;
   if (val > 300) return 6;
   if (val > 250) return 5;
@@ -548,59 +597,58 @@ int btnDown(){
   return 1;
 }
 
+
 // -------------------------------------------------------------------------------
 void deDounceBtnRelease() {
   int i = 2;
-  
-    while (--i) { // DeBounce Button Release, Check twice
+    
+    while (i--) { // DeBounce Button Release, Check twice
       while (btnDown()) delay(20);
     }
     // The following allows the user to re-center the
     // Tuning POT during any Key Press-n-hold without changing Freq.
     readTuningPot();
     tuningPositionPrevious = tuningPosition;
+    tuningLocked = 0; // Allow Tuning to Proceed
 }
 
 
 // ###############################################################################
 void checkButton() {
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int btn;
   btn = btnDown();
-  if (btn) debug(P("btn %d"), btn);
+  if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   
   switch (btn) {
     case 0: return; // Abort
-    case 1: decodeFN(btn); break;  
-    case 2: decodeMoveCursor(btn); break;    
-    case 3: decodeMoveCursor(btn); break;
-    case 4: decodeBtn4(btn); break;
+    case FN_BTN: decodeFN(btn); break;  
+    case LEFT_BTN:  decodeMoveCursor(+1); break;    
+    case RIGHT_BTN: decodeMoveCursor(-1); break;
+    case 4: switch (getButtonPushMode(btn)) { 
+            case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
+            case DOUBLE_PRESS:     eePromIO(EEP_SAVE); break;
+            case LONG_PRESS:       eePromIO(EEP_LOAD); break;
+            case ALT_PRESS:        AltTxVFO = !AltTxVFO;  break;     
+            default: return; // Do Nothing
+            } break;
     case 5: decodeBandUpDown(+1); break; // Band Up
     case 6: decodeBandUpDown(-1); break; // Band Down
-    case 7: decodeBtn7(btn); break; // 
+    case 7: switch (getButtonPushMode(btn)) { 
+            case MOMENTARY_PRESS: decodeTune2500Mode(); break;
+            case DOUBLE_PRESS:    decodeDialFreqCal(); break;
+            case LONG_PRESS:      decodeEditIf(); break;    
+            default: return; // Do Nothing
+            } break;
     //case 7: decodeAux(7); break; // Report Un-Used as AUX Buttons
     default: return;
-  }
-}
-
-
-// ###############################################################################
-void decodeBtn7(int btn) {
-      
-  switch (getButtonPushMode(btn)) { 
-    case MOMENTARY_PRESS:
-      decodeTune2500Mode();
-      break;
-    case DOUBLE_PRESS:
-      decodeDialFreqCal();
-      break;
-    case LONG_PRESS:
-      decodeEditIf();
-      break;    
-    default:
-      return; // Do Nothing
-  }
+  }     
   refreshDisplay++;
+  updateDisplay();
+  deDounceBtnRelease(); // Wait for Button Release
 }
+
 
 // ###############################################################################
 void decodeEditIf() {  // Set the IF Frequency
@@ -608,51 +656,34 @@ void decodeEditIf() {  // Set the IF Frequency
 
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
         iFreq = frequency + ritVal;
-        switch (vfoActivePrev) {
-        case VFO_B: frequency = vfoB; break;
-        default:    frequency = vfoA; break;
-        }
+        vfoActivePrev == VFO_A ? frequency = vfoA : frequency = vfoB;
     }
-    else {  // Save Current VFO, Load IF Freq
-        switch (vfoActive) {
-        case VFO_B: vfoB = frequency; break;
-        default:    vfoA = frequency; break;
-        }
+    else {  // Save Current VFO, Load IF Freq 
+        vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
         frequency = iFreq;
         vfoActivePrev = vfoActive;
     }
     editIfMode = !editIfMode;  // Toggle Edit IF Mode
-    ritOn = false;
-    ritVal = 0;     
-    refreshDisplay++;
-    updateDisplay();
-    deDounceBtnRelease(); // Wait for Button Release 
+    ritOn = ritVal = 0; 
 }
 
 
 // ###############################################################################
 void decodeTune2500Mode() {
     
-    if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
-    
-    if(ritOn) return; // Do Nothing if in RIT Mode
+    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode   
+    if (ritOn) return; // Do Nothing if in RIT Mode
     
     cursorDigitPosition = 3; // Set default Tuning Digit
     tune2500Mode = !tune2500Mode;
-    if(tune2500Mode) frequency = (frequency / 2500) * 2500;
-    refreshDisplay++;
-    updateDisplay();
-    deDounceBtnRelease(); // Wait for Release
+    if (tune2500Mode) frequency = (frequency / 2500) * 2500;
 }
 
 
 // ###############################################################################
 void decodeDialFreqCal() {
-    if(ritOn) {
-        switch(isLSB) {
-        case 0: dialFreqCalUSB += ritVal; break;
-        case 1: dialFreqCalLSB += ritVal; break;
-        }
+    if (ritOn) {
+        isLSB ? dialFreqCalLSB += ritVal : dialFreqCalUSB += ritVal;
         ritVal = 0;
     }
     cursorOff();
@@ -661,73 +692,60 @@ void decodeDialFreqCal() {
         isLSB ? dialFreqCalLSB : dialFreqCalUSB
     );
     printLine2CEL(c);
-    deDounceBtnRelease(); // Wait for Button Release      
-    refreshDisplay++;
-    updateDisplay();
+    delay(500);
+    deDounceBtnRelease(); // Wait for Button Release
 }
 
 
 // ###############################################################################
 void decodeBandUpDown(int dir) {
+    int j;
     
-   if(editIfMode) return; // Do Nothing if in Edit-IF-Mode
-    
-   switch (dir) {  // Decode Direction of Band Change
-     
-     case +1:  // For Band Change, Up
+   if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+      
+    if(dir > 0) {  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
+         j = i*2 + vfoActive;
          if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
            if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
              // Save Current Ham frequency and sideBandMode
-             freqCache[i] = frequency;
-             sideBandModeCache[i] = sideBandMode;
-             i++;
+             freqCache[j] = frequency;
+             sideBandModeCache[j] = sideBandMode;
            }
-           // Load From Next Cache
-           frequency = freqCache[min(i,BANDS-1)];
-           sideBandMode = sideBandModeCache[min(i,BANDS-1)];
+           // Load From Next Cache Up Band
+           j += 2;
+           frequency = freqCache[min(j,BANDS*2-1)];
+           sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
+           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
            break;
          }
        }
-       break;
+     } // End fi
      
-     case -1:  // For Band Change, Down
+     else { // For Band Change, Down
        for (int i = BANDS-1; i > 0; i--) {
+         j = i*2 + vfoActive;
          if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
            if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
              // Save Current Ham frequency and sideBandMode
-             freqCache[i] = frequency;
-             sideBandModeCache[i] = sideBandMode;
-             i--;
+             freqCache[j] = frequency;
+             sideBandModeCache[j] = sideBandMode;
            }
-           frequency = freqCache[max(i,0)];
-           sideBandMode = sideBandModeCache[max(i,0)];
+           // Load From Next Cache Down Band
+           j -= 2;
+           frequency = freqCache[max(j,vfoActive)];
+           sideBandMode = sideBandModeCache[max(j,vfoActive)];
+           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
            break;
          }
        }
-       break;
+     } // End else
      
-   } // Switch End
-   
    freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
    ritOn = 0;
    setSideband();
-   refreshDisplay++;
-   updateDisplay();
-   deDounceBtnRelease(); // Wait for Release
 }
 
-
-
-// ###############################################################################
-void decodeBtn4(int btn) {
-        
-  switch (getButtonPushMode(btn)) { 
-    case MOMENTARY_PRESS: decodeSideBandMode(btn); break;
-    case DOUBLE_PRESS: eePromIO(EEP_SAVE); break;
-    case LONG_PRESS:   eePromIO(EEP_LOAD); break;
-  }
-}
 
 // ###############################################################################
 void decodeSideBandMode(int btn) {
@@ -739,17 +757,12 @@ void decodeSideBandMode(int btn) {
        printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
        delay(500);
        deDounceBtnRelease(); // Wait for Release
-       refreshDisplay++;
-       updateDisplay();
 }
 
 
 // ###############################################################################
-void eePromIO(int mode) {
-    byte checkSum = 0;
-    byte *pb;
-   
-struct config_t {
+void eePromIO(int mode) {   
+   struct config_t {
         long idFlag;
         unsigned long frequency;
         int editIfMode;
@@ -758,49 +771,48 @@ struct config_t {
         int dialFreqCalLSB;
         unsigned long vfoA;
         unsigned long vfoB;
-        char isLSB;
-        char vfoActive;
-        unsigned long freqCache[BANDS];
+        byte isLSB;
+        byte vfoActive;
+        unsigned long freqCache[BANDS*2];
         byte sideBandMode;
-        byte sideBandModeCache[BANDS];
+        byte sideBandModeCache[BANDS*2];
         byte checkSum;
     } E;
+    byte checkSum = 0;
+    byte *pb = (byte *)&E;   
     
     cursorOff();
    
     switch(mode) {
     case EEP_LOAD:
+        // Read from Non-Volatile Memory and check for the correct ID
         eeprom_read_block((void*)&E, (void*)0, sizeof(E));
+        if (E.idFlag != ID_FLAG) { sprintf(c, P("Load Failed ID")); break; }
         
-        if (E.idFlag == ID_FLAG) {          
-            pb = (byte *)&E;
-            for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
-            
-            if(checkSum == 0) {         
-                idFlag = E.idFlag; 
-                frequency = E.frequency;
-                editIfMode = E.editIfMode;
-                dialFreqCalUSB = E.dialFreqCalUSB;
-                dialFreqCalLSB = E.dialFreqCalLSB;
-                vfoA = E.vfoA;
-                vfoB = E.vfoB;
-                isLSB = E.isLSB;
-                vfoActive = E.vfoActive;
-                memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
-                sideBandMode = E.sideBandMode;
-                memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
-                checkSum = E.checkSum;
-                
-                sprintf(c, P("Loading %d Bytes"), sizeof(E));
-            }
-            else sprintf(c, P("Load Failed CSum"));
-        }
-        else sprintf(c, P("Load Failed"));      
+        // Compute and Check the CheckSum
+        for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
+        if (checkSum != 0) { sprintf(c, P("Load Failed CSum")); break; }
+        
+        // Assign Values to Working Variables from eeProm Structure
+        idFlag = E.idFlag; 
+        frequency = E.frequency;
+        editIfMode = E.editIfMode;
+        dialFreqCalUSB = E.dialFreqCalUSB;
+        dialFreqCalLSB = E.dialFreqCalLSB;
+        vfoA = E.vfoA;
+        vfoB = E.vfoB;
+        isLSB = E.isLSB;
+        vfoActive = E.vfoActive;
+        memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
+        sideBandMode = E.sideBandMode;
+        memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
+        checkSum = E.checkSum;
+       
+        sprintf(c, P("Loading %dB"), sizeof(E));      
         break;
         
     case EEP_SAVE :
-        checkSum = 0;
-        
+        // Assign Working Variables to the eeProm Structure
         E.idFlag = ID_FLAG;
         E.frequency = frequency;
         E.editIfMode = editIfMode;
@@ -814,114 +826,93 @@ struct config_t {
         E.sideBandMode = sideBandMode;
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(sideBandModeCache));
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
-                
-        pb = (byte *)&E; 
-        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
-        E.checkSum = -checkSum;
         
+        // Compute and save the new Checksum of eeProm Struture
+        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
+        E.checkSum = -checkSum; // Apply CheckSum to Structure
+        
+        // Write the eeProm Strcture to Non-Volatile Memory
         eeprom_write_block((const void*)&E, (void*)0, sizeof(E));
         
-        sprintf(c, P("Storing %d Bytes"), sizeof(E));
+        sprintf(c, P("Storing %dB"), sizeof(E));
         break;
     }
    
     printLine2CEL(c);
     delay(500);
     deDounceBtnRelease(); // Wait for Release
-    refreshDisplay++;
 } 
 
 
 // ###############################################################################
-void decodeMoveCursor(int btn) {
+void decodeMoveCursor(int dir) {
   
-      if(tune2500Mode) return; // Do not Move Cursor in this mode
+      if (tune2500Mode) return; // Do not Move Cursor in this mode
     
       tuningPositionPrevious = tuningPosition;
-      switch (btn) {
-        case 2: cursorDigitPosition++; break;
-        case 3: cursorDigitPosition--; break;
-      }
+      cursorDigitPosition += dir;
       cursorDigitPosition = min(cursorDigitPosition, 7);
       cursorDigitPosition = max(cursorDigitPosition, 0);
-      freqUnStable = false;  // Set Freq is NOT UnStable, as it is Stable
+      freqUnStable = false;  // Set Freq is NOT UnStable, as it is Stable          
       refreshDisplay++;
-      updateDisplay();
-      deDounceBtnRelease(); // Wait for Button Release
 }
 
 // -------------------------------------------------------------------------------
 void decodeAux(int btn) {
-  //debug("Aux %d", btn);
-  cursorOff();
-  sprintf(c, P("Btn: %.2d"), btn);
-  printLine2CEL(c);
-  refreshDisplay++;
-  updateDisplay();
-  deDounceBtnRelease(); // Wait for Button Release
+    //debug("%s btn %d", __func__, btn);
+    cursorOff();
+    sprintf(c, P("Btn: %.2d"), btn);
+    printLine2CEL(c);
+    delay(500);
+    deDounceBtnRelease(); // Wait for Release
 }
 
 
 // ###############################################################################
 int getButtonPushMode(int btn) {
-  int i, t1, t2;
+  int t1, t2, tbtn;
   
-  t1 = t2 = i = 0;
+  t1 = t2 = 0;
 
-  while (t1 < 30 && btnDown() == btn){
+  // Time for first press
+  tbtn = btnDown();
+  while (t1 < 20 && btn == tbtn){
+    tbtn = btnDown();
+    if (btn != FN_BTN && tbtn == FN_BTN) return ALT_PRESS;
     delay(50);
     t1++;
   }
-  while (t2 < 10 && !btnDown()){
+  // Time between presses
+  while (t2 < 10 && !tbtn){
+    tbtn = btnDown();
+    if (btn != FN_BTN && tbtn == FN_BTN) return ALT_PRESS;
     delay(50);
     t2++;
   }
 
-  //if the press is momentary and there is no secondary press
-  if (t1 < 10 && t2 > 6){
-    return MOMENTARY_PRESS;
-  }
-  //there has been a double press
-  else if (t1 < 10 && t2 <= 6) {
-    return DOUBLE_PRESS;
-  }
-  //there has been a long press
-  else if (t1 > 10){
-    return LONG_PRESS;
-  }
+  if (t1 > 10) return LONG_PRESS;
+  if (t2 < 7) return DOUBLE_PRESS; 
+  return MOMENTARY_PRESS;
+  
 }
-
 
 
 // ###############################################################################
 void decodeFN(int btn) {
-  //if the btn is down while tuning pot is not centered, then lock the tuning
-  //and return
-  
-  // I don't understand this origninal code fragment
-  if (freqUnStable) {
-    if (locked)
-      locked = 0;
-    else
-      locked = 1;
-    return;
-  }
 
   switch (getButtonPushMode(btn)) { 
     case MOMENTARY_PRESS:
-      ritOn = !ritOn;
-      ritVal = 0;
-      break;
+       ritOn = !ritOn; ritVal = 0;     
+       refreshDisplay++;
+       updateDisplay();
+       break;
       
     case DOUBLE_PRESS:
-      if (editIfMode) { // Abort Edit IF Mode, Reload Active VFO
+       if (editIfMode) { // Abort Edit IF Mode, Reload Active VFO
           editIfMode = false;
-          switch (vfoActive) {
-          case VFO_B: frequency = vfoB; break;
-          default:    frequency = vfoA; break;
-          }
-      } 
-      else { // Save Current VFO, Load Other VFO
+          frequency = (vfoActive == VFO_A) ? vfoA : vfoB; break;
+       } 
+       else { // Save Current VFO, Load Other VFO
           if (vfoActive == VFO_A) {
             vfoA = frequency;
             vfoActive = VFO_B;
@@ -932,43 +923,45 @@ void decodeFN(int btn) {
             vfoActive = VFO_A;
             frequency = vfoA;
           }
-      }
-      ritOn = 0;
-      ritVal = 0;
-      refreshDisplay++;
-      updateDisplay();
-      break;
+       }
+       ritOn = ritVal = 0;     
+       refreshDisplay++;
+       updateDisplay();
+       break;
       
     case LONG_PRESS:
-      vfoA = vfoB = frequency;
-      vfoActive = VFO_A;
-      ritOn = 0;
-      refreshDisplay++;
-      updateDisplay();
-      cursorOff();
-      printLine2CEL(P("VFO reset!"));
-      break;
-    default:
-      return; // Do Nothing
+       switch (vfoActive) {
+       case VFO_A :
+          vfoB = frequency + ritVal;
+          sprintf(c,P("A%sB"), ritVal ? "+RIT>": ">");
+          printLine2CEL(c);
+          break;
+       default :
+          vfoA = frequency + ritVal;
+          sprintf(c,P("B%sA"), ritVal ? "+RIT>": ">");
+          printLine2CEL(c);
+          break;
+       }
+       cursorOff();
+       delay(500);
+       break;
+    default :
+       return; // Do Nothing
   }
-
-  refreshDisplay++;
-  deDounceBtnRelease(); // Wait for Button Release
+  deDounceBtnRelease(); // Wait for Release
 }
 
 // ###############################################################################
-void loadUserPerferences() {
+void preLoadUserPerferences() {
   // Check EEPROM for User Saved Preference, Load if available
   // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
-  if(!btnDown()) {
-          eePromIO(EEP_LOAD);
-          delay(500);
-  }
-  else {
-      printLine2CEL(P("Factory Reset"));
-      deDounceBtnRelease(); // Wait for Button Release 
-  }
+  printLine1CEL("User Pref:");
+  if (!btnDown()) eePromIO(EEP_LOAD);
+  else printLine2CEL(P("Factory Reset"));
+  delay(500);
+  deDounceBtnRelease(); // Wait for Button Release 
 }
+
 
 // ###############################################################################
 // ###############################################################################
@@ -977,11 +970,10 @@ void loadUserPerferences() {
 
 // ###############################################################################
 void setup() {
-    long Id = 0;
   
   // Initialize the Serial port so that we can use it for debugging
   Serial.begin(115200);
-  debug(P("Radiono - Rev: %s"), RADIONO_VERSION);
+  debug(P("%s Radiono - Rev: %s"), __func__, RADIONO_VERSION);
 
   lcd.begin(LCD_COL, LCD_ROW);
   printLine1(P("Farhan - Minima"));
@@ -994,6 +986,11 @@ void setup() {
   sprintf(b, P("Rev: %s"), INC_REV);
   printLine2CEL(b);
   delay(2000);
+  
+  //sprintf(b, P("%s"), __DATE__); // Compile Date and Time
+  //sprintf(c, "%3.3s%7.7s %5.5s", b, b+4, __TIME__);
+  //printLine2CEL(c);
+  //delay(2000); 
   
   // Print just the File Name, Added by ERB
   //sprintf(c, P("F: %-13.13s"), P2(__FILE__));
@@ -1023,19 +1020,22 @@ void setup() {
  
   //set up the pins
   pinMode(LSB, OUTPUT);
-  pinMode(TX_RX, INPUT);
   pinMode(CW_KEY, OUTPUT);
-  pinMode(ANALOG_TUNING, INPUT);
-  pinMode(FBUTTON, INPUT);
   pinMode(PA_BAND_CLK, OUTPUT);
 
   //set the side-tone off, put the transceiver to receive mode
   digitalWrite(CW_KEY, 0);
-  digitalWrite(TX_RX, 1); //old way to enable the built-in pull-ups
-  digitalWrite(ANALOG_TUNING, 1);
-  digitalWrite(FBUTTON, 0); // Use an external pull-up of 47K ohm to AREF
   
-  loadUserPerferences();
+  pinMode(TX_RX, INPUT);
+  digitalWrite(TX_RX, 1); //old way to enable the built-in pull-ups
+  
+  pinMode(ANALOG_TUNING, INPUT);
+  digitalWrite(ANALOG_TUNING, 1); //old way to enable the built-in pull-ups
+  
+  pinMode(FN_PIN, INPUT);
+  digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
+  
+  preLoadUserPerferences();
   
   tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
   refreshDisplay = +1;
@@ -1051,18 +1051,14 @@ void loop(){
   readTuningPot();
   checkTuning();
 
-  //the order of testing first for cw and then for ptt is important.
-  checkCW();
   checkTX();
+  
   checkButton();
 
-
   if (editIfMode) {  // Set freq to Curent VFO + Trail IF Freq
-      switch (vfoActive) {
-          case VFO_B: freq = vfoB - iFreq + frequency; break;
-          default:    freq = vfoA - iFreq + frequency; break;
-      }
+         freq = frequency - iFreq + (vfoActive == VFO_A) ? vfoA : vfoB;
   } else freq = frequency;
+  
   freq += isLSB ? SB_OFFSET : -SB_OFFSET;
   freq += isLSB ? dialFreqCalLSB : dialFreqCalUSB;
   if (!inTx && ritOn) freq += ritVal;

@@ -23,6 +23,8 @@ extern char buf[];
 #define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
 
 
+#define debug(x ...)  // Default to NO debug
+
 //#define IF_FREQ   (19997000L)
 
 /*
