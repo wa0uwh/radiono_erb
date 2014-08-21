@@ -26,7 +26,7 @@ void setup(); // #fix Hack
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "DF.16 erb"       // Incremental Rev Code
+#define INC_REV "DF.19 erb"       // Incremental Rev Code
 
 
 /*
@@ -144,7 +144,7 @@ int winkOn;
 char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 byte sideBandMode = 0;
 
-byte locked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
+byte tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
 byte inTx = 0, inPtt = 0;
 byte keyDown = 0;
 byte isLSB = 0;
@@ -361,18 +361,17 @@ void readTuningPot(){
 void checkTuning() {
   long deltaFreq;
   unsigned long newFreq;
-  
-  if (!freqUnStable) locked = 0; //we are Stable, so, Set to Non-lock
-  
-  // Do Not Change Freq while in Transmit
-  if (cwTimeout) {
-      tuningPositionPrevious = tuningPosition;
-      return;
-  }
-  
+
   // Count Down to Freq Stable, i.e. Freq has not changed recently
   if (freqUnStable == 1) refreshDisplay = true;
   freqUnStable = max(--freqUnStable, 0);
+  
+  // Do Not Change Freq while in Transmit or button opperation
+  // Allow Tuning knob to be recentered without changing Frequency
+  if (tuningLocked) {
+      tuningPositionPrevious = tuningPosition;
+      return;
+  }
   
   // Compute tuningDaltaPosition from tuningPosition
   tuningPositionDelta = tuningPosition - tuningPositionPrevious;
@@ -489,7 +488,6 @@ void checkTX() {
 
     if (freqUnStable) return;  // Do Nothing if Freq is UnStable
     if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
-    if (locked) return;        // Do Nothing if Locked
     
     // DEBUG(P("%s %d:  Start Loop"), __func__, __LINE__);
     
@@ -499,7 +497,7 @@ void checkTX() {
         //Change the radio back to receive
         pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
         pinMode(TX_RX, INPUT);  digitalWrite(TX_RX, 1); // With pull-up!
-        inTx = inPtt = cwTimeout = 0;
+        inTx = inPtt = cwTimeout = tuningLocked = 0;
         if (AltTxVFO) toggleAltVfo(inTx);  // Clear Alt VFO if needed
         refreshDisplay++;
         return;
@@ -512,7 +510,7 @@ void checkTX() {
             //put the  TX_RX line to transmit
             pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 0);
             //give the T/R relays a few ms to settle
-            inTx = keyDown = 1;
+            inTx = keyDown = tuningLocked = 1;
             if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFI if Needed
             refreshDisplay++;
             delay(50);
@@ -557,7 +555,7 @@ void checkTX() {
             if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds 
             DEBUG(P("\n%s %d: Start PTT"), __func__, __LINE__); 
             if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFO if Needed
-            inTx = inPtt = 1;
+            inTx = inPtt = tuningLocked = 1;
             delay(50);
             cwTimeout = CW_TIMEOUT + millis(); // Restat timer
             refreshDisplay++;
@@ -582,8 +580,9 @@ int btnDown(){
       val = analogRead(FN_PIN);
   }
   
-  //DEBUG("Val= %d", val);
   if (val>1000) return 0;
+  
+  tuningLocked = 1; // Holdoff Tuning until button is processed
   // 47K Pull-up, and 4.7K switch resistors,
   // Val should be approximately = (btnN×4700)÷(47000+4700)×1023
 
@@ -610,6 +609,7 @@ void deDounceBtnRelease() {
     // Tuning POT during any Key Press-n-hold without changing Freq.
     readTuningPot();
     tuningPositionPrevious = tuningPosition;
+    tuningLocked = 0; // Allow Tuning to Proceed
 }
 
 
@@ -771,8 +771,8 @@ void eePromIO(int mode) {
         int dialFreqCalLSB;
         unsigned long vfoA;
         unsigned long vfoB;
-        char isLSB;
-        char vfoActive;
+        byte isLSB;
+        byte vfoActive;
         unsigned long freqCache[BANDS*2];
         byte sideBandMode;
         byte sideBandModeCache[BANDS*2];
@@ -899,17 +899,6 @@ int getButtonPushMode(int btn) {
 
 // ###############################################################################
 void decodeFN(int btn) {
-  //if the btn is down while tuning pot is not centered, then lock the tuning
-  //and return
-  
-  // I don't understand this origninal code fragment
-  if (freqUnStable) {
-    if (locked)
-      locked = 0;
-    else
-      locked = 1;
-    return;
-  }
 
   switch (getButtonPushMode(btn)) { 
     case MOMENTARY_PRESS:
