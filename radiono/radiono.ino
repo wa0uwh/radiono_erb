@@ -26,7 +26,7 @@ void setup(); // #fix Hack
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EB"              // Incremental Rev Code
+#define INC_REV "EC"              // Incremental Rev Code
 
 
 /*
