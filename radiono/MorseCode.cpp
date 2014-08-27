@@ -12,6 +12,7 @@ extern byte editIfMode;
 extern byte keyDown;
 extern byte inPtt;
 extern byte inTx;
+extern byte AltTxVFO;
 
 extern void printLine2CEL(char const *);
 extern void printLine2(char const *);
@@ -26,7 +27,7 @@ extern void setFreq(unsigned long);
 
 
 // Local
-long ditLen = 2400/13;
+long ditLen = 1200/13; // Default Speed
 #include "MorseTable.h"
 
 
@@ -73,6 +74,7 @@ void sendMesg(int mode, int freqShift, char *c) {
     byte bits = 0;
     unsigned long timeOut;
     
+    if (AltTxVFO) return; // Macros and Beacons not allowed in Split Mode, for now.
     if (editIfMode) return; // Do Nothing if in Edit-IF-Mode       
     if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
     if (isKeyNowClosed()) return; // Abort Message
@@ -97,7 +99,7 @@ void sendMesg(int mode, int freqShift, char *c) {
             bits = pgm_read_byte(&morse[*c & 0x7F - 32]);
             while(bits > 1) {
                 if (isKeyNowClosed()) return; // Abort Message
-                bits & 1 ? dit(mode, freqShift) : dah(mode,freqShift);
+                bits & 1 ? dit(mode, freqShift) : dah(mode, freqShift);
                 watchDog(ditLen);
                 bits /= 2;
             }
@@ -117,7 +119,7 @@ void sendQrssMesg(long len, int freqShift, char *c) {
 
 // ########################################################
 void sendMorseMesg(int wpm, char *c) {
-    ditLen = int(2400 / wpm); 
+    ditLen = int(1200 / wpm); 
     sendMesg(0, 0, c);  
 }
 

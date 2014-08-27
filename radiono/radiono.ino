@@ -28,29 +28,30 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 // Message Macros fragments
 #define CALLID "N0CAL"
 #define QTH "Someplace, US"
-#define MACRO1  "CQ CQ CQ de " CALLID " " CALLID "  "
+#define GRID "CN88xc"
+#define MACRO1  "CQ CQ CQ de " CALLID " " CALLID " "
 
 // Message Macros
-#define CW_MSG1 MACRO1 MACRO1 "K"
+#define CW_MSG1 MACRO1 " " MACRO1 " K"
 #define CW_MSG2 "de " CALLID
 
-#define QRSS_MSG1 CW_MSG1
-#define QRSS_MSG2 "aeiou AEIOU " // A test Mesg
-
-
-
+// QRSS Info, See: http://www.w0ch.net/qrss/qrss.htm
+#define QRSS_MSG1 " " CALLID " " GRID "   " CALLID " " GRID " "
+#define QRSS_MSG2 " " CALLID " " CALLID " "
+#define QRSS_MSG3 "aeiou AEIOU " // A test Mesg
 
 // CW Message Speed
-#define CW_WPM (18)
+#define CW_WPM (13)
 
 // QRSS Message Speed
-#define QRSS_DIT_TIME (3) // Typically 3, 6, 12, 24 seconds, etc, 60 is very-very slow, negative values are ms
-#define QRSS_SHIFT (5)    // Typically 5 to 8 Hz Shift for QRSS
+#define QRSS_DIT_TIME (1) //  1 for Demo, Typically 3, 6, 12, 24 seconds, etc, 60 is very-very slow, negative values are ms
+#define QRSS_SHIFT (50)   // 50 for Demo, Typically 5 to 8 Hz Shift for QRSS
+
 
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EC_A09"              // Incremental Rev Code
+#define INC_REV "EC_A20"              // Incremental Rev Code
 
 
 /*
@@ -603,7 +604,6 @@ int isKeyNowOpen() {
     return analogRead(ANALOG_KEYER) > 150;
 }
 
-
 void startSidetone() {
     digitalWrite(CW_KEY, 1); // start the side-tone
 }
@@ -995,12 +995,12 @@ void decodeFN(int btn) {
        switch (vfoActive) {
        case VFO_A :
           vfoB = frequency + ritVal;
-          sprintf(c,P("A%sB"), ritVal ? "+RIT>": ">");
+          sprintf(c,P("A%sB"), ritVal ? P2("+RIT>"): ">");
           printLine2CEL(c);
           break;
        default :
           vfoA = frequency + ritVal;
-          sprintf(c,P("B%sA"), ritVal ? "+RIT>": ">");
+          sprintf(c,P("B%sA"), ritVal ? P2("+RIT>"): ">");
           printLine2CEL(c);
           break;
        }
@@ -1017,7 +1017,7 @@ void decodeFN(int btn) {
 void preLoadUserPerferences() {
   // Check EEPROM for User Saved Preference, Load if available
   // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
-  printLine1CEL("User Pref:");
+  printLine1CEL(P("User Pref:"));
   if (!btnDown()) eePromIO(EEP_LOAD);
   else printLine2CEL(P("Factory Reset"));
   delay(500);
@@ -1044,17 +1044,17 @@ void setup() {
   
   // Initialize the Serial port so that we can use it for debugging
   Serial.begin(115200);
-  debug(P("%s Radiono - Rev: %s"), __func__, RADIONO_VERSION);
+  debug(P("%s Radiono - Rev: %s"), __func__, P2(RADIONO_VERSION));
 
   lcd.begin(LCD_COL, LCD_ROW);
   printLine1(P("Farhan - Minima"));
   printLine2(P("  Tranceiver"));
   delay(2000);
   
-  sprintf(b, P("Radiono %s"), RADIONO_VERSION);
+  sprintf(b, P("Radiono %s"), P2(RADIONO_VERSION));
   printLine1CEL(b);
   
-  sprintf(b, P("Rev: %s"), INC_REV);
+  sprintf(b, P("Rev: %s"), P2(INC_REV));
   printLine2CEL(b);
   delay(2000);
   
