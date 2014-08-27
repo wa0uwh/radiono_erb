@@ -18,6 +18,8 @@ FN Button Operations
    Btn4 Double_Press = Saves User-Preferences  to  Non-Volatile Memory
    Btn4   Long_Press = Loads User-Preferences from Non-Volatile Memory
    Btn4  Alt_PressFN = Toggle Split Operation ON/OFF
+   Btn4  Alt_PressLT = CW Send Macro MESG1
+   Btn4  Alt_PressRT = CW Send Macro MESG2
  
    Btn5 Single_Press =   Up, Change HAM Band (saves current Freq and SSB Mode) 
    Btn6 Single_Press = Down, Change HAM Band (saves current Freq and SSB Mode)
@@ -25,9 +27,17 @@ FN Button Operations
    Btn7 Single_Press = Toggle Tune 2500Hz Mode ON/OFF 
    Btn7 Double_Press = Set Dial Calibration, from RIT value 
    Btn7   Long_Press = Display, and Edit IF-Freq, Saves IF-Freq
+   Btn7  Alt_PressLT = QRSS Send Macro MESG1
+   Btn7  Alt_PressRT = QRSS Send Macro MESG2
 
-   Where: "Alt_PressFN" = First press a BtnN (while holding) quickly press FN and
-                          release FN, then release BtnN
+   Where:
+
+         Alt_PressFN = First press a BtnN (while holding) quickly press FN and
+                       release FN, then release BtnN
+         Alt_PressLT = First press a BtnN (while holding) quickly press LEFT and
+                       release LEFT, then release BtnN
+         Alt_PressRT = First press a BtnN (while holding) quickly press RIGHT and
+                       release RIGHT, then release BtnN
 
 
 User-Preferences

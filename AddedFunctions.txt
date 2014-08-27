@@ -24,6 +24,8 @@ The following functions are inplemented
     o Factory Reset - By Holding any Button at Power-ON or Processor Reset
     o Split, Cross-Band or In-Band operations; Transmit on "A" VFO and Receive on "B" VFO
       (Note: I need to check the Regulations to see if Split operations is legal on HF?)
+    o Two CW and Two QRSS User Beacon/Macro Messages/Modes, A quick Press CW Key will Abort Message
+      (Note: Macros and Beacons are not currently allowed in Split Mode, maybe someday)
 
     See: https://github.com/wa0uwh/radiono_erb/tree/AltTuneMethod
 
