@@ -527,7 +527,6 @@ void checkTX() {
     if (inTx && cwTimeout < millis()) {
         DEBUG(P("%s %d: TX to RX"), __func__, __LINE__);
         //Change the radio back to receive
-        stopSidetone();
         changeToReceive();
         inTx = inPtt = cwTimeout = tuningLocked = 0;
         if (AltTxVFO) toggleAltVfo(inTx);  // Clear Alt VFO if needed
@@ -623,6 +622,7 @@ void changeToTransmit() {
 }
 
 void changeToReceive() {
+    stopSidetone();
     pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
     pinMode(TX_RX, INPUT);  digitalWrite(TX_RX, 1); // With pull-up!
 }
