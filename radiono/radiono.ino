@@ -90,7 +90,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define SI570_I2C_ADDRESS 0x55
 //#define IF_FREQ   (0)  // FOR debug ONLY
 #define IF_FREQ   (19997000L) // this is for usb, we should probably have the USB and LSB frequencies separately
-#define SB_OFFSET (1200L)     // this is used as a +/- Value for Sideband Offset
+#define SB_OFFSET (3400L)     // this is used as a +/- Value for Sideband Offset
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
@@ -527,6 +527,7 @@ void checkTX() {
     if (inTx && cwTimeout < millis()) {
         DEBUG(P("%s %d: TX to RX"), __func__, __LINE__);
         //Change the radio back to receive
+        stopSidetone();
         changeToReceive();
         inTx = inPtt = cwTimeout = tuningLocked = 0;
         if (AltTxVFO) toggleAltVfo(inTx);  // Clear Alt VFO if needed
@@ -540,10 +541,10 @@ void checkTX() {
         if (!inTx){
             //put the  TX_RX line to transmit
             changeToTransmit();
-            //give the T/R relays a few ms to settle
             inTx = keyDown = tuningLocked = 1;
             if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFI if Needed
             refreshDisplay++;
+            //give the T/R relays a few ms to settle
             delay(50);
         }
         startSidetone(); //start the side-tone
