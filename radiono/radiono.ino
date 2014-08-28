@@ -51,7 +51,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EC_B01"              // Incremental Rev Code
+#define INC_REV "EC_B02"              // Incremental Rev Code
 
 
 /*
@@ -535,17 +535,17 @@ void checkTX() {
     }
   
     if (!keyDown && isKeyNowClosed()) { // New KeyDown
-        DEBUG(P("\n%s %d: Start KEY Dn"), __func__, __LINE__);
         if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
+        DEBUG(P("\n%s %d: Start KEY Dn"), __func__, __LINE__);
         if (!inTx){
             //put the  TX_RX line to transmit
             changeToTransmit();
-            inTx = keyDown = tuningLocked = 1;
             if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFI if Needed
             refreshDisplay++;
             //give the T/R relays a few ms to settle
             delay(50);
         }
+        inTx = keyDown = tuningLocked = 1;
         startSidetone(); //start the side-tone
         cwTimeout = CW_TIMEOUT + millis(); // Start the timer the key is down
         return;
@@ -596,32 +596,39 @@ void checkTX() {
 }
 
 // -------------------------------------------------------------
-int isPttPressed() {   
+int isPttPressed() {
+    DEBUG(P("\n%s %d"), __func__, __LINE__);
     pinMode(TX_RX, INPUT); digitalWrite(TX_RX, 1); // With pull-up!
     return !digitalRead(TX_RX); // Is PTT pushed  
 }
 
 int isKeyNowClosed() {
+    DEBUG(P("\n%s %d"), __func__, __LINE__);
     return analogRead(ANALOG_KEYER) < 50;
 }
 
 int isKeyNowOpen() {
+    DEBUG(P("\n%s %d"), __func__, __LINE__);
     return analogRead(ANALOG_KEYER) > 150;
 }
 
 void startSidetone() {
+    DEBUG(P("\n%s %d"), __func__, __LINE__);
     digitalWrite(CW_KEY, 1); // start the side-tone
 }
 
 void stopSidetone() {
+    DEBUG(P("\n%s %d"), __func__, __LINE__);
     digitalWrite(CW_KEY, 0); // stop the side-tone
 }
 
 void changeToTransmit() {
+    DEBUG(P("\n%s %d"), __func__, __LINE__);
     pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 0);
 }
 
 void changeToReceive() {
+    DEBUG(P("\n%s %d"), __func__, __LINE__);
     stopSidetone();
     pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
     pinMode(TX_RX, INPUT);  digitalWrite(TX_RX, 1); // With pull-up!
