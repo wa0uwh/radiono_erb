@@ -51,7 +51,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EC_A20"              // Incremental Rev Code
+#define INC_REV "EC_A21"              // Incremental Rev Code
 
 
 /*
@@ -233,25 +233,29 @@ char buf[64+2];
 // ###############################################################################
 /* display routines */
 void printLine1(char const *c){
+    
     lcd.setCursor(0, 0);
     lcd.print(c);
 }
 
 void printLine2(char const *c){
+    
     lcd.setCursor(0, 1);
     lcd.print(c);
 }
 
 // Print LCD Line1 with Clear to End of Line
-void printLine1CEL(char const *c){
+void printLine1CEL(char const *c){   
     char lbuf[LCD_COL+2];
+    
     sprintf(lbuf, LCD_STR_CEL, c);
     printLine1(lbuf);
 }
 
 // Print LCD Line2 with Clear to End of Line
-void printLine2CEL(char const *c){
+void printLine2CEL(char const *c){  
     char lbuf[LCD_COL+2];
+    
     sprintf(lbuf, LCD_STR_CEL, c);
     printLine2(lbuf);
 }
@@ -305,6 +309,7 @@ void setCursorCRM(int col, int row, int mode) {
 
 // -------------------------------------------------------------------------------
 void cursorOff() {
+    
   lcd.noBlink();
   lcd.noCursor();
 }
@@ -352,7 +357,7 @@ void updateCursor() {
 
 // ###############################################################################
 void setSideband(){
-  
+    
   switch(sideBandMode) {
     case AUTO_SIDEBAND_MODE: // Automatic Side Band Mode
       isLSB = (frequency < 10000000UL) ? 1 : 0 ; break;
@@ -366,8 +371,8 @@ void setSideband(){
 
  
 // ###############################################################################
-void setBandswitch(unsigned long freq){
-  
+void setBandswitch(unsigned long freq){ 
+    
   if (freq >= 15000000UL) digitalWrite(BAND_HI, 1);
   else digitalWrite(BAND_HI, 0);
 }
@@ -375,6 +380,7 @@ void setBandswitch(unsigned long freq){
 
 // ###############################################################################
 void readTuningPot(){
+    
     tuningPosition = analogRead(ANALOG_TUNING);
 }
 
@@ -590,10 +596,9 @@ void checkTX() {
 }
 
 // -------------------------------------------------------------
-int isPttPressed() {
+int isPttPressed() {   
     pinMode(TX_RX, INPUT); digitalWrite(TX_RX, 1); // With pull-up!
-    return !digitalRead(TX_RX); // Is PTT pushed
-    
+    return !digitalRead(TX_RX); // Is PTT pushed  
 }
 
 int isKeyNowClosed() {
@@ -672,6 +677,7 @@ void checkButton() {
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int btn;
+  
   btn = btnDown();
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   
@@ -740,6 +746,7 @@ void decodeTune2500Mode() {
 
 // ###############################################################################
 void decodeDialFreqCal() {
+    
     if (ritOn) {
         isLSB ? dialFreqCalLSB += ritVal : dialFreqCalUSB += ritVal;
         ritVal = 0;
@@ -807,7 +814,7 @@ void decodeBandUpDown(int dir) {
 
 // ###############################################################################
 void decodeSideBandMode(int btn) {
-        
+    
        sideBandMode++;
        sideBandMode %= 3; // Limit to Three Modes
        setSideband();
@@ -819,7 +826,8 @@ void decodeSideBandMode(int btn) {
 
 
 // ###############################################################################
-void eePromIO(int mode) {   
+void eePromIO(int mode) {
+   
    struct config_t {
         long idFlag;
         unsigned long frequency;
@@ -904,7 +912,7 @@ void eePromIO(int mode) {
 
 // ###############################################################################
 void decodeMoveCursor(int dir) {
-  
+
       if (tune2500Mode) return; // Do not Move Cursor in this mode
     
       tuningPositionPrevious = tuningPosition;
@@ -917,6 +925,7 @@ void decodeMoveCursor(int dir) {
 
 // -------------------------------------------------------------------------------
 void decodeAux(int btn) {
+    
     //debug("%s btn %d", __func__, btn);
     cursorOff();
     sprintf(c, P("Btn: %.2d"), btn);
@@ -954,8 +963,7 @@ int getButtonPushMode(int btn) {
 
   if (t1 > 10) return LONG_PRESS;
   if (t2 < 7) return DOUBLE_PRESS; 
-  return MOMENTARY_PRESS;
-  
+  return MOMENTARY_PRESS; 
 }
 
 
@@ -1015,6 +1023,7 @@ void decodeFN(int btn) {
 
 // ###############################################################################
 void preLoadUserPerferences() {
+    
   // Check EEPROM for User Saved Preference, Load if available
   // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
   printLine1CEL(P("User Pref:"));
@@ -1027,6 +1036,7 @@ void preLoadUserPerferences() {
 
 // ###############################################################################
 void setFreq(unsigned long freq) {
+
   freq += isLSB ? SB_OFFSET : -SB_OFFSET;
   freq += isLSB ? dialFreqCalLSB : dialFreqCalUSB;
   if (!inTx && ritOn) freq += ritVal;
@@ -1116,7 +1126,7 @@ void setup() {
 // ###############################################################################
 // ###############################################################################
 void loop(){
-    unsigned long freq;
+  unsigned long freq;
   
   readTuningPot();
   checkTuning();
@@ -1129,11 +1139,7 @@ void loop(){
          freq = frequency - iFreq + (vfoActive == VFO_A) ? vfoA : vfoB;
   } else freq = frequency;
   
-  setFreq(freq); 
-  //freq += isLSB ? SB_OFFSET : -SB_OFFSET;
-  //freq += isLSB ? dialFreqCalLSB : dialFreqCalUSB;
-  //if (!inTx && ritOn) freq += ritVal;
-  //vfo->setFrequency(freq + iFreq);
+  setFreq(freq);
   
   setSideband();
   setBandswitch(frequency);

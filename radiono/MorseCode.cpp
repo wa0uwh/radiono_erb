@@ -38,6 +38,7 @@ long ditLen = 1200/13; // Default Speed
 
 // ########################################################
 void watchDog(unsigned long timeOut) {
+    
     timeOut += millis();
     while(timeOut > millis()) {
         if (isKeyNowClosed()) return; // Abort Message
@@ -113,12 +114,14 @@ void sendMesg(int mode, int freqShift, char *c) {
 
 // ########################################################
 void sendQrssMesg(long len, int freqShift, char *c) {
+    
     ditLen = len < 0 ? -len : len * 1000;
     sendMesg(1, freqShift, c);
 }
 
 // ########################################################
 void sendMorseMesg(int wpm, char *c) {
+    
     ditLen = int(1200 / wpm); 
     sendMesg(0, 0, c);  
 }
