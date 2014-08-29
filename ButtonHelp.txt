@@ -25,7 +25,6 @@ FN Button Operations
    Btn6 Single_Press = Down, Change HAM Band (saves current Freq and SSB Mode)
  
    Btn7 Single_Press = Toggle Tune 2500Hz Mode ON/OFF 
-   Btn7 Double_Press = Set Dial Calibration, from RIT value 
    Btn7   Long_Press = Display, and Edit IF-Freq, Saves IF-Freq
    Btn7  Alt_PressLT = QRSS Send Macro MESG1
    Btn7  Alt_PressRT = QRSS Send Macro MESG2
