@@ -78,4 +78,16 @@ Error and Status Messages
    Storing nnnB = This is the size of the User-Preferences Saved
       to Non-Volatile Memory.
 
+
+IF Freq Calibrate
+
+   1. Select a Sideband
+   2. Adjust VFO Display the expected Zero Beat Frequency of you Standard
+   3. Long-Press btn7
+   4. Zero Beat, adjust as necessary with the Cursor and Dial, or the RIT
+   5. To Complete Calibration, Long-Press btn7 (or, to abort CAL - Double-Press FN)
+   6. To Save to Non-Volatile Memory Double-Press btn4
+   7. Do the same for the other Sideband
+
+
 --
