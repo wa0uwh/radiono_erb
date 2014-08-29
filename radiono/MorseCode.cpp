@@ -115,15 +115,15 @@ void sendMesg(int mode, int freqShift, char *c) {
 // ########################################################
 void sendQrssMesg(long len, int freqShift, char *c) {
     
-    ditLen = len < 0 ? -len : len * 1000;
-    sendMesg(1, freqShift, c);
+    ditLen = len < 0 ? -len : len * 1000; // Len is -MS or +Seconds
+    sendMesg(MOD_QRSS, freqShift, c);
 }
 
 // ########################################################
 void sendMorseMesg(int wpm, char *c) {
     
     ditLen = int(1200 / wpm); 
-    sendMesg(0, 0, c);  
+    sendMesg(MOD_CW, 0, c);  
 }
 
 // End

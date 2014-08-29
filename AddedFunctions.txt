@@ -16,9 +16,7 @@ The following functions are inplemented
     o Limit TX to within the Ham Bands (currently, the user must control Sidebands
       out side of the Ham Bands)
     o Include Jeff -KO7M Si570 Driver "Tuning Click" fix
-    o Frequency Dial Calibration via RIT
-    o Display IF Frequency, Set IF when RIT Mode is ON
-    o IF Configuration and Adjustments
+    o IF Freq Adjustments for either USB and LSB
     o On demand, save user specified Band Memories into non-volatile memory, and
       retrieved on power up.
     o Factory Reset - By Holding any Button at Power-ON or Processor Reset
