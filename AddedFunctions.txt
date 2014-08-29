@@ -16,14 +16,14 @@ The following functions are inplemented
     o Limit TX to within the Ham Bands (currently, the user must control Sidebands
       out side of the Ham Bands)
     o Include Jeff -KO7M Si570 Driver "Tuning Click" fix
-    o Frequency Dial Calibration via RIT
-    o Display IF Frequency, Set IF when RIT Mode is ON
-    o IF Configuration and Adjustments
+    o IF Freq Adjustments for either USB and LSB
     o On demand, save user specified Band Memories into non-volatile memory, and
       retrieved on power up.
     o Factory Reset - By Holding any Button at Power-ON or Processor Reset
     o Split, Cross-Band or In-Band operations; Transmit on "A" VFO and Receive on "B" VFO
       (Note: I need to check the Regulations to see if Split operations is legal on HF?)
+    o Two CW and Two QRSS User Beacon/Macro Messages/Modes, A quick Press CW Key will Abort Message
+      (Note: Macros and Beacons are not currently allowed in Split Mode, maybe someday)
 
     See: https://github.com/wa0uwh/radiono_erb/tree/AltTuneMethod
 
