@@ -51,7 +51,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EC_C03"              // Incremental Rev Code
+#define INC_REV "EC_C04"              // Incremental Rev Code
 
 
 /*
@@ -465,7 +465,7 @@ void checkTuning() {
       // Avoiding Nagative underRoll of UnSigned Long, and over-run MAX_FREQ  
       if (newFreq <= MAX_FREQ) {
         frequency = newFreq;
-        vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;  
+        if (!editIfMode) vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;  
         refreshDisplay++;
       }
       freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
@@ -736,12 +736,12 @@ void decodeEditIf() {  // Set the IF Frequency
 
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
         isLSB ? iFreqLSB = frequency + ritVal : iFreqUSB = frequency + ritVal;
-        vfoActivePrev == VFO_A ? frequency = vfoA : frequency = vfoB;
+        frequency = (vfoActivePrev == VFO_A) ? vfoA : vfoB;
     }
     else {  // Save Current VFO, Load IF Freq 
         vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
-        frequency = isLSB ? iFreqLSB : iFreqUSB;
         vfoActivePrev = vfoActive;
+        frequency = isLSB ? iFreqLSB : iFreqUSB;
     }
     editIfMode = !editIfMode;  // Toggle Edit IF Mode    
     cursorDigitPosition = 0; // Set default Tuning Digit
