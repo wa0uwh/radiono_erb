@@ -51,7 +51,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EC_C05"              // Incremental Rev Code
+#define INC_REV "EC_C06"              // Incremental Rev Code
 
 
 /*
@@ -433,8 +433,7 @@ void checkTuning() {
   // Decode and implement RIT Tuning
   if (ritOn) {
       ritVal += tuningDir * 10;
-      ritVal = max(ritVal, -990);
-      ritVal = min(ritVal, +990);
+      ritVal = constrain(ritVal, -990, +990);
       tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
       refreshDisplay++;
       updateDisplay();
@@ -744,8 +743,7 @@ void decodeEditIf() {  // Set the IF Frequency
         vfoActivePrev = vfoActive;
         frequency = isLSB ? iFreqLSB : iFreqUSB;
     }
-    editIfMode = !editIfMode;  // Toggle Edit IF Mode    
-    cursorDigitPosition = 0; // Set default Tuning Digit
+    editIfMode = !editIfMode;  // Toggle Edit IF Mode
     tune2500Mode = 0;
     ritOn = ritVal = 0;
 }
@@ -921,8 +919,7 @@ void decodeMoveCursor(int dir) {
     
       tuningPositionPrevious = tuningPosition;
       cursorDigitPosition += dir;
-      cursorDigitPosition = min(cursorDigitPosition, 7);
-      cursorDigitPosition = max(cursorDigitPosition, 0);
+      cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
       freqUnStable = false;  // Set Freq is NOT UnStable, as it is Stable          
       refreshDisplay++;
 }
