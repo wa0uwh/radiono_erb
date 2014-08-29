@@ -51,7 +51,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EC_C02"              // Incremental Rev Code
+#define INC_REV "EC_C03"              // Incremental Rev Code
 
 
 /*
@@ -700,7 +700,7 @@ void checkButton() {
             case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
             case DOUBLE_PRESS:     eePromIO(EEP_SAVE); break;
             case LONG_PRESS:       eePromIO(EEP_LOAD); break;
-            case ALT_PRESS_FN:     AltTxVFO = !AltTxVFO;  break;
+            case ALT_PRESS_FN:     toggleAltTxVFO();  break;
             case ALT_PRESS_LEFT:   sendMorseMesg(CW_WPM, P(CW_MSG1));  break;
             case ALT_PRESS_RIGHT:  sendMorseMesg(CW_WPM, P(CW_MSG2));  break;    
             default: return; // Do Nothing
@@ -724,6 +724,13 @@ void checkButton() {
 
 
 // ###############################################################################
+void toggleAltTxVFO() {
+    
+    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode 
+    AltTxVFO = !AltTxVFO;
+}
+
+// ###############################################################################
 void decodeEditIf() {  // Set the IF Frequency
     static int vfoActivePrev = VFO_A;
 
@@ -736,8 +743,10 @@ void decodeEditIf() {  // Set the IF Frequency
         frequency = isLSB ? iFreqLSB : iFreqUSB;
         vfoActivePrev = vfoActive;
     }
-    editIfMode = !editIfMode;  // Toggle Edit IF Mode
-    ritOn = ritVal = 0; 
+    editIfMode = !editIfMode;  // Toggle Edit IF Mode    
+    cursorDigitPosition = 0; // Set default Tuning Digit
+    tune2500Mode = 0;
+    ritOn = ritVal = 0;
 }
 
 
