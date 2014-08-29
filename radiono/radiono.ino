@@ -51,7 +51,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ED"              // Incremental Rev Code
+#define INC_REV "EE"              // Incremental Rev Code
 
 
 /*
@@ -92,8 +92,8 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define IF_FREQ_LSB   (0)  // FOR debug ONLY
 //#define IF_FREQ_USB   (0)  // FOR debug ONLY
 // USB and LSB IF frequencies
-#define IF_FREQ_USB   (19997000L)
-#define IF_FREQ_LSB   (20003000L)
+#define IF_FREQ_USB   (19998000L)
+#define IF_FREQ_LSB   (19991000L)
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
@@ -361,12 +361,9 @@ void updateCursor() {
 void setSideband(){
     
   switch(sideBandMode) {
-    case AUTO_SIDEBAND_MODE: // Automatic Side Band Mode
-      isLSB = (frequency < 10000000UL) ? 1 : 0 ; break;
-    case UPPER_SIDEBAND_MODE: // Force USB Mode
-      isLSB = 0; break;
-    case LOWER_SIDEBAND_MODE: // Force LSB Mode
-      isLSB = 1; break;
+    case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 10000000UL) ? 1 : 0 ; break; // Automatic Side Band Mode
+    case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
+    case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
   } 
   digitalWrite(LSB, isLSB);
 }
