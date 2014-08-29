@@ -51,7 +51,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EC_C04"              // Incremental Rev Code
+#define INC_REV "EC_C05"              // Incremental Rev Code
 
 
 /*
@@ -735,7 +735,8 @@ void decodeEditIf() {  // Set the IF Frequency
     static int vfoActivePrev = VFO_A;
 
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
-        isLSB ? iFreqLSB = frequency + ritVal : iFreqUSB = frequency + ritVal;
+        frequency += ritVal;
+        isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
         frequency = (vfoActivePrev == VFO_A) ? vfoA : vfoB;
     }
     else {  // Save Current VFO, Load IF Freq 
@@ -807,7 +808,7 @@ void decodeBandUpDown(int dir) {
      } // End else
      
    freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
-   ritOn = 0;
+   ritOn = ritVal = 0;
    setSideband();
 }
 
@@ -1138,12 +1139,15 @@ void loop(){
   
   checkButton();
 
-  if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq 
-         freq = frequency + (vfoActive == VFO_A) ? vfoA : vfoB;
-         freq -+ isLSB ? iFreqLSB : iFreqUSB; // This will be added back in setFreq Function
-  } else freq = frequency;
-  
-  setFreq(freq);
+  if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
+      freq = frequency;
+      if (ritOn) freq += ritVal;
+      freq += (vfoActive == VFO_A) ? vfoA : vfoB;
+      vfo->setFrequency(freq);
+  } else {
+      freq = frequency;
+      setFreq(freq);
+  }
   
   setSideband();
   setBandswitch(frequency);
