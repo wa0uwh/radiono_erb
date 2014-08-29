@@ -14,7 +14,7 @@ const byte morse[] PROGMEM = { 	// Morse Code Lookup table
 	B01100001,	// '
 	B00110010,	// (
 	B01010010,	// )
-	B01011110,	// *  // NA - send "-"
+	B00010110,	// *  // NA - send "x"
 	B00110101,	// +
 	B01001100,      // ,
 	B01011110,      // -
@@ -32,9 +32,9 @@ const byte morse[] PROGMEM = { 	// Morse Code Lookup table
 	B00110000,	// 9
 	B01111000,	// :
 	B00101010,	// ;
-	B00110010,	// < // NA - send "("
+	B00110010,	// <  // NA - send "("
 	B00101110,	// =
-	B01010010,	// > // NA - send ")"
+	B01010010,	// >  // NA - send ")"
 	B01110011,	// ?
 	B01101001,	// @
 	B00000101,	// A
@@ -63,12 +63,12 @@ const byte morse[] PROGMEM = { 	// Morse Code Lookup table
 	B00010110,	// X
 	B00010010,	// Y
 	B00011100,	// Z
-	B01011110,	// [  // NA - send "-"
-	B01011110,	// \  // NA - send "-"
-	B01011110,	// ]  // NA - send "-"
+	B00110010,	// [  // NA - send "("
+	B00110110,	// \  // NA - send "/"
+	B01010010,	// ]  // NA - send ")"
 	B01011110,	// ^  // NA - send "-"
-	B01011110,	// _  // NA - send "-"
-	B01011110,	// '  // NA - send "-"
+	B01010011,	// _ 
+	B01100001,	// '
 	B00000101,	// a -> A
 	B00011110,	// b -> B
 	B00011010,	// c -> C
@@ -95,9 +95,9 @@ const byte morse[] PROGMEM = { 	// Morse Code Lookup table
 	B00010110,	// x -> X
 	B00010010,	// y -> Y
 	B00011100,	// z -> Z
-	B01011110,	// {  // NA - send "-"
-	B01011110,	// |  // NA - send "-"
-	B01011110,	// }  // NA - send "-"
+	B00110010,	// {  // NA - send "("
+	B00110110,	// \  // NA - send "/"
+	B01010010,	// }  // NA - send ")"
 	B01011110,	// ~  // NA - send "-"
 	B01011110,	// del  // NA - send "-"
 	

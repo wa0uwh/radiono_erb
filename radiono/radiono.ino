@@ -51,7 +51,8 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ED"              // Incremental Rev Code
+#define INC_REV "ED_A01"              // Incremental Rev Code
+
 
 
 /*
@@ -361,12 +362,9 @@ void updateCursor() {
 void setSideband(){
     
   switch(sideBandMode) {
-    case AUTO_SIDEBAND_MODE: // Automatic Side Band Mode
-      isLSB = (frequency < 10000000UL) ? 1 : 0 ; break;
-    case UPPER_SIDEBAND_MODE: // Force USB Mode
-      isLSB = 0; break;
-    case LOWER_SIDEBAND_MODE: // Force LSB Mode
-      isLSB = 1; break;
+    case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 10000000UL) ? 1 : 0 ; break; // Automatic Side Band Mode
+    case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
+    case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
   } 
   digitalWrite(LSB, isLSB);
 }
