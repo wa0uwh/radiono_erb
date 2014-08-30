@@ -1,3 +1,4 @@
+// MorseTable.h
 // Morse Code Table
 
 #ifndef MORSETABLE_H

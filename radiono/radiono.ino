@@ -25,33 +25,9 @@
 void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 
-// Message Macros fragments
-#define CALLID "N0CAL"
-#define QTH "Someplace, US"
-#define GRID "CN88xc"
-#define MACRO1  "CQ CQ CQ de " CALLID " " CALLID " "
-
-// Message Macros
-#define CW_MSG1 MACRO1 " " MACRO1 " K"
-#define CW_MSG2 "de " CALLID
-
-// QRSS Info, See: http://www.w0ch.net/qrss/qrss.htm
-#define QRSS_MSG1 " " CALLID " " GRID "   " CALLID " " GRID " "
-#define QRSS_MSG2 " " CALLID " " CALLID " "
-#define QRSS_MSG3 "aeiou AEIOU " // A test Mesg
-
-// CW Message Speed
-#define CW_WPM (13)
-
-// QRSS Message Speed
-#define QRSS_DIT_TIME (1) //  1 for Demo, Typically 3, 6, 12, 24 seconds, etc, 60 is very-very slow, negative values are ms
-#define QRSS_SHIFT (50)   // 50 for Demo, Typically 5 to 8 Hz Shift for QRSS
-
-
-
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EE"              // Incremental Rev Code
+#define INC_REV "EE_NV02"              // Incremental Rev Code
 
 
 /*
@@ -70,10 +46,11 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #include <avr/io.h>
 #include "Si570.h"
 #include "debug.h"
+#include "NonVol.h"
 #include "Rf386.h"
 #include "MorseCode.h"
+#include "Macro.h"
 
-#include <avr/eeprom.h>
 
 
 /*
@@ -139,12 +116,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define VFO_A (0)
 #define VFO_B (1)
 
-#define ID_FLAG (1408281941L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
-    
-#define EEP_LOAD (0)
-#define EEP_SAVE (1)
-
-
 Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
@@ -200,8 +171,6 @@ const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
    };
    
 #define BANDS (sizeof(bandLimits)/sizeof(prog_uint32_t)/2)
-
-long idFlag = ID_FLAG;
 
 // An Array to save: A-VFO & B-VFO
 unsigned long freqCache[] = { // Set Default Values for Cache
@@ -824,92 +793,6 @@ void decodeSideBandMode(int btn) {
 
 
 // ###############################################################################
-void eePromIO(int mode) {
-   
-   struct config_t {
-        long idFlag;
-        unsigned long frequency;
-        int editIfMode;
-        unsigned long iFreqUSB;
-        unsigned long iFreqLSB;
-        unsigned long vfoA;
-        unsigned long vfoB;
-        byte isLSB;
-        byte vfoActive;
-        unsigned long freqCache[BANDS*2];
-        byte sideBandMode;
-        byte sideBandModeCache[BANDS*2];
-        byte checkSum;
-    } E;
-    byte checkSum = 0;
-    byte *pb = (byte *)&E;
-    
-    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode   
-    
-    cursorOff();
-   
-    switch(mode) {
-    case EEP_LOAD:
-        // Read from Non-Volatile Memory and check for the correct ID
-        eeprom_read_block((void*)&E, (void*)0, sizeof(E));
-        if (E.idFlag != ID_FLAG) { sprintf(c, P("Load Failed ID")); break; }
-        
-        // Compute and Check the CheckSum
-        for (int i = 0; i < sizeof(E); i++) checkSum += *pb++;
-        if (checkSum != 0) { sprintf(c, P("Load Failed CSum")); break; }
-        
-        // Assign Values to Working Variables from eeProm Structure
-        idFlag = E.idFlag; 
-        frequency = E.frequency;
-        editIfMode = E.editIfMode;
-        iFreqUSB = E.iFreqUSB;
-        iFreqLSB = E.iFreqLSB;
-        vfoA = E.vfoA;
-        vfoB = E.vfoB;
-        isLSB = E.isLSB;
-        vfoActive = E.vfoActive;
-        memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
-        sideBandMode = E.sideBandMode;
-        memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
-        checkSum = E.checkSum;
-       
-        sprintf(c, P("Loading %dB"), sizeof(E));      
-        break;
-        
-    case EEP_SAVE :
-        // Assign Working Variables to the eeProm Structure
-        E.idFlag = ID_FLAG;
-        E.frequency = frequency;
-        E.editIfMode = editIfMode;
-        E.iFreqUSB = iFreqUSB;
-        E.iFreqLSB = iFreqLSB;
-        E.vfoA = vfoA;
-        E.vfoB = vfoB;
-        E.isLSB = isLSB;
-        E.vfoActive = vfoActive;
-        memcpy(E.freqCache, freqCache, sizeof(freqCache));
-        E.sideBandMode = sideBandMode;
-        memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(sideBandModeCache));
-        E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
-        
-        // Compute and save the new Checksum of eeProm Struture
-        for (int i = 0; i < sizeof(E) - sizeof(E.checkSum); i++) checkSum += *pb++;
-        E.checkSum = -checkSum; // Apply CheckSum to Structure
-        
-        // Write the eeProm Strcture to Non-Volatile Memory
-        eeprom_write_block((const void*)&E, (void*)0, sizeof(E));
-        
-        sprintf(c, P("Storing %dB"), sizeof(E));
-        break;
-    }
-   
-    printLine2CEL(c);
-    delay(500);
-    deDounceBtnRelease(); // Wait for Release
-} 
-
-
-// ###############################################################################
 void decodeMoveCursor(int dir) {
 
       if (tune2500Mode) return; // Do not Move Cursor in this mode
@@ -1018,18 +901,6 @@ void decodeFN(int btn) {
        return; // Do Nothing
   }
   deDounceBtnRelease(); // Wait for Release
-}
-
-// ###############################################################################
-void preLoadUserPerferences() {
-      
-  // Check EEPROM for User Saved Preference, Load if available
-  // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
-  printLine1CEL(P("User Pref:"));
-  if (!btnDown()) eePromIO(EEP_LOAD);
-  else printLine2CEL(P("Factory Reset"));
-  delay(500);
-  deDounceBtnRelease(); // Wait for Button Release 
 }
 
 
