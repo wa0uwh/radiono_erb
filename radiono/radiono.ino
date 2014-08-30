@@ -92,8 +92,8 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define IF_FREQ_LSB   (0)  // FOR debug ONLY
 //#define IF_FREQ_USB   (0)  // FOR debug ONLY
 // USB and LSB IF frequencies
-#define IF_FREQ_USB   (19998000L)
-#define IF_FREQ_LSB   (19991000L)
+#define IF_FREQ_USB   (19997000L)
+#define IF_FREQ_LSB   (19992000L)
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
