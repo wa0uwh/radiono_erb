@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <avr/eeprom.h>
 #include "NonVol.h"
-#include "debug.h"
 
 // Defines that MUST match Main  
 #define BANDS (9)
