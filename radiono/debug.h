@@ -1,4 +1,11 @@
+// debug.h
 
-void debug(char const *fmt, ... );
+#ifndef DEBUG_H
+#define DEBUG_H
 
-void debugUnique(char const *fmt, ... );
+    void debug(char const *fmt, ... );
+    void debugUnique(char const *fmt, ... );
+
+#endif
+
+// End
