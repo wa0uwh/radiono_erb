@@ -1,9 +1,10 @@
+// MorseTable.h
 // Morse Code Table
 
 #ifndef MORSETABLE_H
 #define MORSETABLE_H
 
-const byte morse[] PROGMEM = { 	// Morse Code Lookup table
+    const byte morse[] PROGMEM = { 	// Morse Code Lookup table
 	B00000001,	// sp // Place Holder
 	B01001010,	// !
 	B01101101,	// "
@@ -99,8 +100,7 @@ const byte morse[] PROGMEM = { 	// Morse Code Lookup table
 	B00110110,	// \  // NA - send "/"
 	B01010010,	// }  // NA - send ")"
 	B01011110,	// ~  // NA - send "-"
-	B01011110,	// del  // NA - send "-"
-	
-};
+	B01011110,	// del  // NA - send "-"	
+    };
 
 #endif
