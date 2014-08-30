@@ -1,9 +1,9 @@
+// MorseCode.cpp
 // Send Morse Code
 
 
 #include <Arduino.h>
-#define MOD_CW (0)
-#define MOD_QRSS (1)
+#include "MorseCode.h"
 
 // Externs from main
 extern unsigned long frequency;
