@@ -27,7 +27,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EG"              // Incremental Rev Code
+#define INC_REV "EH"              // Incremental Rev Code
 
 
 /*
@@ -252,10 +252,10 @@ void updateDisplay(){
           );
       printLine1CEL(c);
       
-      sprintf(c, P("%3s%1s %-3s %3.3s"),
+      sprintf(c, P("%3s%1s %-2s %3.3s"),
           isLSB ? "LSB" : "USB",
           sideBandMode > 0 ? "*" : " ",
-          inTx ? (inPtt ? "PTT" : "CW") : "RX",
+          inTx ? (inPtt ? "PT" : "CW") : "RX",
           freqUnStable ? " " : vfoStatus[vfo->status]
           );
       printLine2CEL(c);
