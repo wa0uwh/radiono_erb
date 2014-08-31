@@ -2,18 +2,8 @@
 // Support for RF386 Filter Selection
 
 #include <Arduino.h>
+#include "A1Main.h"
 #include "debug.h"
-
-#define PA_BAND_CLK (7)
-
-// ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
-extern char buf[];
-// ERB - Force format stings into FLASH Memory
-#define  P(x) strcpy_P(buf, PSTR(x))
-// FLASH2 can be used where Two small (1/2 size) Buffers are needed.
-#define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
-
-#define debug(x ...)  // Default to NO debug
 
 void setRf386BandSignal(unsigned long freq){
   // This setup is compatable with the Minima RF386 RF Power Amplifier
