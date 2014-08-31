@@ -21,9 +21,23 @@ Copyright (C)2014  Ashhar Farhan
 
 
 --------------------
-Some Modifcations, By: Eldon R. Brown - WA0UWH
 
-    An Aternate Tuning Method
-    Button to Support Alternate Tuning Method
+Modified by: Jeff Witlatch - KO7M - Copyright (C) 2014
+    Added Si570 1Hz VFO Resolution
+ 
+Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
+    Added An Alternate Tuning Method, with Cursor and POT
+    Added Multiple Button Support
+    Added RIT Function
+    Added Manual Sideband Selection
+    Added Band Selection UP/DOWN
+    Added Band Selection Memories for both VFO_A and VFO_B
+    Added Band Limits for Transmit
+    Added Alternate VFO for Transmit, Split Operation
+    Added Rf386 Band Selecter Encoder
+    Added Edit and Set IF Frequency for Dial Calibration for USB and LSB
+    Added Support for 2500Hz Tuning Mode
+    Added Non-Volatile Memory Storage
+    Added Morse Code Functions, MACROs and Beacon
 
 --
