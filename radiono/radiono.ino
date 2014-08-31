@@ -16,9 +16,23 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
+ * Modified by: Jeff Witlatch - KO7M - Copyright (C) 2014
+ *   Added 1Hz VFO Resolution
  *
- * Modified:
- * An Alternate Tuning Method by: Eldon R. Brown (ERB) - WA0UWH, Apr 25, 2014
+ * Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
+ *   Added An Alternate Tuning Method, with Cursor and POT
+ *   Added Multiple Button Support
+ *   Added RIT Function
+ *   Added Manual Sideband Selection 
+ *   Added Band Selection UP/DOWN
+ *   Added Band Selection Memories for both VFO_A and VFO_B
+ *   Added Band Limits for Transmit
+ *   Added Alternate VFO for Transmit, Split Operation
+ *   Added Rf386 Band Selecter Encoder
+ *   Added Edit and Set IF Frequency for Dial Calibration for USB and LSB
+ *   Added Support for 2500Hz Tuning Mode
+ *   Added Non-Volatile Memory Storage
+ *   Added Morse Code Functions, MACROs and Beacon 
  *
  */
 
@@ -27,7 +41,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EH"              // Incremental Rev Code
+#define INC_REV "EM"              // Incremental Rev Code
 
 
 /*
@@ -44,6 +58,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 
 #include <avr/io.h>
+#include "A1Main.h"
 #include "Si570.h"
 #include "debug.h"
 #include "NonVol.h"
@@ -75,7 +90,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
 #define MAX_FREQ (30000000UL)
-
 #define DEAD_ZONE (40)
 
 #define CURSOR_MODE (1)
@@ -90,12 +104,17 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define DOUBLE_PRESS (2)
 #define LONG_PRESS (3)
 #define ALT_PRESS_FN (4)
-#define ALT_PRESS_LEFT (5)
-#define ALT_PRESS_RIGHT (6)
+#define ALT_PRESS_LT (5)
+#define ALT_PRESS_RT (6)
 
 #define FN_BTN (1)
-#define LEFT_BTN (2)
-#define RIGHT_BTN (3)
+#define LT_CUR_BTN (2)
+#define RT_CUR_BTN (3)
+#define LT_BTN (4)
+#define UP_BTN (5)
+#define DN_BTN (6)
+#define RT_BTN (7)
+
 
 #define AUTO_SIDEBAND_MODE (0)
 #define UPPER_SIDEBAND_MODE (1)
@@ -106,8 +125,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define TX_RX (3)
 #define CW_KEY (4)
 
-#define BAND_HI (5)
-#define PA_BAND_CLK (7)
 
 #define FN_PIN (A3)
 #define ANALOG_TUNING (A2)
@@ -124,8 +141,8 @@ unsigned long iFreqUSB = IF_FREQ_USB;
 unsigned long iFreqLSB = IF_FREQ_LSB;
 
 unsigned long vfoA = frequency, vfoB = frequency;
-unsigned long cwTimeout = 0, pttTimeout = 0;
-int editIfMode = false;
+unsigned long cwTimeout = 0;
+boolean editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
 
@@ -140,24 +157,24 @@ int tuningPositionDelta = 0;
 int cursorDigitPosition = 0;
 int tuningPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
-int winkOn;
+boolean winkOn;
 char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 byte sideBandMode = 0;
 
-byte tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
-byte inTx = 0, inPtt = 0;
-byte keyDown = 0;
-byte isLSB = 0;
-byte vfoActive = VFO_A;
+boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
+boolean inTx = 0, inPtt = 0;
+boolean keyDown = 0;
+boolean isLSB = 0;
+boolean vfoActive = VFO_A;
 
 /* modes */
-byte ritOn = 0;
 int ritVal = 0;
-byte AltTxVFO = 0;
-byte isAltVFO = 0;
+boolean ritOn = 0;
+boolean AltTxVFO = 0;
+boolean isAltVFO = 0;
 
 // PROGMEM is used to avoid using the small available variable space
-const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
+const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Limits
       1800000UL,  2000000UL, // 160m
       3500000UL,  4000000UL, //  80m
       7000000UL,  7300000UL, //  40m
@@ -169,11 +186,9 @@ const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
      28000000UL, 29700000UL, //  10m
    //50000000UL, 54000000UL, //   6m - Will need New Low Pass Filter Support
    };
-   
-#define BANDS (sizeof(bandLimits)/sizeof(prog_uint32_t)/2)
 
 // An Array to save: A-VFO & B-VFO
-unsigned long freqCache[] = { // Set Default Values for Cache
+unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
       1825000UL, 1825000UL,  // 160m - QRP SSB Calling Freq
       3985000UL, 3985000UL,  //  80m - QRP SSB Calling Freq
       7285000UL, 7285000UL,  //  40m - QRP SSB Calling Freq
@@ -187,14 +202,9 @@ unsigned long freqCache[] = { // Set Default Values for Cache
    };
 byte sideBandModeCache[BANDS*2] = {0};
 
-// ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
+// ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
 char buf[64+2];
-// ERB - Force format stings into FLASH Memory
-#define  P(x) strcpy_P(buf, PSTR(x))
-// FLASH2 can be used where Two small (1/2 size) Buffers are needed.
-#define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
 
-#define DEBUG(x ...)  // Default to NO debug
 
 // ###############################################################################
 // ###############################################################################
@@ -236,26 +246,31 @@ void printLine2CEL(char const *c){
 void updateDisplay(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
   char d[6]; // Buffer for RIT Display Value
+  char *vfoLabel;
   
   if (refreshDisplay) {
       refreshDisplay = false;
       cursorOff();
-        
+      
+      // Create Label for Displayed VFO
+      vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
+      if (AltTxVFO)  *vfoLabel += 32; // Convert to Lower Case
+      if (editIfMode) vfoLabel = isLSB ? P2("L") : P2("U"); // Replace with IF Freq VFO
+      
       // Top Line of LCD
       sprintf(d, P("%+03.3d"), ritVal);  
       sprintf(b, P("%08ld"), frequency);
-      sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"),
-          editIfMode ? (isLSB ? "L" : "U") : (vfoActive == VFO_A ? (AltTxVFO ? "a": "A") : (AltTxVFO ? "b" : "B")) ,
+      sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"), vfoLabel,
           b,  b+2,
-          inTx ? " " : ritOn ? d : " ",
-          tune2500Mode ? "*": " "
+          inTx ? P4(" ") : ritOn ? d : P4(" "),
+          tune2500Mode ? P8("*"): P8(" ")
           );
       printLine1CEL(c);
       
       sprintf(c, P("%3s%1s %-2s %3.3s"),
-          isLSB ? "LSB" : "USB",
-          sideBandMode > 0 ? "*" : " ",
-          inTx ? (inPtt ? "PT" : "CW") : "RX",
+          isLSB ? P2("LSB") : P2("USB"),
+          sideBandMode > 0 ? P4("*") : P4(" "),
+          inTx ? (inPtt ? P8("PT") : P8("CW")) : P8("RX"),
           freqUnStable ? " " : vfoStatus[vfo->status]
           );
       printLine2CEL(c);
@@ -341,8 +356,8 @@ void setSideband(){
 // ###############################################################################
 void setBandswitch(unsigned long freq){ 
     
-  if (freq >= 15000000UL) digitalWrite(BAND_HI, 1);
-  else digitalWrite(BAND_HI, 0);
+  if (freq >= 15000000UL) digitalWrite(BAND_HI_PIN, 1);
+  else digitalWrite(BAND_HI_PIN, 0);
 }
 
 
@@ -476,7 +491,7 @@ void toggleAltVfo(int mode) {
     DEBUG(P("%s %d: A,B: %lu, %lu"), __func__, __LINE__, vfoA, vfoB);
     vfoActive = (vfoActive == VFO_A) ? VFO_B : VFO_A;
     frequency = (vfoActive == VFO_A) ? vfoA : vfoB;
-    DEBUG(P("%s %d: %s %lu"), __func__, __LINE__, vfoActive == VFO_A ? "A:": "B:", frequency);
+    DEBUG(P("%s %d: %s %lu"), __func__, __LINE__, vfoActive == VFO_A ? P2("A:"): P2("B:"), frequency);
     refreshDisplay++;
 }
       
@@ -659,27 +674,27 @@ void checkButton() {
   switch (btn) {
     case 0: return; // Abort
     case FN_BTN: decodeFN(btn); break;  
-    case LEFT_BTN:  decodeMoveCursor(+1); break;    
-    case RIGHT_BTN: decodeMoveCursor(-1); break;
-    case 4: switch (getButtonPushMode(btn)) { 
+    case LT_CUR_BTN:  decodeMoveCursor(+1); break;    
+    case RT_CUR_BTN: decodeMoveCursor(-1); break;
+    case LT_BTN: switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
             case DOUBLE_PRESS:     eePromIO(EEP_SAVE); break;
             case LONG_PRESS:       eePromIO(EEP_LOAD); break;
             case ALT_PRESS_FN:     toggleAltTxVFO();  break;
-            case ALT_PRESS_LEFT:   sendMorseMesg(CW_WPM, P(CW_MSG1));  break;
-            case ALT_PRESS_RIGHT:  sendMorseMesg(CW_WPM, P(CW_MSG2));  break;    
+            case ALT_PRESS_LT:     sendMorseMesg(CW_WPM, P(CW_MSG1));  break;
+            case ALT_PRESS_RT:     sendMorseMesg(CW_WPM, P(CW_MSG2));  break;    
             default: return; // Do Nothing
             } break;
-    case 5: decodeBandUpDown(+1); break; // Band Up
-    case 6: decodeBandUpDown(-1); break; // Band Down
-    case 7: switch (getButtonPushMode(btn)) { 
+    case UP_BTN: decodeBandUpDown(+1); break; // Band Up
+    case DN_BTN: decodeBandUpDown(-1); break; // Band Down
+    case RT_BTN: switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS: decodeTune2500Mode(); break;
             case LONG_PRESS:      decodeEditIf(); break;
-            case ALT_PRESS_LEFT:  sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG1));  break;
-            case ALT_PRESS_RIGHT: sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG2));  break;    
+            case ALT_PRESS_LT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG1));  break;
+            case ALT_PRESS_RT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG2));  break;    
             default: return; // Do Nothing
             } break;
-    //case 7: decodeAux(7); break; // Report Un-Used as AUX Buttons
+    //case 8: decodeAux(8); break; // Report Un-Used as AUX Buttons
     default: return;
   }     
   refreshDisplay++;
@@ -826,18 +841,18 @@ int getButtonPushMode(int btn) {
   tbtn = btnDown();
   while (t1 < 20 && btn == tbtn){
     tbtn = btnDown();
-    if (btn != FN_BTN    && tbtn == FN_BTN)    return ALT_PRESS_FN;
-    if (btn != LEFT_BTN  && tbtn == LEFT_BTN)  return ALT_PRESS_LEFT;
-    if (btn != RIGHT_BTN && tbtn == RIGHT_BTN) return ALT_PRESS_RIGHT;
+    if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
+    if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
+    if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
     delay(50);
     t1++;
   }
   // Time between presses
   while (t2 < 10 && !tbtn){
     tbtn = btnDown();
-    if (btn != FN_BTN    && tbtn == FN_BTN)    return ALT_PRESS_FN;
-    if (btn != LEFT_BTN  && tbtn == LEFT_BTN)  return ALT_PRESS_LEFT;
-    if (btn != RIGHT_BTN && tbtn == RIGHT_BTN) return ALT_PRESS_RIGHT;
+    if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
+    if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
+    if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
     delay(50);
     t2++;
   }
@@ -885,12 +900,12 @@ void decodeFN(int btn) {
        switch (vfoActive) {
        case VFO_A :
           vfoB = frequency + ritVal;
-          sprintf(c,P("A%sB"), ritVal ? P2("+RIT>"): ">");
+          sprintf(c, P("A%sB"), ritVal ? P2("+RIT>"): P2(">"));
           printLine2CEL(c);
           break;
        default :
           vfoA = frequency + ritVal;
-          sprintf(c,P("B%sA"), ritVal ? P2("+RIT>"): ">");
+          sprintf(c, P("B%sA"), ritVal ? P2("+RIT>"): P2(">"));
           printLine2CEL(c);
           break;
        }
@@ -960,13 +975,13 @@ void setup() {
     delay(3000);
   }
   
-  printLine2CEL(" ");
+  printLine2CEL(P(" "));
  
   // This will print some debugging info to the serial console.
   vfo->debugSi570();
 
   //set the initial frequency
-  vfo->setFrequency(26150000L);
+  vfo->setFrequency(frequency);
  
   //set up the pins
   pinMode(LSB, OUTPUT);
@@ -985,7 +1000,7 @@ void setup() {
   pinMode(FN_PIN, INPUT);
   digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
   
-  preLoadUserPerferences();
+  loadUserPerferences();
   
   tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
   refreshDisplay = +1; 

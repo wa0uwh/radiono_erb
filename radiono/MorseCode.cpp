@@ -37,7 +37,7 @@ long ditLen = 1200/13; // Default Speed
 
 
 // ########################################################
-void watchDog(unsigned long timeOut) {
+void bitTimer(unsigned long timeOut) {
     
     timeOut += millis();
     while(timeOut > millis()) {
@@ -53,7 +53,7 @@ void sendBit(int mode, int freqShift, int mult) {
     case MOD_QRSS: setFreq(frequency + freqShift); break;
     }
     
-    watchDog(ditLen * mult);
+    bitTimer(ditLen * mult);
     
     switch (mode) {
     case MOD_CW:   stopSidetone(); break;
@@ -87,26 +87,26 @@ void sendMesg(int mode, int freqShift, char *c) {
      
     if(mode == MOD_QRSS) startSidetone();        
     printLine2CEL(c); // Scroll Message on Line 2
-    watchDog(ditLen);
+    bitTimer(ditLen);
     
     while(*c) {
         if (isKeyNowClosed()) return; // Abort Message
         if (*c == ' ') {
            c++;
            printLine2CEL(c); // Scroll Message on Line 2
-           watchDog(ditLen * 4); // 3 for previous character + 4 for word = 7 total
+           bitTimer(ditLen * 4); // 3 for previous character + 4 for word = 7 total
         }
         else {
             bits = pgm_read_byte(&morse[*c & 0x7F - 32]);
             while(bits > 1) {
                 if (isKeyNowClosed()) return; // Abort Message
                 bits & 1 ? dit(mode, freqShift) : dah(mode, freqShift);
-                watchDog(ditLen);
+                bitTimer(ditLen);
                 bits /= 2;
             }
             c++;
             printLine2CEL(c); // Scroll Message on Line 2
-            watchDog(ditLen * 2); // 1 + 2 added between characters
+            bitTimer(ditLen * 2); // 1 + 2 added between characters
         } 
         cwTimeout = ditLen * 10 + millis();
     } // main checkTX() will clean-up and stop Transmit
