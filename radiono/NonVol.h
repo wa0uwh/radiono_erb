@@ -8,7 +8,7 @@
     #define EEP_SAVE (1)
     
     void eePromIO(int mode);
-    void preLoadUserPerferences();
+    void loadUserPerferences();
 
 #endif
 

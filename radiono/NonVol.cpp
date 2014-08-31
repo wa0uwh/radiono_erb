@@ -134,7 +134,7 @@ void eePromIO(int mode) {
 
 
 // ###############################################################################
-void preLoadUserPerferences() {
+void loadUserPerferences() {
       
     // Check EEPROM for User Saved Preference, Load if available
     // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values

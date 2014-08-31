@@ -27,7 +27,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EH"              // Incremental Rev Code
+#define INC_REV "EL"              // Incremental Rev Code
 
 
 /*
@@ -124,8 +124,8 @@ unsigned long iFreqUSB = IF_FREQ_USB;
 unsigned long iFreqLSB = IF_FREQ_LSB;
 
 unsigned long vfoA = frequency, vfoB = frequency;
-unsigned long cwTimeout = 0, pttTimeout = 0;
-int editIfMode = false;
+unsigned long cwTimeout = 0;
+boolean editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
 
@@ -140,24 +140,24 @@ int tuningPositionDelta = 0;
 int cursorDigitPosition = 0;
 int tuningPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
-int winkOn;
+boolean winkOn;
 char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 byte sideBandMode = 0;
 
-byte tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
-byte inTx = 0, inPtt = 0;
-byte keyDown = 0;
-byte isLSB = 0;
-byte vfoActive = VFO_A;
+boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
+boolean inTx = 0, inPtt = 0;
+boolean keyDown = 0;
+boolean isLSB = 0;
+boolean vfoActive = VFO_A;
 
 /* modes */
-byte ritOn = 0;
 int ritVal = 0;
-byte AltTxVFO = 0;
-byte isAltVFO = 0;
+boolean ritOn = 0;
+boolean AltTxVFO = 0;
+boolean isAltVFO = 0;
 
 // PROGMEM is used to avoid using the small available variable space
-const prog_uint32_t bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
+const unsigned long bandLimits[] PROGMEM = {  // Lower and Upper Band Limits
       1800000UL,  2000000UL, // 160m
       3500000UL,  4000000UL, //  80m
       7000000UL,  7300000UL, //  40m
@@ -191,8 +191,10 @@ byte sideBandModeCache[BANDS*2] = {0};
 char buf[64+2];
 // ERB - Force format stings into FLASH Memory
 #define  P(x) strcpy_P(buf, PSTR(x))
-// FLASH2 can be used where Two small (1/2 size) Buffers are needed.
+// PN can be used where Multiple small (1/2, 1/4, 1/8 size) Buffers are needed.
 #define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
+#define P4(x) strcpy_P(buf + sizeof(buf)/4*3, PSTR(x))
+#define P8(x) strcpy_P(buf + sizeof(buf)/8*7, PSTR(x))
 
 #define DEBUG(x ...)  // Default to NO debug
 
@@ -236,26 +238,31 @@ void printLine2CEL(char const *c){
 void updateDisplay(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
   char d[6]; // Buffer for RIT Display Value
+  char *vfoLabel;
   
   if (refreshDisplay) {
       refreshDisplay = false;
       cursorOff();
-        
+      
+      // Create Label for Displayed VFO
+      vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
+      if (AltTxVFO)  *vfoLabel += 32; // Convert to Lower Case
+      if (editIfMode) vfoLabel = isLSB ? P2("L") : P2("U"); // Replace with IF Freq VFO
+      
       // Top Line of LCD
       sprintf(d, P("%+03.3d"), ritVal);  
       sprintf(b, P("%08ld"), frequency);
-      sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"),
-          editIfMode ? (isLSB ? "L" : "U") : (vfoActive == VFO_A ? (AltTxVFO ? "a": "A") : (AltTxVFO ? "b" : "B")) ,
+      sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"), vfoLabel,
           b,  b+2,
-          inTx ? " " : ritOn ? d : " ",
-          tune2500Mode ? "*": " "
+          inTx ? P4(" ") : ritOn ? d : P4(" "),
+          tune2500Mode ? P8("*"): P8(" ")
           );
       printLine1CEL(c);
       
       sprintf(c, P("%3s%1s %-2s %3.3s"),
-          isLSB ? "LSB" : "USB",
-          sideBandMode > 0 ? "*" : " ",
-          inTx ? (inPtt ? "PT" : "CW") : "RX",
+          isLSB ? P2("LSB") : P2("USB"),
+          sideBandMode > 0 ? P4("*") : P4(" "),
+          inTx ? (inPtt ? P8("PT") : P8("CW")) : P8("RX"),
           freqUnStable ? " " : vfoStatus[vfo->status]
           );
       printLine2CEL(c);
@@ -476,7 +483,7 @@ void toggleAltVfo(int mode) {
     DEBUG(P("%s %d: A,B: %lu, %lu"), __func__, __LINE__, vfoA, vfoB);
     vfoActive = (vfoActive == VFO_A) ? VFO_B : VFO_A;
     frequency = (vfoActive == VFO_A) ? vfoA : vfoB;
-    DEBUG(P("%s %d: %s %lu"), __func__, __LINE__, vfoActive == VFO_A ? "A:": "B:", frequency);
+    DEBUG(P("%s %d: %s %lu"), __func__, __LINE__, vfoActive == VFO_A ? P2("A:"): P2("B:"), frequency);
     refreshDisplay++;
 }
       
@@ -885,12 +892,12 @@ void decodeFN(int btn) {
        switch (vfoActive) {
        case VFO_A :
           vfoB = frequency + ritVal;
-          sprintf(c,P("A%sB"), ritVal ? P2("+RIT>"): ">");
+          sprintf(c, P("A%sB"), ritVal ? P2("+RIT>"): P2(">"));
           printLine2CEL(c);
           break;
        default :
           vfoA = frequency + ritVal;
-          sprintf(c,P("B%sA"), ritVal ? P2("+RIT>"): ">");
+          sprintf(c, P("B%sA"), ritVal ? P2("+RIT>"): P2(">"));
           printLine2CEL(c);
           break;
        }
@@ -960,7 +967,7 @@ void setup() {
     delay(3000);
   }
   
-  printLine2CEL(" ");
+  printLine2CEL(P(" "));
  
   // This will print some debugging info to the serial console.
   vfo->debugSi570();
@@ -985,7 +992,7 @@ void setup() {
   pinMode(FN_PIN, INPUT);
   digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
   
-  preLoadUserPerferences();
+  loadUserPerferences();
   
   tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
   refreshDisplay = +1; 
