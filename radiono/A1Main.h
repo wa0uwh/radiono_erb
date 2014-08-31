@@ -9,6 +9,7 @@
     #define PA_BAND_CLK (7)
 
     #define DEBUG(x ...)  // Default to NO debug
+    //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
     
     extern char b[], c[];
     extern char buf[];
