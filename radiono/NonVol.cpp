@@ -5,9 +5,7 @@
 #include <avr/eeprom.h>
 #include "A1Main.h"
 #include "NonVol.h"
-
-// Defines that MUST match Main  
-// #define BANDS (9)
+#include "debug.h"
 
 #define ID_FLAG (1408281941L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
@@ -15,15 +13,15 @@
 
 // Externs Variables from Main
 extern unsigned long frequency;
-extern int editIfMode;
+extern boolean editIfMode;
 extern unsigned long iFreqUSB;
 extern unsigned long iFreqLSB;
 extern unsigned long vfoA;
 extern unsigned long vfoB;
-extern byte isLSB;
-extern byte vfoActive;
+extern boolean isLSB;
+extern boolean vfoActive;
 extern unsigned long freqCache[];
-extern byte sideBandMode;
+extern boolean sideBandMode;
 extern byte sideBandModeCache[];
 
 
@@ -37,7 +35,7 @@ extern int btnDown();
 // Local Varibles
 long idFlag = ID_FLAG;
 
-/*
+extern char buf[];
 // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
 // ERB - Force format stings into FLASH Memory
 #define  P(x) strcpy_P(buf, PSTR(x))
@@ -45,10 +43,14 @@ long idFlag = ID_FLAG;
 #define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
 
 #define DEBUG(x ...)  // Default to NO debug
-*/
+
 
 // ###############################################################################
 void eePromIO(int mode) {
+#define DEBUG(x ...)  // Default to NO debug    
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+    
+   DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
    
    struct config_t {
         long idFlag;
@@ -68,12 +70,15 @@ void eePromIO(int mode) {
     byte checkSum = 0;
     byte *pb = (byte *)&E;
     
+    DEBUG(P("\nFunc: %s %d, editIfMode= %d"), __func__, __LINE__, editIfMode);
     if (editIfMode) return; // Do Nothing if in Edit-IF-Mode   
     
     cursorOff();
    
+    DEBUG(P("\nFunc: %s %d, Mode= %d"), __func__, __LINE__, mode);
     switch(mode) {
     case EEP_LOAD:
+        DEBUG(P("Loading EEPROM"));
         // Read from Non-Volatile Memory and check for the correct ID
         eeprom_read_block((void*)&E, (void*)0, sizeof(E));
         if (E.idFlag != ID_FLAG) { sprintf(c, P("Load Failed ID")); break; }
@@ -135,6 +140,10 @@ void eePromIO(int mode) {
 
 // ###############################################################################
 void loadUserPerferences() {
+#define DEBUG(x ...)  // Default to NO debug    
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+    
+    DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
       
     // Check EEPROM for User Saved Preference, Load if available
     // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values

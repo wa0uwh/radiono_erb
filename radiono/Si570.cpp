@@ -16,6 +16,8 @@
 #include "debug.h"
 
 
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+
 /*
 // Debug output
 static void debug(char const *fmt, ... ) 
@@ -56,7 +58,7 @@ Si570::Si570(uint8_t si570_address, uint32_t calibration_frequency)
 {
   
   i2c_address = si570_address;
-  debug(P("Si570 init, calibration frequency = %lu"), calibration_frequency);
+  DEBUG(P("Si570 init, calibration frequency = %lu"), calibration_frequency);
   Wire.begin();
 
   // Disable internal pullups - You will need external 3.3v pullups.
@@ -69,7 +71,7 @@ Si570::Si570(uint8_t si570_address, uint32_t calibration_frequency)
   max_delta = ((uint64_t) f_center * 10035LL / 10000LL) - f_center;
 
   // Force Si570 to reset to initial freq
-  debug(P("Resetting Si570"));
+  DEBUG(P("Resetting Si570"));
   i2c_write(135,0x01);
   delay(20);
 
@@ -83,7 +85,7 @@ Si570::Si570(uint8_t si570_address, uint32_t calibration_frequency)
   {
     // Use the factory default if we were unable to talk to the chip
     freq_xtal = 114285000L;
-    debug(P("Unable to properly initialize Si570"));
+    DEBUG(P("Unable to properly initialize Si570"));
     status = SI570_ERROR;
   }
   
@@ -94,17 +96,17 @@ Si570::Si570(uint8_t si570_address, uint32_t calibration_frequency)
 void Si570::debugSi570()
 {
   
-  debug(P(" --- Si570 Debug Info ---"));
+  DEBUG(P(" --- Si570 Debug Info ---"));
   
-  debug(P("Status: %i"), status);
+  DEBUG(P("Status: %i"), status);
   
   for (int i = 7; i < 15; i++) {
-    debug(P("Register[%i] = %02x"), i, dco_reg[i]);
+    DEBUG(P("Register[%i] = %02x"), i, dco_reg[i]);
   }
   
-  debug(P("HSDIV = %i, N1 = %i"), getHSDIV(), getN1());
+  DEBUG(P("HSDIV = %i, N1 = %i"), getHSDIV(), getN1());
   
-  debug(P("RFREQ (hex): %04lx%04lx"), (uint32_t)(getRFREQ() >> 32), (uint32_t)(getRFREQ() & 0xffffffff));
+  DEBUG(P("RFREQ (hex): %04lx%04lx"), (uint32_t)(getRFREQ() >> 32), (uint32_t)(getRFREQ() & 0xffffffff));
 }
 
 // Return the 8 bit HSDIV value from register 7
@@ -152,7 +154,7 @@ int Si570::i2c_write(uint8_t reg_address, uint8_t *data, uint8_t length)
   int error = Wire.endTransmission();
   if (error != 0) 
   {
-    debug(P("Error writing %i bytes to register %i: %i"), length, reg_address, error);
+    DEBUG(P("Error writing %i bytes to register %i: %i"), length, reg_address, error);
     return -1;
   }
   return length;
@@ -180,15 +182,15 @@ int Si570::i2c_read(uint8_t reg_address, uint8_t *output, uint8_t length) {
   int error = Wire.endTransmission();
   if (error != 0) 
   {
-    debug(P("Error reading %i bytes from register %i."), reg_address);
-    debug(P(" endTransmission() returned %i"), error);
+    DEBUG(P("Error reading %i bytes from register %i."), reg_address);
+    DEBUG(P(" endTransmission() returned %i"), error);
     return 0;
   }
 
   int len = Wire.requestFrom(i2c_address,length);
   if (len != length) 
   {
-    debug(P("Requested %i bytes and only got %i bytes"), length, len);
+    DEBUG(P("Requested %i bytes and only got %i bytes"), length, len);
   }
   for (int i = 0; i < len && Wire.available(); i++)
     output[i] = Wire.read();
@@ -206,7 +208,7 @@ bool Si570::read_si570(){
     {
       return true;
     }
-    debug(P("Error reading Si570 registers... Retrying."));
+    DEBUG(P("Error reading Si570 registers... Retrying."));
     delay(50);
   }
   return false;
@@ -339,6 +341,6 @@ Si570_Status Si570::setFrequency(uint32_t newfreq)
     write_si570();
   }
   
-  debug(P("RFREQ (dec): %lu"), newfreq); // DEBUG ###
+  DEBUG(P("RFREQ (dec): %lu"), newfreq); // DEBUG ###
   return status;
 }
