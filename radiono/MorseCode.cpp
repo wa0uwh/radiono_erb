@@ -3,28 +3,8 @@
 
 
 #include <Arduino.h>
+#include "A1Main.h"
 #include "MorseCode.h"
-
-// Externs from main
-extern unsigned long frequency;
-extern unsigned long cwTimeout;
-extern byte editIfMode;
-extern byte keyDown;
-extern byte inPtt;
-extern byte inTx;
-extern byte AltTxVFO;
-
-extern void printLine2CEL(char const *);
-extern void printLine2(char const *);
-extern void startSidetone();
-extern void stopSidetone();
-extern void changeToTransmit();
-extern void changeToReceive();
-extern int inBandLimits(unsigned long);
-extern int isKeyNowClosed();
-extern int isPttPressed();
-extern void setFreq(unsigned long);
-
 
 // Local
 long ditLen = 1200/13; // Default Speed

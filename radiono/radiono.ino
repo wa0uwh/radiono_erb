@@ -41,7 +41,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "EN"              // Incremental Rev Code
+#define INC_REV "FC"              // Incremental Rev Code
 
 
 /*
@@ -667,6 +667,8 @@ void checkButton() {
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int btn;
+
+  if (inTx) return;    // Do Nothing if in TX-Mode
   
   btn = btnDown();
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);

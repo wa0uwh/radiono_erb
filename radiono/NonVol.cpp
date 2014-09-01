@@ -10,39 +10,8 @@
 #define ID_FLAG (1408281941L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
-
-// Externs Variables from Main
-extern unsigned long frequency;
-extern boolean editIfMode;
-extern unsigned long iFreqUSB;
-extern unsigned long iFreqLSB;
-extern unsigned long vfoA;
-extern unsigned long vfoB;
-extern boolean isLSB;
-extern boolean vfoActive;
-extern unsigned long freqCache[];
-extern boolean sideBandMode;
-extern byte sideBandModeCache[];
-
-
-// Extern Functions from Main
-extern void cursorOff();
-extern void printLine1CEL(char const *);
-extern void printLine2CEL(char const *);
-extern void deDounceBtnRelease();
-extern int btnDown();
-
 // Local Varibles
 long idFlag = ID_FLAG;
-
-extern char buf[];
-// ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory
-// ERB - Force format stings into FLASH Memory
-#define  P(x) strcpy_P(buf, PSTR(x))
-// FLASH2 can be used where Two small (1/2 size) Buffers are needed.
-#define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
-
-#define DEBUG(x ...)  // Default to NO debug
 
 
 // ###############################################################################
