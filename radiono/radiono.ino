@@ -33,6 +33,7 @@
  *   Added Support for 2500Hz Tuning Mode
  *   Added Non-Volatile Memory Storage
  *   Added Morse Code Functions, MACROs and Beacon 
+ *   Added New Cursor Blink Strategy
  *
  */
 
