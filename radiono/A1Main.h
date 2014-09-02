@@ -34,7 +34,6 @@
     extern int cursorDigitPosition;
     extern int tuningPositionPrevious;
     extern int cursorCol, cursorRow, cursorMode;
-    extern boolean winkOn;
     extern char* const sideBandText[] PROGMEM;
     extern byte sideBandMode;
     
@@ -57,8 +56,6 @@
     extern unsigned long freqCache[BANDS*2];
     extern byte sideBandModeCache[BANDS*2];
     
-    // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
-    extern char buf[];
 
 
     // Functions From Main    
@@ -77,7 +74,9 @@
     extern void deDounceBtnRelease();
     extern int btnDown();
     
-
+    // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
+    extern char buf[];
+    
     // ERB - Force format stings into FLASH Memory
     #define  P(x) strcpy_P(buf, PSTR(x))
     // PN can be used where Multiple small (1/2, 1/4, 1/8 size) Buffers are needed.

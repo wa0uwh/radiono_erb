@@ -49,7 +49,7 @@ void eePromIO(int mode) {
     case EEP_LOAD:
         DEBUG(P("Loading EEPROM"));
         // Read from Non-Volatile Memory and check for the correct ID
-        eeprom_read_block((void*)&E, (void*)0, sizeof(E));
+        eeprom_read_block(&E, 0, sizeof(E));
         if (E.idFlag != ID_FLAG) { sprintf(c, P("Load Failed ID")); break; }
         
         // Compute and Check the CheckSum
@@ -95,7 +95,7 @@ void eePromIO(int mode) {
         E.checkSum = -checkSum; // Apply CheckSum to Structure
         
         // Write the eeProm Strcture to Non-Volatile Memory
-        eeprom_write_block((const void*)&E, (void*)0, sizeof(E));
+        eeprom_write_block(&E, 0, sizeof(E));
         
         sprintf(c, P("Storing %dB"), sizeof(E));
         break;

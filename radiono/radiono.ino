@@ -33,6 +33,7 @@
  *   Added Support for 2500Hz Tuning Mode
  *   Added Non-Volatile Memory Storage
  *   Added Morse Code Functions, MACROs and Beacon 
+ *   Added New Cursor Blink Strategy
  *
  */
 
@@ -41,7 +42,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FC"              // Incremental Rev Code
+#define INC_REV "FE"              // Incremental Rev Code
 
 
 /*
@@ -92,14 +93,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define MAX_FREQ (30000000UL)
 #define DEAD_ZONE (40)
 
-#define CURSOR_MODE (1)
-#define DIGIT_MODE (2)
-
-#define NO_CURSOR (0)
-#define UNDERLINE (1)
-#define UNDERLINE_ WINK (2)
-#define BLOCK_BLINK (3)
-
 #define MOMENTARY_PRESS (1)
 #define DOUBLE_PRESS (2)
 #define LONG_PRESS (3)
@@ -145,6 +138,7 @@ unsigned long cwTimeout = 0;
 boolean editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
+char blinkChar[2];
 
 /* tuning pot stuff */
 byte refreshDisplay = 0;
@@ -157,7 +151,6 @@ int tuningPositionDelta = 0;
 int cursorDigitPosition = 0;
 int tuningPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
-boolean winkOn;
 char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 byte sideBandMode = 0;
 
@@ -249,7 +242,7 @@ void updateDisplay(){
   char *vfoLabel;
   
   if (refreshDisplay) {
-      refreshDisplay = false;
+      refreshDisplay = 0;
       cursorOff();
       
       // Create Label for Displayed VFO
@@ -267,6 +260,9 @@ void updateDisplay(){
           );
       printLine1CEL(c);
       
+      saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);   
+      sprintf(blinkChar, "%1.1s", c+cursorCol);  // Save Character to Blink
+      
       sprintf(c, P("%3s%1s %-2s %3.3s"),
           isLSB ? P2("LSB") : P2("USB"),
           sideBandMode > 0 ? P4("*") : P4(" "),
@@ -275,71 +271,47 @@ void updateDisplay(){
           );
       printLine2CEL(c);
       
-      setCursorCRM(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0, CURSOR_MODE);
   }
-  updateCursor();
+  updateCursor(800);
 }
 
 
 // -------------------------------------------------------------------------------
-void setCursorCRM(int col, int row, int mode) {
-  // mode 0 = underline
-  // mode 1 = underline wink
-  // move 2 = block blink
-  // else   = no cursor
+void saveCursor(int col, int row) {
   cursorCol = col;
   cursorRow = row;
-  cursorMode = mode;
 }
 
 
 // -------------------------------------------------------------------------------
-void cursorOff() {
-    
+void cursorOff() {    
   lcd.noBlink();
   lcd.noCursor();
 }
 
 
 // -------------------------------------------------------------------------------
-void updateCursor() {
-  
-  lcd.setCursor(cursorCol, cursorRow); // Postion Curesor
-  
-  // Set Cursor Display Mode, Wink On and OFF for DigitMode, Solid for CursorMode
-  if (cursorMode == CURSOR_MODE) {
-      if (millis() & 0x0200 ) { // Update only once in a while
-        lcd.noBlink();
-        lcd.cursor();
-      }
+void updateCursor(int blinkRateMS) {
+#define BLINK (75) // ON Percent
+  static unsigned long blinkInterval = 0;
+  static boolean toggle = false;
+    
+  if (inTx) return;   // Don't Blink if inTx
+  if (ritOn) return;  // Don't Blink if RIT is ON
+   
+  if (blinkInterval < millis()) { // Wink OFF
+      blinkInterval = millis() + blinkRateMS;
+      lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
+      lcd.print(P(" "));
+      toggle = true;
+  } 
+  else if ((blinkInterval - (blinkRateMS/100*BLINK)) < millis() && toggle) { // Wink ON
+      toggle = !toggle;
+      lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
+      lcd.print(blinkChar);
   }
-  else if (cursorMode == DIGIT_MODE) { // Winks Underline Cursor
-      if (millis() & 0x0200 ) { // Update only once in a while
-        if (winkOn == false) {
-          lcd.cursor();
-          winkOn = true;
-        }
-      } else {
-        if (winkOn == true) {
-          lcd.noCursor();
-          winkOn = false;
-        }
-      }
-  }
-  else if (cursorMode == BLOCK_BLINK) {
-      if (millis() & 0x0200 ) { // Update only once in a while
-        lcd.blink();
-        lcd.noCursor();
-      }
-  }
-  else {
-      if (millis() & 0x0200 ) { // Update only once in a while
-        cursorOff();
-      }
-  }
- 
+  return;
 }
-
 
 // ###############################################################################
 void setSideband(){
@@ -378,7 +350,7 @@ void checkTuning() {
   unsigned long newFreq;
 
   // Count Down to Freq Stable, i.e. Freq has not changed recently
-  if (freqUnStable == 1) refreshDisplay = true;
+  if (freqUnStable == 1) refreshDisplay++;
   freqUnStable = max(--freqUnStable, 0);
   
   // Do Not Change Freq while in Transmit or button opperation
@@ -445,7 +417,7 @@ void checkTuning() {
       // Avoiding Nagative underRoll of UnSigned Long, and over-run MAX_FREQ  
       if (newFreq <= MAX_FREQ) {
         frequency = newFreq;
-        if (!editIfMode) vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;  
+        if (!editIfMode) vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
         refreshDisplay++;
       }
       freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
@@ -676,15 +648,15 @@ void checkButton() {
   switch (btn) {
     case 0: return; // Abort
     case FN_BTN: decodeFN(btn); break;  
-    case LT_CUR_BTN:  decodeMoveCursor(+1); break;    
+    case LT_CUR_BTN: decodeMoveCursor(+1); break;    
     case RT_CUR_BTN: decodeMoveCursor(-1); break;
     case LT_BTN: switch (getButtonPushMode(btn)) { 
-            case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
-            case DOUBLE_PRESS:     eePromIO(EEP_SAVE); break;
-            case LONG_PRESS:       eePromIO(EEP_LOAD); break;
-            case ALT_PRESS_FN:     toggleAltTxVFO();  break;
-            case ALT_PRESS_LT:     sendMorseMesg(CW_WPM, P(CW_MSG1));  break;
-            case ALT_PRESS_RT:     sendMorseMesg(CW_WPM, P(CW_MSG2));  break;    
+            case MOMENTARY_PRESS: decodeSideBandMode(btn); break;
+            case DOUBLE_PRESS:    eePromIO(EEP_SAVE); break;
+            case LONG_PRESS:      eePromIO(EEP_LOAD); break;
+            case ALT_PRESS_FN:    toggleAltTxVFO();  break;
+            case ALT_PRESS_LT:    sendMorseMesg(CW_WPM, P(CW_MSG1));  break;
+            case ALT_PRESS_RT:    sendMorseMesg(CW_WPM, P(CW_MSG2));  break;    
             default: return; // Do Nothing
             } break;
     case UP_BTN: decodeBandUpDown(+1); break; // Band Up
@@ -1008,7 +980,7 @@ void setup() {
   loadUserPerferences();
   
   tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
-  refreshDisplay = +1; 
+  refreshDisplay++; 
 }
 
 
@@ -1037,9 +1009,9 @@ void loop(){
   setSideband();
   setBandswitch(frequency);
   setRf386BandSignal(frequency);
-
-  updateDisplay();
   
+  updateDisplay();
+   
 }
 
 // ###############################################################################
