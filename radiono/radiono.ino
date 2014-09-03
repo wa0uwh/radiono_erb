@@ -42,7 +42,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FE"              // Incremental Rev Code
+#define INC_REV "FF"              // Incremental Rev Code
 
 
 /*
@@ -243,7 +243,6 @@ void updateDisplay(){
   
   if (refreshDisplay) {
       refreshDisplay = 0;
-      cursorOff();
       
       // Create Label for Displayed VFO
       vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
@@ -272,7 +271,7 @@ void updateDisplay(){
       printLine2CEL(c);
       
   }
-  updateCursor(800);
+  updateCursor();
 }
 
 
@@ -291,6 +290,8 @@ void cursorOff() {
 
 
 // -------------------------------------------------------------------------------
+void updateCursor() {updateCursor(800);}
+
 void updateCursor(int blinkRateMS) {
 #define BLINK (75) // ON Percent
   static unsigned long blinkInterval = 0;
@@ -298,6 +299,7 @@ void updateCursor(int blinkRateMS) {
     
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
+  if (freqUnStable) return;  // Don't Blink if Frequency is UnStable 
    
   if (blinkInterval < millis()) { // Wink OFF
       blinkInterval = millis() + blinkRateMS;
@@ -346,11 +348,13 @@ void readTuningPot(){
 // Tuning Position by Switches on FN Circuit
 // Author: Eldon R. Brown - WA0UWH, Apr 25, 2014
 void checkTuning() {
+#define AUTOTIMER_RATE_MS (200)
   long deltaFreq;
   unsigned long newFreq;
+  static unsigned long AutoTimer = 0;
 
   // Count Down to Freq Stable, i.e. Freq has not changed recently
-  if (freqUnStable == 1) refreshDisplay++;
+  if (freqUnStable && freqUnStable < 5) refreshDisplay++;
   freqUnStable = max(--freqUnStable, 0);
   
   // Do Not Change Freq while in Transmit or button opperation
@@ -364,19 +368,20 @@ void checkTuning() {
   tuningPositionDelta = tuningPosition - tuningPositionPrevious;
   
   tuningDir = 0;  // Set Default Tuning Directon to neather Right nor Left
-
-  // Check to see if Automatic Digit Change Action is Required, if SO, force the change
-  if (tuningPosition < DEAD_ZONE * 2) { // We must be at the Low end of the Tuning POT
-    tuningPositionDelta = -DEAD_ZONE;
-    delay(100);
-    if (tuningPosition > DEAD_ZONE ) delay(100);
+  
+  if (AutoTimer > millis()) return;
+  
+  if (tuningPosition < DEAD_ZONE * 2 && AutoTimer < millis()) { // We must be at the Low end of the Tuning POT
+      tuningPositionDelta = -DEAD_ZONE;
+      AutoTimer = millis() + AUTOTIMER_RATE_MS;
+      if (tuningPosition > DEAD_ZONE ) AutoTimer += AUTOTIMER_RATE_MS*3/2; // At very end of Tuning POT
   }
-  if (tuningPosition > 1023 - DEAD_ZONE * 2) { // We must be at the High end of the Tuning POT
-    tuningPositionDelta = DEAD_ZONE; 
-    delay(100);
-    if (tuningPosition < 1023 - DEAD_ZONE / 8) delay(100);
+  if (tuningPosition > 1023 - DEAD_ZONE * 2 && AutoTimer < millis()) { // We must be at the High end of the Tuning POT
+      tuningPositionDelta = +DEAD_ZONE;
+      AutoTimer = millis() + AUTOTIMER_RATE_MS;
+      if (tuningPosition  < 1023 - DEAD_ZONE / 8) AutoTimer += AUTOTIMER_RATE_MS*3/2; // At very end of Tuning POT
   }
-
+  
   // Check to see if Digit Change Action is Required, Otherwise Do Nothing via RETURN 
   if (abs(tuningPositionDelta) < DEAD_ZONE) return;
 
@@ -420,7 +425,7 @@ void checkTuning() {
         if (!editIfMode) vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
         refreshDisplay++;
       }
-      freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
+      freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
       tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
   }
 }
@@ -760,7 +765,7 @@ void decodeBandUpDown(int dir) {
        }
      } // End else
      
-   freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
+   freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    ritOn = ritVal = 0;
    setSideband();
 }
@@ -774,9 +779,8 @@ void decodeSideBandMode(int btn) {
        sideBandMode++;
        sideBandMode %= 3; // Limit to Three Modes
        setSideband();
-       cursorOff();
        printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
-       delay(500);
+       delay(100);
        deDounceBtnRelease(); // Wait for Release
 }
 
@@ -789,7 +793,7 @@ void decodeMoveCursor(int dir) {
       tuningPositionPrevious = tuningPosition;
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
-      freqUnStable = false;  // Set Freq is NOT UnStable, as it is Stable          
+      freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable          
       refreshDisplay++;
 }
 
@@ -797,10 +801,9 @@ void decodeMoveCursor(int dir) {
 void decodeAux(int btn) {
     
     //debug("%s btn %d", __func__, btn);
-    cursorOff();
     sprintf(c, P("Btn: %.2d"), btn);
     printLine2CEL(c);
-    delay(500);
+    delay(100);
     deDounceBtnRelease(); // Wait for Release
 }
 
@@ -883,8 +886,7 @@ void decodeFN(int btn) {
           printLine2CEL(c);
           break;
        }
-       cursorOff();
-       delay(500);
+       delay(100);
        break;
     default :
        return; // Do Nothing
@@ -910,13 +912,14 @@ void setFreq(unsigned long freq) {
 // ###############################################################################
 void setup() {
 #define DEBUG(x ...)  // Default to NO debug    
-//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   
   // Initialize the Serial port so that we can use it for debugging
   Serial.begin(115200);
   debug(P("%s Radiono - Rev: %s"), __func__, P2(RADIONO_VERSION));
 
   lcd.begin(LCD_COL, LCD_ROW);
+  cursorOff();
   printLine1(P("Farhan - Minima"));
   printLine2(P("  Tranceiver"));
   delay(2000);
@@ -1001,10 +1004,7 @@ void loop(){
       if (ritOn) freq += ritVal;
       freq += (vfoActive == VFO_A) ? vfoA : vfoB;
       vfo->setFrequency(freq);
-  } else {
-      freq = frequency;
-      setFreq(freq);
-  }
+  } else setFreq(frequency);
   
   setSideband();
   setBandswitch(frequency);
