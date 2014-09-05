@@ -64,7 +64,7 @@ void sendMesg(int mode, int freqShift, char *msg) {
     inTx = 1; 
     changeToTransmit();
     printLine2CEL(" "); // Clear Line 2
-    sprintf(c, "%s%02.2d", mode == MOD_QRSS ? "QR": "CW", txSpeed);
+    sprintf(c, P("%s%02.2d"), mode == MOD_QRSS ? P8("QR"): P8("CW"), txSpeed);
     printLineXY(12, 0, c);
     delay(50);
      

@@ -3,20 +3,21 @@
 #ifndef MORSECODE_H
 #define MORSECODE_H
 
-
-    #define MOD_CW (0)
-    #define MOD_QRSS (1)
+    enum Modes {
+        MOD_CW = 0,
+        MOD_QRSS,
+    };
     
     // CW Message Speed
-    #define CW_WPM (13)
+    #define CW_WPM (15)
     
     // QRSS Message Speed
     #define QRSS_DIT_TIME (1) //  1 for Demo, Typically 3, 6, 12, 24 seconds, etc, 60 is very-very slow, negative values are ms
     #define QRSS_SHIFT (50)   // 50 for Demo, Typically 5 to 8 Hz Shift for QRSS
     
     
-    void sendMorseMesg(int, char *);
-    void sendQrssMesg(long, int, char *);
+    void sendMorseMesg(int wpm, char *msg);
+    void sendQrssMesg(long len, int freqShift, char *msg);
 
 #endif
 
