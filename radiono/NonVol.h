@@ -4,8 +4,10 @@
 #ifndef NONVOL_H
 #define NONVOL_H
 
-    #define EEP_LOAD (0)
-    #define EEP_SAVE (1)
+    enum {
+        EEP_LOAD = 0,
+        EEP_SAVE,
+    };
     
     void eePromIO(int mode);
     void loadUserPerferences();

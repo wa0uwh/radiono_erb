@@ -43,7 +43,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FH"              // Incremental Rev Code
+#define INC_REV "FJ"              // Incremental Rev Code
 
 
 /*
@@ -83,49 +83,57 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 #define SI570_I2C_ADDRESS 0x55
 
-//#define IF_FREQ_LSB   (0)  // FOR debug ONLY
-//#define IF_FREQ_USB   (0)  // FOR debug ONLY
 // USB and LSB IF frequencies
 #define IF_FREQ_USB   (19997000L)
 #define IF_FREQ_LSB   (19992000L)
+//#define IF_FREQ_USB   (0)  // FOR debug ONLY
+//#define IF_FREQ_LSB   (0)  // FOR debug ONLY
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
 #define MAX_FREQ (30000000UL)
 #define DEAD_ZONE (40)
 
-#define MOMENTARY_PRESS (1)
-#define DOUBLE_PRESS (2)
-#define LONG_PRESS (3)
-#define ALT_PRESS_FN (4)
-#define ALT_PRESS_LT (5)
-#define ALT_PRESS_RT (6)
+enum ButtonPressModes { // Button Press Modes
+    MOMENTARY_PRESS = 1,
+    DOUBLE_PRESS,
+    LONG_PRESS,
+    ALT_PRESS_FN,
+    ALT_PRESS_LT,
+    ALT_PRESS_RT,
+};
 
-#define FN_BTN (1)
-#define LT_CUR_BTN (2)
-#define RT_CUR_BTN (3)
-#define LT_BTN (4)
-#define UP_BTN (5)
-#define DN_BTN (6)
-#define RT_BTN (7)
+enum Buttons { // Button Numbers
+    FN_BTN = 1,
+    LT_CUR_BTN,
+    RT_CUR_BTN,
+    LT_BTN,
+    UP_BTN,
+    DN_BTN,
+    RT_BTN,
+};
 
+enum SidebandModes { // Sideband Modes
+    AUTO_SIDEBAND_MODE = 0,
+    UPPER_SIDEBAND_MODE,
+    LOWER_SIDEBAND_MODE,
+};
 
-#define AUTO_SIDEBAND_MODE (0)
-#define UPPER_SIDEBAND_MODE (1)
-#define LOWER_SIDEBAND_MODE (2)
+enum VFOs { // Available VFOs
+    VFO_A = 0,
+    VFO_B,
+};
 
-/* the digital controls */
+// Pin Number for the digital output controls
 #define LSB (2)
 #define TX_RX (3)
 #define CW_KEY (4)
 
-
+// Pin Numbers for analog inputs
 #define FN_PIN (A3)
 #define ANALOG_TUNING (A2)
 #define ANALOG_KEYER (A1)
 
-#define VFO_A (0)
-#define VFO_B (1)
 
 Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
@@ -186,7 +194,7 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
       1825000UL, 1825000UL,  // 160m - QRP SSB Calling Freq
       3985000UL, 3985000UL,  //  80m - QRP SSB Calling Freq
       7285000UL, 7285000UL,  //  40m - QRP SSB Calling Freq
-     10138700UL, 10138700UL, //  30m - QRP QRSS and WSPR
+     10138700UL, 10138700UL, //  30m - QRP QRSS, WSPR and PropNET
      14285000UL, 14285000UL, //  20m - QRP SSB Calling Freq
      18130000UL, 18130000UL, //  17m - QRP SSB Calling Freq
      21385000UL, 21385000UL, //  15m - QRP SSB Calling Freq
@@ -225,18 +233,20 @@ void printLine2(char const *c){
 }
 
 // Print LCD Line1 with Clear to End of Line
-void printLine1CEL(char const *c){   
+void printLine1CEL(char const *c){
+    char buf[16];   
     char lbuf[LCD_COL+2];
     
-    sprintf(lbuf, LCD_STR_CEL, c);
+    sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, 0, lbuf);
 }
 
 // Print LCD Line2 with Clear to End of Line
-void printLine2CEL(char const *c){  
+void printLine2CEL(char const *c){
+    char buf[16];  
     char lbuf[LCD_COL+2];
     
-    sprintf(lbuf, LCD_STR_CEL, c);
+    sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, 1, lbuf);
 }
 
@@ -650,7 +660,8 @@ void checkButton() {
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int btn;
-
+  char buf[PBUFSIZE]; // A Local buf, used to pass mesg's to send messages
+  
   if (inTx) return;    // Do Nothing if in TX-Mode
   
   btn = btnDown();
@@ -794,9 +805,8 @@ void decodeSideBandMode(int btn) {
 // ###############################################################################
 void decodeMoveCursor(int dir) {
 
-      if (tune2500Mode) return; // Do not Move Cursor in this mode
-    
       tuningPositionPrevious = tuningPosition;
+      if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
       freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable          
@@ -918,7 +928,7 @@ void setFreq(unsigned long freq) {
 // ###############################################################################
 void setup() {
 #define DEBUG(x ...)  // Default to NO debug    
-#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   
   // Initialize the Serial port so that we can use it for debugging
   Serial.begin(115200);
