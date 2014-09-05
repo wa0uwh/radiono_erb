@@ -24,7 +24,7 @@ void debug2(const __FlashStringHelper *c) {
 void debugUnique(char const *fmt, ... ) {
     static byte checkSumPrev = 0;
     byte checkSum = 0;
-    char tmp[64]; // resulting string limited to 64 chars
+    char tmp[64+2]; // resulting string limited to 64 chars
     byte *pb = (byte *)&tmp;
   
     va_list args;

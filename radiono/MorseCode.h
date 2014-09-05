@@ -15,8 +15,8 @@
     #define QRSS_SHIFT (50)   // 50 for Demo, Typically 5 to 8 Hz Shift for QRSS
     
     
-    void sendMorseMesg(int, char *c);
-    void sendQrssMesg(long, int, char *c);
+    void sendMorseMesg(int, char *);
+    void sendQrssMesg(long, int, char *);
 
 #endif
 
