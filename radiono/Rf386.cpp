@@ -28,7 +28,7 @@ void setRf386BandSignal(unsigned long freq){
   if (band == prevBand) return;
   prevBand = band;
   
-  debug(P("BandI = %d"), band);
+  debug(P("BandIndex = %d"), band);
   pinMode(PA_BAND_CLK, OUTPUT);
   
   digitalWrite(PA_BAND_CLK, 1);  // Output Reset Pulse for PA Band Filter

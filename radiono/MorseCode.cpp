@@ -8,6 +8,7 @@
 
 // Local
 long ditLen = 1200/13; // Default Speed
+byte txSpeed = 0;
 #include "MorseTable.h"
 
 
@@ -51,7 +52,7 @@ void dah(int mode, int freqShift) {
 
 
 // ########################################################
-void sendMesg(int mode, int freqShift, char *c) {
+void sendMesg(int mode, int freqShift, char *msg) {
     byte bits = 0;
     unsigned long timeOut;
     
@@ -63,29 +64,31 @@ void sendMesg(int mode, int freqShift, char *c) {
     inTx = 1; 
     changeToTransmit();
     printLine2CEL(" "); // Clear Line 2
+    sprintf(c, "%s%02.2d", mode == MOD_QRSS ? "QR": "CW", txSpeed);
+    printLineXY(12, 0, c);
     delay(50);
      
     if(mode == MOD_QRSS) startSidetone();        
-    printLine2CEL(c); // Scroll Message on Line 2
+    printLine2CEL(msg); // Scroll Message on Line 2
     bitTimer(ditLen);
     
-    while(*c) {
+    while(*msg) {
         if (isKeyNowClosed()) return; // Abort Message
-        if (*c == ' ') {
-           c++;
-           printLine2CEL(c); // Scroll Message on Line 2
+        if (*msg == ' ') {
+           msg++;
+           printLine2CEL(msg); // Scroll Message on Line 2
            bitTimer(ditLen * 4); // 3 for previous character + 4 for word = 7 total
         }
         else {
-            bits = pgm_read_byte(&morse[*c & 0x7F - 32]);
+            bits = pgm_read_byte(&morse[*msg & 0x7F - 32]); // Read Code from FLASH
             while(bits > 1) {
                 if (isKeyNowClosed()) return; // Abort Message
                 bits & 1 ? dit(mode, freqShift) : dah(mode, freqShift);
                 bitTimer(ditLen);
                 bits /= 2;
             }
-            c++;
-            printLine2CEL(c); // Scroll Message on Line 2
+            msg++;
+            printLine2CEL(msg); // Scroll Message on Line 2
             bitTimer(ditLen * 2); // 1 + 2 added between characters
         } 
         cwTimeout = ditLen * 10 + millis();
@@ -93,17 +96,19 @@ void sendMesg(int mode, int freqShift, char *c) {
 }
 
 // ########################################################
-void sendQrssMesg(long len, int freqShift, char *c) {
+void sendQrssMesg(long len, int freqShift, char *msg) {
     
     ditLen = len < 0 ? -len : len * 1000; // Len is -MS or +Seconds
-    sendMesg(MOD_QRSS, freqShift, c);
+    txSpeed = ditLen / 1000;
+    sendMesg(MOD_QRSS, freqShift, msg);
 }
 
 // ########################################################
-void sendMorseMesg(int wpm, char *c) {
+void sendMorseMesg(int wpm, char *msg) {
     
-    ditLen = int(1200 / wpm); 
-    sendMesg(MOD_CW, 0, c);  
+    ditLen = int(1200 / wpm);
+    txSpeed = wpm; 
+    sendMesg(MOD_CW, 0, msg);  
 }
 
 // End

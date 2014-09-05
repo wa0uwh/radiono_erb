@@ -57,33 +57,35 @@
     extern byte sideBandModeCache[BANDS*2];
     
 
-
     // Functions From Main    
     extern void cursorOff();
-    extern void printLine1CEL(char const *);
-    extern void printLine2CEL(char const *);
-    extern void printLine2(char const *);
+    extern void printLineXY(byte x, byte y, char const *c);
+    extern void printLine1CEL(char const *c);
+    extern void printLine2CEL(char const *c);
+    extern void printLine1(char const *c);
+    extern void printLine2(char const *c);
     extern void startSidetone();
     extern void stopSidetone();
     extern void changeToTransmit();
     extern void changeToReceive();
-    extern int inBandLimits(unsigned long);
+    extern int inBandLimits(unsigned long freq);
     extern int isKeyNowClosed();
     extern int isPttPressed();
-    extern void setFreq(unsigned long);
+    extern void setFreq(unsigned long freq);
     extern void deDounceBtnRelease();
     extern int btnDown();
     
     // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
-    extern char buf[];
+    #define PBUFSIZE (66)
+    extern char buf[PBUFSIZE];
     
     // ERB - Force format stings into FLASH Memory
     #define  P(x) strcpy_P(buf, PSTR(x))
     // PN can be used where Multiple small (1/2, 1/4, 1/8 size) Buffers are needed.
-    #define P2(x) strcpy_P(buf + sizeof(buf)/2, PSTR(x))
-    #define P3(x) strcpy_P(buf + sizeof(buf)/8*5, PSTR(x))
-    #define P4(x) strcpy_P(buf + sizeof(buf)/4*3, PSTR(x))
-    #define P8(x) strcpy_P(buf + sizeof(buf)/8*7, PSTR(x))
+    #define P2(x) strcpy_P(buf + PBUFSIZE/2,   PSTR(x))
+    #define P3(x) strcpy_P(buf + PBUFSIZE/8*5, PSTR(x))
+    #define P4(x) strcpy_P(buf + PBUFSIZE/4*3, PSTR(x))
+    #define P8(x) strcpy_P(buf + PBUFSIZE/8*7, PSTR(x))
     
     // Buffer Space Indexes
     // |-------|-------|-------|-------|-------|-------|-------|-------|
