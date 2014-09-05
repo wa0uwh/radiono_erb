@@ -34,6 +34,7 @@
  *   Added Non-Volatile Memory Storage
  *   Added Morse Code Functions, MACROs and Beacon 
  *   Added New Cursor Blink Strategy
+ *   Added Some new LCD Display Format Functions
  *
  */
 
@@ -42,7 +43,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FF"              // Incremental Rev Code
+#define INC_REV "FH"              // Incremental Rev Code
 
 
 /*
@@ -196,7 +197,7 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
 byte sideBandModeCache[BANDS*2] = {0};
 
 // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
-char buf[64+2];
+char buf[PBUFSIZE];  // Note: PBUFSIZE must be set in A1Main.h
 
 
 // ###############################################################################
@@ -206,16 +207,21 @@ char buf[64+2];
 
 // ###############################################################################
 /* display routines */
-void printLine1(char const *c){
+void printLineXY(byte col, byte row, char const *c) {   
+    char lbuf[LCD_COL+2];
     
-    lcd.setCursor(0, 0);
-    lcd.print(c);
+    //snprintf(lbuf, sizeof(lbuf)-col, "%s", c);
+    strncpy(lbuf, c, sizeof(lbuf)-col);
+    lcd.setCursor(col, row);
+    lcd.print(lbuf);
+}
+
+void printLine1(char const *c){
+    printLineXY(0, 0, c);
 }
 
 void printLine2(char const *c){
-    
-    lcd.setCursor(0, 1);
-    lcd.print(c);
+    printLineXY(0, 1, c);
 }
 
 // Print LCD Line1 with Clear to End of Line
@@ -223,7 +229,7 @@ void printLine1CEL(char const *c){
     char lbuf[LCD_COL+2];
     
     sprintf(lbuf, LCD_STR_CEL, c);
-    printLine1(lbuf);
+    printLineXY(0, 0, lbuf);
 }
 
 // Print LCD Line2 with Clear to End of Line
@@ -231,7 +237,7 @@ void printLine2CEL(char const *c){
     char lbuf[LCD_COL+2];
     
     sprintf(lbuf, LCD_STR_CEL, c);
-    printLine2(lbuf);
+    printLineXY(0, 1, lbuf);
 }
 
 
@@ -299,12 +305,12 @@ void updateCursor(int blinkRateMS) {
     
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
-  if (freqUnStable) return;  // Don't Blink if Frequency is UnStable 
+  if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
    
   if (blinkInterval < millis()) { // Wink OFF
       blinkInterval = millis() + blinkRateMS;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
-      lcd.print(P(" "));
+      lcd.print(P(" ")); 
       toggle = true;
   } 
   else if ((blinkInterval - (blinkRateMS/100*BLINK)) < millis() && toggle) { // Wink ON
