@@ -35,6 +35,7 @@
  *   Added Morse Code Functions, MACROs and Beacon 
  *   Added New Cursor Blink Strategy
  *   Added Some new LCD Display Format Functions
+ *   Added Idle Timeout for Blinking Cursor
  *
  */
 
@@ -43,7 +44,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FJ"              // Incremental Rev Code
+#define INC_REV "FK"              // Incremental Rev Code
 
 
 /*
@@ -151,6 +152,7 @@ char blinkChar[2];
 
 /* tuning pot stuff */
 byte refreshDisplay = 0;
+int blinkCount = 0;
 
 int tuningDir = 0;
 int tuningPosition = 0;
@@ -258,7 +260,8 @@ void updateDisplay(){
   char *vfoLabel;
   
   if (refreshDisplay) {
-      refreshDisplay = 0;
+      refreshDisplay = 0; 
+      blinkCount = 0;
       
       // Create Label for Displayed VFO
       vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
@@ -292,7 +295,7 @@ void updateDisplay(){
 
 
 // -------------------------------------------------------------------------------
-void saveCursor(int col, int row) {
+void saveCursor(int col, int row) {  
   cursorCol = col;
   cursorRow = row;
 }
@@ -327,6 +330,11 @@ void updateCursor(int blinkRateMS) {
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(blinkChar);
+      if (++blinkCount > 15 * 6000/BLINK) { // Stop Blink after Idle period, Minutes * 6000/BLINK 
+          cursorDigitPosition = 0;
+          refreshDisplay++;
+          updateDisplay();
+      }
   }
   return;
 }
@@ -339,6 +347,7 @@ void setSideband(){
     case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
     case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
   } 
+  pinMode(LSB, OUTPUT);
   digitalWrite(LSB, isLSB);
 }
 
@@ -537,12 +546,14 @@ void checkTX() {
     
     if (keyDown) {
         DEBUG(P("%s %d: KEY On"), __func__, __LINE__);
+        blinkCount = 0;
         cwTimeout = CW_TIMEOUT + millis(); // Restat timer
         return;
     } 
       
     if (inPtt && inTx) { // Check PTT
         DEBUG(P("%s %d: PTT"), __func__, __LINE__);
+        blinkCount = 0;
         cwTimeout = CW_TIMEOUT + millis(); // Restat timer
         // It is OK, to stop TX
         if (!isPttPressed()) { // Is PTT Not pushed, then end PTT
@@ -573,8 +584,21 @@ void checkTX() {
 // -------------------------------------------------------------
 int isPttPressed() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    pinMode(TX_RX, INPUT); digitalWrite(TX_RX, 1); // With pull-up!
+    pinMode(TX_RX, INPUT);
+    digitalWrite(TX_RX, 1); // With pull-up!
     return !digitalRead(TX_RX); // Is PTT pushed  
+}
+void changeToReceive() {
+    DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
+    stopSidetone();
+    pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
+    pinMode(TX_RX, INPUT);  digitalWrite(TX_RX, 1); // With pull-up!
+}
+
+void changeToTransmit() {
+    DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
+    pinMode(TX_RX, OUTPUT);
+    digitalWrite(TX_RX, 0);
 }
 
 int isKeyNowClosed() {
@@ -594,20 +618,10 @@ void startSidetone() {
 
 void stopSidetone() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
+    pinMode(CW_KEY, OUTPUT);
     digitalWrite(CW_KEY, 0); // stop the side-tone
 }
 
-void changeToTransmit() {
-    DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 0);
-}
-
-void changeToReceive() {
-    DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    stopSidetone();
-    pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
-    pinMode(TX_RX, INPUT);  digitalWrite(TX_RX, 1); // With pull-up!
-}
 
 // ###############################################################################
 int btnDown(){
@@ -791,14 +805,14 @@ void decodeBandUpDown(int dir) {
 // ###############################################################################
 void decodeSideBandMode(int btn) {
     
-       if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
-   
-       sideBandMode++;
-       sideBandMode %= 3; // Limit to Three Modes
-       setSideband();
-       printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
-       delay(100);
-       deDounceBtnRelease(); // Wait for Release
+    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+
+    sideBandMode++;
+    sideBandMode %= 3; // Limit to Three Modes
+    setSideband();
+    printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
+    delay(100);
+    deDounceBtnRelease(); // Wait for Release
 }
 
 
@@ -809,7 +823,7 @@ void decodeMoveCursor(int dir) {
       if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
-      freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable          
+      freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable     
       refreshDisplay++;
 }
 
@@ -826,33 +840,33 @@ void decodeAux(int btn) {
 
 // ###############################################################################
 int getButtonPushMode(int btn) {
-  int t1, t2, tbtn;
+    int t1, t2, tbtn;
   
-  t1 = t2 = 0;
+    t1 = t2 = 0;
 
-  // Time for first press
-  tbtn = btnDown();
-  while (t1 < 20 && btn == tbtn){
+    // Time for first press
     tbtn = btnDown();
-    if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
-    if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
-    if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
-    delay(50);
-    t1++;
-  }
-  // Time between presses
-  while (t2 < 10 && !tbtn){
-    tbtn = btnDown();
-    if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
-    if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
-    if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
-    delay(50);
-    t2++;
-  }
+    while (t1 < 20 && btn == tbtn){
+        tbtn = btnDown();
+        if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
+        if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
+        if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
+        delay(50);
+        t1++;
+    }
+    // Time between presses
+    while (t2 < 10 && !tbtn){
+        tbtn = btnDown();
+        if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
+        if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
+        if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
+        delay(50);
+        t2++;
+    }
 
-  if (t1 > 10) return LONG_PRESS;
-  if (t2 < 7) return DOUBLE_PRESS; 
-  return MOMENTARY_PRESS; 
+    if (t1 > 10) return LONG_PRESS;
+    if (t2 < 7) return DOUBLE_PRESS; 
+    return MOMENTARY_PRESS; 
 }
 
 
@@ -914,9 +928,9 @@ void decodeFN(int btn) {
 // ###############################################################################
 void setFreq(unsigned long freq) {
 
-  if (!inTx && ritOn) freq += ritVal;
-  freq += isLSB ? iFreqLSB : iFreqUSB;
-  vfo->setFrequency(freq);
+    if (!inTx && ritOn) freq += ritVal;
+    freq += isLSB ? iFreqLSB : iFreqUSB;
+    vfo->setFrequency(freq);
 }
 
 
@@ -975,29 +989,27 @@ void setup() {
   // This will print some debugging info to the serial console.
   vfo->debugSi570();
 
-  //set the initial frequency
+  // Setup the initial frequency
   vfo->setFrequency(frequency);
  
-  //set up the pins
-  pinMode(LSB, OUTPUT);
-  pinMode(CW_KEY, OUTPUT);
-  pinMode(PA_BAND_CLK, OUTPUT);
+  // Setup with No SideTone
+  stopSidetone();
 
-  //set the side-tone off, put the transceiver to receive mode
-  digitalWrite(CW_KEY, 0);
+  // Setup in Receive Mode
+  changeToReceive();
   
-  pinMode(TX_RX, INPUT);
-  digitalWrite(TX_RX, 1); //old way to enable the built-in pull-ups
-  
+  // Setup to read Tuning POT
   pinMode(ANALOG_TUNING, INPUT);
   digitalWrite(ANALOG_TUNING, 1); //old way to enable the built-in pull-ups
   
+  // Setup to read Buttons
   pinMode(FN_PIN, INPUT);
   digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
   
   DEBUG(P("Pre Load EEPROM"));
   loadUserPerferences();
   
+  // Setup the First Tuning POT Position
   tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
   refreshDisplay++; 
 }
