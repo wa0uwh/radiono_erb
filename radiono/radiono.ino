@@ -44,7 +44,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FL"              // Incremental Rev Code
+#define INC_REV "ERB_FM"          // Incremental Rev Code
 
 
 /*
@@ -585,8 +585,8 @@ void checkTX() {
 // -------------------------------------------------------------
 int isPttPressed() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    pinMode(TX_RX, INPUT);
-    digitalWrite(TX_RX, 1); // With pull-up!
+    //pinMode(TX_RX, INPUT);
+    //digitalWrite(TX_RX, 1); // With pull-up!
     return !digitalRead(TX_RX); // Is PTT pushed  
 }
 void changeToReceive() {
