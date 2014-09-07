@@ -44,7 +44,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FK"              // Incremental Rev Code
+#define INC_REV "FL"              // Incremental Rev Code
 
 
 /*
@@ -283,9 +283,9 @@ void updateDisplay(){
       
       sprintf(c, P("%3s%1s %-2s %3.3s"),
           isLSB ? P2("LSB") : P2("USB"),
-          sideBandMode > 0 ? P4("*") : P4(" "),
-          inTx ? (inPtt ? P8("PT") : P8("CW")) : P8("RX"),
-          freqUnStable ? " " : vfoStatus[vfo->status]
+          sideBandMode > 0 ? P3("*") : P3(" "),
+          inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
+          freqUnStable ? P8(" ") : vfoStatus[vfo->status]
           );
       printLine2CEL(c);
       
@@ -460,24 +460,25 @@ void checkTuning() {
 int inBandLimits(unsigned long freq){
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
-    static unsigned long freqPrev = 0;
-    static byte bandPrev = 0;
+    //static unsigned long freqPrev = 0;
+    //static byte bandPrev = 0;
     int upper, lower = 0;
     
        if (AltTxVFO) freq = (vfoActive == VFO_A) ? vfoB : vfoA;
        DEBUG(P("%s %d: A,B: %lu, %lu, %lu"), __func__, __LINE__, freq, vfoA, vfoB);
        
        //if (freq == freqPrev) return bandPrev;
-       freqPrev = freq;
+       //freqPrev = freq;
        
        for (int band = 0; band < BANDS; band++) {
          lower = band * 2;
          upper = lower + 1;
          if (freq >= pgm_read_dword(&bandLimits[lower]) &&
              freq <= pgm_read_dword(&bandLimits[upper]) ) {
-             bandPrev = ++band;
+             band++;
+             //bandPrev = band;
              DEBUG(P("In Band %d"), band);
-             return bandPrev;
+             return band;
              }
        }
        DEBUG(P("Out Of Band"));
