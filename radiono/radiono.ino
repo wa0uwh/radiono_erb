@@ -44,7 +44,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FK_01"              // Incremental Rev Code
+#define INC_REV "FL"              // Incremental Rev Code
 
 
 /*
