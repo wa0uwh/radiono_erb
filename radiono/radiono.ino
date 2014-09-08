@@ -44,8 +44,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ERB_FM"          // Incremental Rev Code
+#define INC_REV "ERB_FN"          // Incremental Rev Code
 
+//#define USE_PCA9546	1             // Define this symbol to include PCA9546 support
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -62,6 +63,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 #include <avr/io.h>
 #include "A1Main.h"
+#ifdef USE_PCA9546
+  #include "PCA9546.h"
+#endif
 #include "Si570.h"
 #include "debug.h"
 #include "NonVol.h"
@@ -82,7 +86,10 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
     14           8             D7           14
 */
 
-#define SI570_I2C_ADDRESS 0x55
+#ifdef USE_PCA9546
+  #define PCA9546_I2C_ADDRESS 0x70
+#endif
+#define SI570_I2C_ADDRESS   0x55
 
 // USB and LSB IF frequencies
 #define IF_FREQ_USB   (19997000L)
@@ -135,7 +142,9 @@ enum VFOs { // Available VFOs
 #define ANALOG_TUNING (A2)
 #define ANALOG_KEYER (A1)
 
-
+#ifdef USE_PCA9546
+PCA9546 *mux;
+#endif
 Si570 *vfo;
 LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 
@@ -585,8 +594,6 @@ void checkTX() {
 // -------------------------------------------------------------
 int isPttPressed() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    //pinMode(TX_RX, INPUT);
-    //digitalWrite(TX_RX, 1); // With pull-up!
     return !digitalRead(TX_RX); // Is PTT pushed  
 }
 void changeToReceive() {
@@ -972,6 +979,15 @@ void setup() {
   //printLine2CLE(c);
   //delay(2000);
   
+#ifdef USE_PCA9546
+  // Initialize the PCA9546 multiplexer and select channel 1
+  mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
+  if (mux->status == PCA9546_ERROR)
+  {
+    printLine2CEL(P("PCA9546 init error"));
+    delay(3000);
+  }
+#endif
 
   // The library automatically reads the factory calibration settings of your Si570
   // but it needs to know for what frequency it was calibrated for.
