@@ -44,7 +44,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ERB_FN"          // Incremental Rev Code
+#define INC_REV "ERB_FO"          // Incremental Rev Code
 
 //#define USE_PCA9546	1             // Define this symbol to include PCA9546 support
 
@@ -350,7 +350,9 @@ void updateCursor(int blinkRateMS) {
 
 // ###############################################################################
 void setSideband(){
-    
+
+  if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+
   switch(sideBandMode) {
     case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 10000000UL) ? 1 : 0 ; break; // Automatic Side Band Mode
     case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
@@ -363,7 +365,9 @@ void setSideband(){
  
 // ###############################################################################
 void setBandswitch(unsigned long freq){ 
-    
+
+  if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+
   if (freq >= 15000000UL) digitalWrite(BAND_HI_PIN, 1);
   else digitalWrite(BAND_HI_PIN, 0);
 }
