@@ -31,12 +31,12 @@ bool PCA9546::selectChannel(uint8_t channel)
   if (channel <= 0xf)
   {
     i2c_write(channel);
-    debug(P("Successfully selected PCA9546 channel"));
+    DEBUG(P("Successfully selected PCA9546 channel"));
     status = PCA9546_SUCCESS;
   }
   else
   {
-    debug(P("PCA9546 channel selection failed"));
+    DEBUG(P("PCA9546 channel selection failed"));
     status = PCA9546_ERROR;
   }
   return (PCA9546_SUCCESS == status);
