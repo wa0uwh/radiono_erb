@@ -44,7 +44,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ERB_FM"          // Incremental Rev Code
+#define INC_REV "ERB_FO"          // Incremental Rev Code
 
 //#define USE_PCA9546	1             // Define this symbol to include PCA9546 support
 
