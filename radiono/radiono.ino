@@ -36,6 +36,7 @@
  *   Added New Cursor Blink Strategy
  *   Added Some new LCD Display Format Functions
  *   Added Idle Timeout for Blinking Cursor
+ *   Added Sideband Toggle while in Edit-IF-Mode
  *
  */
 
@@ -44,7 +45,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ERB_FO"          // Incremental Rev Code
+#define INC_REV "ERB_FP"          // Incremental Rev Code
 
 //#define USE_PCA9546	1             // Define this symbol to include PCA9546 support
 
@@ -735,15 +736,18 @@ void toggleAltTxVFO() {
 // ###############################################################################
 void decodeEditIf() {  // Set the IF Frequency
     static int vfoActivePrev = VFO_A;
+    static boolean sbActivePrev;
 
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
         frequency += ritVal;
         isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
+        isLSB = sbActivePrev;
         frequency = (vfoActivePrev == VFO_A) ? vfoA : vfoB;
     }
     else {  // Save Current VFO, Load IF Freq 
         vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
         vfoActivePrev = vfoActive;
+        sbActivePrev = isLSB;
         frequency = isLSB ? iFreqLSB : iFreqUSB;
     }
     editIfMode = !editIfMode;  // Toggle Edit IF Mode
@@ -816,15 +820,23 @@ void decodeBandUpDown(int dir) {
 
 // ###############################################################################
 void decodeSideBandMode(int btn) {
-    
-    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 
-    sideBandMode++;
-    sideBandMode %= 3; // Limit to Three Modes
-    setSideband();
-    printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
-    delay(100);
-    deDounceBtnRelease(); // Wait for Release
+    DEBUG(P("\nCurrent, isLSB %d"), isLSB);
+    if (editIfMode) { // Switch Sidebands
+        isLSB = !isLSB;
+        frequency = isLSB ? iFreqLSB : iFreqUSB;
+    }
+    else {
+        sideBandMode++;
+        sideBandMode %= 3; // Limit to Three Modes
+        setSideband();
+    }
+
+    DEBUG(P("Toggle, isLSB %d"), isLSB);
+    refreshDisplay++;
+    updateDisplay();
 }
 
 
