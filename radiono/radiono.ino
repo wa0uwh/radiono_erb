@@ -45,7 +45,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ERB_FQ"          // Incremental Rev Code
+#define INC_REV "ERB_FR"          // Incremental Rev Code
 
 //#define USE_PCA9546	1             // Define this symbol to include PCA9546 support
 
@@ -350,7 +350,7 @@ void updateCursor(int blinkRateMS) {
 }
 
 // ###############################################################################
-void setSideband(){
+void decodeSideband(){
 
   if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
 
@@ -358,7 +358,12 @@ void setSideband(){
     case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 10000000UL) ? 1 : 0 ; break; // Automatic Side Band Mode
     case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
     case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
-  } 
+  }
+  setSideband();
+}
+
+// -------------------------------------------------------------------------------
+void setSideband(){  
   pinMode(LSB, OUTPUT);
   digitalWrite(LSB, isLSB);
 }
@@ -814,7 +819,7 @@ void decodeBandUpDown(int dir) {
      
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    ritOn = ritVal = 0;
-   setSideband();
+   decodeSideband();
 }
 
 
@@ -826,14 +831,16 @@ void decodeSideBandMode(int btn) {
     DEBUG(P("\nCurrent, isLSB %d"), isLSB);
     if (editIfMode) { // Switch Sidebands
         frequency += ritVal;
+        ritVal = 0;
         isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
         isLSB = !isLSB;
         frequency = isLSB ? iFreqLSB : iFreqUSB;
+        setSideband();
     }
     else {
         sideBandMode++;
         sideBandMode %= 3; // Limit to Three Modes
-        setSideband();
+        decodeSideband();
     }
 
     DEBUG(P("Toggle, isLSB %d"), isLSB);
@@ -1069,7 +1076,7 @@ void loop(){
       vfo->setFrequency(freq);
   } else setFreq(frequency);
   
-  setSideband();
+  decodeSideband();
   setBandswitch(frequency);
   setRf386BandSignal(frequency);
   
