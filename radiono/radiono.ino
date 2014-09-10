@@ -18,6 +18,8 @@
  *
  * Modified by: Jeff Witlatch - KO7M - Copyright (C) 2014
  *   Added 1Hz VFO Resolution
+ *   Added Support for PCA9546 I2C Mux
+ *   Added Support for I2C LCD
  *
  * Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
  *   Added An Alternate Tuning Method, with Cursor and POT
@@ -45,19 +47,27 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ERB_FR"          // Incremental Rev Code
+#define INC_REV "ko7m-AC"         // Incremental Rev Code
+#define INC_REV "ERB_FQ"          // Incremental Rev Code
 
-//#define USE_PCA9546	1             // Define this symbol to include PCA9546 support
+//#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
+//#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
  * the Arduino environment knows we need it.
  */
 #include <Wire.h>
-#include <LiquidCrystal.h>
+#ifndef USE_I2C_LCD
+  #include <LiquidCrystal.h>
+#else
+  #include <LiquidTWI.h>
+#endif
 
 #define LCD_COL (16)
 #define LCD_ROW (2)
+//#define LCD_COL (20)
+//#define LCD_ROW (4)
 #define LCD_STR_CEL "%-16.16s"
 //#define LCD_STR_CEL "%-20.20s"  // For 20 Character LCD Display
 
@@ -73,19 +83,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #include "Rf386.h"
 #include "MorseCode.h"
 #include "Macro.h"
-
-
-
-/*
- The 16x2 LCD is connected as follows:
-    LCD's PIN   Raduino's PIN  PURPOSE      ATMEGA328's PIN
-    4           13             Reset LCD    19
-    6           12             Enable       18
-    11          10             D4           17
-    12          11             D5           16
-    13           9             D6           15
-    14           8             D7           14
-*/
 
 #ifdef USE_PCA9546
   #define PCA9546_I2C_ADDRESS 0x70
@@ -147,7 +144,11 @@ enum VFOs { // Available VFOs
 PCA9546 *mux;
 #endif
 Si570 *vfo;
-LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+#ifndef USE_I2C_LCD
+  LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+#else
+  LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
+#endif
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
 unsigned long iFreqUSB = IF_FREQ_USB;
@@ -981,6 +982,16 @@ void setup() {
   Serial.begin(115200);
   debug(P("%s Radiono - Rev: %s"), __func__, P2(RADIONO_VERSION));
 
+#ifdef USE_PCA9546
+  // Initialize the PCA9546 multiplexer and select channel 1 
+  mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
+  if (mux->status == PCA9546_ERROR)
+  {
+    printLine2(P("PCA9546 init error"));
+    delay(3000);
+  }
+#endif
+
   lcd.begin(LCD_COL, LCD_ROW);
   cursorOff();
   printLine1(P("Farhan - Minima"));
@@ -1003,16 +1014,7 @@ void setup() {
   //sprintf(c, P("F: %-13.13s"), P2(__FILE__));
   //printLine2CLE(c);
   //delay(2000);
-  
-#ifdef USE_PCA9546
-  // Initialize the PCA9546 multiplexer and select channel 1
-  mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
-  if (mux->status == PCA9546_ERROR)
-  {
-    printLine2CEL(P("PCA9546 init error"));
-    delay(3000);
-  }
-#endif
+
 
   // The library automatically reads the factory calibration settings of your Si570
   // but it needs to know for what frequency it was calibrated for.

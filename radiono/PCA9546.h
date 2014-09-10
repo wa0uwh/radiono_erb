@@ -14,6 +14,7 @@ typedef enum
   PCA9546_SUCCESS
 } PCA9546_Status;
 
+#define PCA9546_NOCHANNEL (0)   // No channel selected
 #define PCA9546_CHANNEL_1 (1)	// Bit 1
 #define PCA9546_CHANNEL_2 (2)	// Bit 2
 #define PCA9546_CHANNEL_3 (4)	// Bit 3
@@ -22,14 +23,15 @@ typedef enum
 class PCA9546
 {
 public:
+  PCA9546(uint8_t i2c_address);
   PCA9546(uint8_t i2c_address, uint8_t channel);
-
+  bool selectChannel(uint8_t channel);
+  
   PCA9546_Status status;
   uint8_t channel;
 
 private:
   uint8_t i2c_address;
-  bool selectChannel(uint8_t channel);
   uint8_t i2c_read();
   void i2c_write(uint8_t data);
 };
