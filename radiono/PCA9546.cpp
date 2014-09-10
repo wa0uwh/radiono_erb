@@ -15,6 +15,15 @@
 #define DEBUG(x ...)  // Default to NO debug    
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 
+// Initialize the PCA9546 and disable all channels
+PCA9546::PCA9546(uint8_t PCA9546_address)
+{ 
+  i2c_address = PCA9546_address;
+
+  Wire.begin();
+  selectChannel(PCA9546_NOCHANNEL);
+}
+
 // Initialize the PCA9546 and enable the channel(s) indicated
 PCA9546::PCA9546(uint8_t PCA9546_address, uint8_t channel)
 { 
@@ -27,7 +36,7 @@ PCA9546::PCA9546(uint8_t PCA9546_address, uint8_t channel)
 // Send a channel selection word to the PCA9546
 bool PCA9546::selectChannel(uint8_t channel)
 {
-  // Sanity check value passed.  Only least significant 4 bits vali
+  // Sanity check value passed.  Only least significant 4 bits valid
   if (channel <= 0xf)
   {
     i2c_write(channel);
