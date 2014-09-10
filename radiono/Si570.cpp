@@ -19,41 +19,6 @@
 #define DEBUG(x ...)  // Default to NO debug    
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 
-/*
-// Debug output
-static void debug(char const *fmt, ... ) 
-{
-  char tmp[128]; // resulting string limited to 128 chars
-  va_list args;
-  va_start (args, fmt );
-  vsnprintf(tmp, sizeof(tmp), fmt, args);
-  va_end (args);
-  Serial.println(tmp);
-}
-
-// Debug output without outputting a newline
-static void debugx(char const *fmt, ... ) 
-{
-  char tmp[128]; // resulting string limited to 128 chars
-  va_list args;
-  va_start (args, fmt );
-  vsnprintf(tmp, sizeof(tmp), fmt, args);
-  va_end (args);
-  Serial.print(tmp);
-}
-
-// Memory dump 
-static void dump(const void *mem, int n)
-{
-  const unsigned char *p = reinterpret_cast<const unsigned char *>( mem );
-  for (int i = 0; i < n; i++)
-  {
-    debugx("%02x", p[i]);
-  }
-  debug("");
-}
-*/
-
 // Initialize the Si570 and determine its internal crystal frequency given the default output frequency
 Si570::Si570(uint8_t si570_address, uint32_t calibration_frequency) 
 {
