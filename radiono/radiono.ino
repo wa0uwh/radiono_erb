@@ -48,7 +48,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FR"          // Incremental Rev Code
+#define INC_REV "ERB_FR.01"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -68,7 +68,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define LCD_ROW (2)
 //#define LCD_COL (20)
 //#define LCD_ROW (4)
-#define LCD_STR_CEL "%-16.16s"
+#define LCD_STR_CEL "%-16.16s"    // Fmt to implement Clear to End of Line
 //#define LCD_STR_CEL "%-20.20s"  // For 20 Character LCD Display
 
 
@@ -173,7 +173,6 @@ int tuningPositionDelta = 0;
 int cursorDigitPosition = 0;
 int tuningPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
-char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 byte sideBandMode = 0;
 
 boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
@@ -247,18 +246,18 @@ void printLine2(char const *c){
 
 // Print LCD Line1 with Clear to End of Line
 void printLine1CEL(char const *c){
-    char buf[16];   
+    char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
-    
+
     sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, 0, lbuf);
 }
 
 // Print LCD Line2 with Clear to End of Line
 void printLine2CEL(char const *c){
-    char buf[16];  
+    char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
-    
+
     sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, 1, lbuf);
 }
@@ -294,7 +293,7 @@ void updateDisplay(){
       
       sprintf(c, P("%3s%1s %-2s %3.3s"),
           isLSB ? P2("LSB") : P2("USB"),
-          sideBandMode > 0 ? P3("*") : P3(" "),
+          sideBandMode ? P3("*") : P3(" "),
           inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
           freqUnStable ? P8(" ") : vfoStatus[vfo->status]
           );
@@ -994,8 +993,7 @@ void setup() {
   mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
   if (mux->status == PCA9546_ERROR)
   {
-    printLine2(P("PCA9546 init error"));
-    delay(3000);
+    debug(P("PCA9546 init error"));
   }
 #endif
 
