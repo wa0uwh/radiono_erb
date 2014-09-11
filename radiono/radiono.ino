@@ -163,7 +163,7 @@ char blinkChar[2];
 
 /* tuning pot stuff */
 byte refreshDisplay = 0;
-int blinkCount = 0;
+unsigned int blinkCount = 0;
 
 int tuningDir = 0;
 int tuningPosition = 0;
@@ -323,25 +323,32 @@ void cursorOff() {
 void updateCursor() {updateCursor(800);}
 
 void updateCursor(int blinkRateMS) {
-#define BLINK (75) // ON Percent
+#define DEBUG(x...)
+//#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
+#define BLINK (75) // ON Percen
+#define BLINK_TIMEOUT (5) // In Minutes
   static unsigned long blinkInterval = 0;
   static boolean toggle = false;
     
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
   if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
-   
+  
+  DEBUG(P("\nStart Blink"));
   if (blinkInterval < millis()) { // Wink OFF
+      DEBUG(P("Wink OFF"));
       blinkInterval = millis() + blinkRateMS;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(P(" ")); 
       toggle = true;
   } 
   else if ((blinkInterval - (blinkRateMS/100*BLINK)) < millis() && toggle) { // Wink ON
+      DEBUG(P("Wink ON, %d %d"), (BLINK_TIMEOUT * 600/BLINK * 10), blinkCount);
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(blinkChar);
-      if (++blinkCount > 15 * 6000/BLINK) { // Stop Blink after Idle period, Minutes * 6000/BLINK 
+      if (++blinkCount > (BLINK_TIMEOUT * 600/BLINK * 10)) { // Stop Blink after Idle period, Minutes * 6000/BLINK 
+          DEBUG(P("End Blink TIMED OUT"));
           cursorDigitPosition = 0;
           refreshDisplay++;
           updateDisplay();
