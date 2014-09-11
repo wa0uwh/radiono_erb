@@ -18,6 +18,8 @@
  *
  * Modified by: Jeff Witlatch - KO7M - Copyright (C) 2014
  *   Added 1Hz VFO Resolution
+ *   Added Support for PCA9546 I2C Mux
+ *   Added Support for I2C LCD
  *
  * Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
  *   Added An Alternate Tuning Method, with Cursor and POT
@@ -36,6 +38,7 @@
  *   Added New Cursor Blink Strategy
  *   Added Some new LCD Display Format Functions
  *   Added Idle Timeout for Blinking Cursor
+ *   Added Sideband Toggle while in Edit-IF-Mode
  *
  */
 
@@ -44,24 +47,36 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "FK"              // Incremental Rev Code
+#define INC_REV "ko7m-AC"         // Incremental Rev Code
+#define INC_REV "ERB_FQ"          // Incremental Rev Code
 
+//#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
+//#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
  * the Arduino environment knows we need it.
  */
 #include <Wire.h>
-#include <LiquidCrystal.h>
+#ifndef USE_I2C_LCD
+  #include <LiquidCrystal.h>
+#else
+  #include <LiquidTWI.h>
+#endif
 
 #define LCD_COL (16)
 #define LCD_ROW (2)
+//#define LCD_COL (20)
+//#define LCD_ROW (4)
 #define LCD_STR_CEL "%-16.16s"
 //#define LCD_STR_CEL "%-20.20s"  // For 20 Character LCD Display
 
 
 #include <avr/io.h>
 #include "A1Main.h"
+#ifdef USE_PCA9546
+  #include "PCA9546.h"
+#endif
 #include "Si570.h"
 #include "debug.h"
 #include "NonVol.h"
@@ -69,20 +84,10 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #include "MorseCode.h"
 #include "Macro.h"
 
-
-
-/*
- The 16x2 LCD is connected as follows:
-    LCD's PIN   Raduino's PIN  PURPOSE      ATMEGA328's PIN
-    4           13             Reset LCD    19
-    6           12             Enable       18
-    11          10             D4           17
-    12          11             D5           16
-    13           9             D6           15
-    14           8             D7           14
-*/
-
-#define SI570_I2C_ADDRESS 0x55
+#ifdef USE_PCA9546
+  #define PCA9546_I2C_ADDRESS 0x70
+#endif
+#define SI570_I2C_ADDRESS   0x55
 
 // USB and LSB IF frequencies
 #define IF_FREQ_USB   (19997000L)
@@ -135,9 +140,15 @@ enum VFOs { // Available VFOs
 #define ANALOG_TUNING (A2)
 #define ANALOG_KEYER (A1)
 
-
+#ifdef USE_PCA9546
+PCA9546 *mux;
+#endif
 Si570 *vfo;
-LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+#ifndef USE_I2C_LCD
+  LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+#else
+  LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
+#endif
 
 unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
 unsigned long iFreqUSB = IF_FREQ_USB;
@@ -283,9 +294,9 @@ void updateDisplay(){
       
       sprintf(c, P("%3s%1s %-2s %3.3s"),
           isLSB ? P2("LSB") : P2("USB"),
-          sideBandMode > 0 ? P4("*") : P4(" "),
-          inTx ? (inPtt ? P8("PT") : P8("CW")) : P8("RX"),
-          freqUnStable ? " " : vfoStatus[vfo->status]
+          sideBandMode > 0 ? P3("*") : P3(" "),
+          inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
+          freqUnStable ? P8(" ") : vfoStatus[vfo->status]
           );
       printLine2CEL(c);
       
@@ -340,13 +351,20 @@ void updateCursor(int blinkRateMS) {
 }
 
 // ###############################################################################
-void setSideband(){
-    
+void decodeSideband(){
+
+  if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+
   switch(sideBandMode) {
     case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 10000000UL) ? 1 : 0 ; break; // Automatic Side Band Mode
     case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
     case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
-  } 
+  }
+  setSideband();
+}
+
+// -------------------------------------------------------------------------------
+void setSideband(){  
   pinMode(LSB, OUTPUT);
   digitalWrite(LSB, isLSB);
 }
@@ -354,7 +372,9 @@ void setSideband(){
  
 // ###############################################################################
 void setBandswitch(unsigned long freq){ 
-    
+
+  if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+
   if (freq >= 15000000UL) digitalWrite(BAND_HI_PIN, 1);
   else digitalWrite(BAND_HI_PIN, 0);
 }
@@ -460,24 +480,25 @@ void checkTuning() {
 int inBandLimits(unsigned long freq){
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
-    static unsigned long freqPrev = 0;
-    static byte bandPrev = 0;
+    //static unsigned long freqPrev = 0;
+    //static byte bandPrev = 0;
     int upper, lower = 0;
     
        if (AltTxVFO) freq = (vfoActive == VFO_A) ? vfoB : vfoA;
        DEBUG(P("%s %d: A,B: %lu, %lu, %lu"), __func__, __LINE__, freq, vfoA, vfoB);
        
        //if (freq == freqPrev) return bandPrev;
-       freqPrev = freq;
+       //freqPrev = freq;
        
        for (int band = 0; band < BANDS; band++) {
          lower = band * 2;
          upper = lower + 1;
          if (freq >= pgm_read_dword(&bandLimits[lower]) &&
              freq <= pgm_read_dword(&bandLimits[upper]) ) {
-             bandPrev = ++band;
+             band++;
+             //bandPrev = band;
              DEBUG(P("In Band %d"), band);
-             return bandPrev;
+             return band;
              }
        }
        DEBUG(P("Out Of Band"));
@@ -584,8 +605,6 @@ void checkTX() {
 // -------------------------------------------------------------
 int isPttPressed() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    pinMode(TX_RX, INPUT);
-    digitalWrite(TX_RX, 1); // With pull-up!
     return !digitalRead(TX_RX); // Is PTT pushed  
 }
 void changeToReceive() {
@@ -723,15 +742,18 @@ void toggleAltTxVFO() {
 // ###############################################################################
 void decodeEditIf() {  // Set the IF Frequency
     static int vfoActivePrev = VFO_A;
+    static boolean sbActivePrev;
 
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
         frequency += ritVal;
         isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
+        isLSB = sbActivePrev;
         frequency = (vfoActivePrev == VFO_A) ? vfoA : vfoB;
     }
     else {  // Save Current VFO, Load IF Freq 
         vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
         vfoActivePrev = vfoActive;
+        sbActivePrev = isLSB;
         frequency = isLSB ? iFreqLSB : iFreqUSB;
     }
     editIfMode = !editIfMode;  // Toggle Edit IF Mode
@@ -798,21 +820,33 @@ void decodeBandUpDown(int dir) {
      
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    ritOn = ritVal = 0;
-   setSideband();
+   decodeSideband();
 }
 
 
 // ###############################################################################
 void decodeSideBandMode(int btn) {
-    
-    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 
-    sideBandMode++;
-    sideBandMode %= 3; // Limit to Three Modes
-    setSideband();
-    printLine2CEL((char *)pgm_read_word(&sideBandText[sideBandMode]));
-    delay(100);
-    deDounceBtnRelease(); // Wait for Release
+    DEBUG(P("\nCurrent, isLSB %d"), isLSB);
+    if (editIfMode) { // Switch Sidebands
+        frequency += ritVal;
+        ritVal = 0;
+        isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
+        isLSB = !isLSB;
+        frequency = isLSB ? iFreqLSB : iFreqUSB;
+        setSideband();
+    }
+    else {
+        sideBandMode++;
+        sideBandMode %= 3; // Limit to Three Modes
+        decodeSideband();
+    }
+
+    DEBUG(P("Toggle, isLSB %d"), isLSB);
+    refreshDisplay++;
+    updateDisplay();
 }
 
 
@@ -948,6 +982,16 @@ void setup() {
   Serial.begin(115200);
   debug(P("%s Radiono - Rev: %s"), __func__, P2(RADIONO_VERSION));
 
+#ifdef USE_PCA9546
+  // Initialize the PCA9546 multiplexer and select channel 1 
+  mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
+  if (mux->status == PCA9546_ERROR)
+  {
+    printLine2(P("PCA9546 init error"));
+    delay(3000);
+  }
+#endif
+
   lcd.begin(LCD_COL, LCD_ROW);
   cursorOff();
   printLine1(P("Farhan - Minima"));
@@ -970,7 +1014,7 @@ void setup() {
   //sprintf(c, P("F: %-13.13s"), P2(__FILE__));
   //printLine2CLE(c);
   //delay(2000);
-  
+
 
   // The library automatically reads the factory calibration settings of your Si570
   // but it needs to know for what frequency it was calibrated for.
@@ -1034,7 +1078,7 @@ void loop(){
       vfo->setFrequency(freq);
   } else setFreq(frequency);
   
-  setSideband();
+  decodeSideband();
   setBandswitch(frequency);
   setRf386BandSignal(frequency);
   

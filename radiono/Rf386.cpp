@@ -5,6 +5,9 @@
 #include "A1Main.h"
 #include "debug.h"
 
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+
 void setRf386BandSignal(unsigned long freq){
   // This setup is compatable with the Minima RF386 RF Power Amplifier
   // See: http://www.hfsignals.org/index.php/RF386
@@ -28,7 +31,7 @@ void setRf386BandSignal(unsigned long freq){
   if (band == prevBand) return;
   prevBand = band;
   
-  debug(P("BandIndex = %d"), band);
+  DEBUG(P("BandIndex = %d"), band);
   pinMode(PA_BAND_CLK, OUTPUT);
   
   digitalWrite(PA_BAND_CLK, 1);  // Output Reset Pulse for PA Band Filter
