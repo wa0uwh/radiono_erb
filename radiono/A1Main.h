@@ -10,36 +10,20 @@
     #define BAND_LO_PIN (7)
     #define PA_BAND_CLK (7)
     
-    #define DEAD_ZONE (40)
-    
-    #define MENUS (15)
+    // Pin Numbers for analog inputs
+    #define FN_PIN (A3)
+    #define ANALOG_TUNING (A2)
+    #define ANALOG_KEYER (A1)
 
-    enum LCDDisplayLines {
+
+    enum LCD_DisplayLines {
         FIRST_LINE = 0,
         STATUS_LINE,
-        MEMU_PROMPT_LINE,
+        MENU_PROMPT_LINE,
         MENU_ITEM_LINE
     };
 
-    enum ButtonPressModes { // Button Press Modes
-        MOMENTARY_PRESS = 1,
-        DOUBLE_PRESS,
-        LONG_PRESS,
-        ALT_PRESS_FN,
-        ALT_PRESS_LT,
-        ALT_PRESS_RT,
-    };
-    
-    enum Buttons { // Button Numbers
-        FN_BTN = 1,
-        LT_CUR_BTN,
-        RT_CUR_BTN,
-        LT_BTN,
-        UP_BTN,
-        DN_BTN,
-        RT_BTN,
-    };
-    
+  
     #define DEBUG(x ...)  // Default to NO debug
     //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
  
@@ -59,12 +43,12 @@
     
     /* tuning pot stuff */  
     extern int tuningDir;
-    extern int tuningPosition;
+    extern int knobPosition;
     extern int tune2500Mode;
     extern int freqUnStable;
-    extern int tuningPositionDelta;
+    extern int knobPositionDelta;
     extern int cursorDigitPosition;
-    extern int tuningPositionPrevious;
+    extern int knobPositionPrevious;
     extern int cursorCol, cursorRow, cursorMode;
     extern char* const sideBandText[] PROGMEM;
     extern byte sideBandMode;
@@ -106,6 +90,7 @@
     extern int getButtonPushMode(int btn);
     extern void deDounceBtnRelease();
     extern int btnDown();
+    extern int doKnob();
     
     // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
     #define PBUFSIZE (66)
