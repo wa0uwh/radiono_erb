@@ -47,8 +47,8 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FR.01"          // Incremental Rev Code
+//#define INC_REV "ko7m-AC"         // Incremental Rev Code
+#define INC_REV "ERB_FRa.04"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -99,6 +99,15 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 #define MAX_FREQ (30000000UL)
 #define DEAD_ZONE (40)
+
+enum DisplayModes {
+    TUNER_MODE = 0,
+    MENU1_MODE,
+    MENU2_MODE,
+    MENU3_MODE,
+    MENU_LAST
+};
+
 
 enum ButtonPressModes { // Button Press Modes
     MOMENTARY_PRESS = 1,
@@ -165,6 +174,7 @@ char blinkChar[2];
 byte refreshDisplay = 0;
 unsigned int blinkCount = 0;
 
+byte displayMode = TUNER_MODE;
 int tuningDir = 0;
 int tuningPosition = 0;
 int tune2500Mode = 0;
@@ -232,39 +242,44 @@ void printLineXY(byte col, byte row, char const *c) {
     
     //snprintf(lbuf, sizeof(lbuf)-col, "%s", c);
     strncpy(lbuf, c, sizeof(lbuf)-col);
-    lcd.setCursor(col, row);
+    lcd.setCursor(col, row % LCD_ROW);
     lcd.print(lbuf);
 }
 
-void printLine1(char const *c){
-    printLineXY(0, 0, c);
+// -------------------------------------------------------------------------------
+void printLine(int row, char const *c){
+    printLineXY(0, row, c);
 }
 
-void printLine2(char const *c){
-    printLineXY(0, 1, c);
-}
-
-// Print LCD Line1 with Clear to End of Line
-void printLine1CEL(char const *c){
+// -------------------------------------------------------------------------------
+// Print LCD Row with Clear to End of Line
+void printLineCEL(int row, char const *c){
     char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
 
     sprintf(lbuf, P(LCD_STR_CEL), c);
-    printLineXY(0, 0, lbuf);
+    printLineXY(0, row, lbuf);
 }
-
-// Print LCD Line2 with Clear to End of Line
-void printLine2CEL(char const *c){
-    char buf[16];  // Used for local P() Function
-    char lbuf[LCD_COL+2];
-
-    sprintf(lbuf, P(LCD_STR_CEL), c);
-    printLineXY(0, 1, lbuf);
-}
-
 
 // ###############################################################################
 void updateDisplay(){
+
+    if (displayMode == TUNER_MODE) updateDisplayTuner();
+    else updateDisplayMenu(displayMode);
+}
+
+// -------------------------------------------------------------------------------
+void updateDisplayMenu(int menu){
+  if (refreshDisplay) {
+      refreshDisplay = 0;
+      sprintf(c, P("Menu%d:"), menu);
+      printLineCEL(MEMU_PROMPT_LINE, c);
+      printLineCEL(MENU_ITEM_LINE, P(" "));
+  }
+}
+
+// ###############################################################################
+void updateDisplayTuner(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
   char d[6]; // Buffer for RIT Display Value
   char *vfoLabel;
@@ -286,7 +301,7 @@ void updateDisplay(){
           inTx ? P4(" ") : ritOn ? d : P4(" "),
           tune2500Mode ? P8("*"): P8(" ")
           );
-      printLine1CEL(c);
+      printLineCEL(FIRST_LINE, c);
       
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);   
       sprintf(blinkChar, "%1.1s", c+cursorCol);  // Save Character to Blink
@@ -297,7 +312,7 @@ void updateDisplay(){
           inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
           freqUnStable ? P8(" ") : vfoStatus[vfo->status]
           );
-      printLine2CEL(c);
+      printLineCEL(STATUS_LINE, c);
       
   }
   updateCursor();
@@ -696,16 +711,55 @@ void deDounceBtnRelease() {
 
 // ###############################################################################
 void checkButton() {
+    switch(displayMode) {
+    case TUNER_MODE:  checkButtonTuner(); break;
+    case MENU1_MODE:
+    case MENU2_MODE:
+    case MENU3_MODE: checkButtonMenu(); break;
+    }
+}
+
+// ###############################################################################
+void checkButtonMenu() {
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+//#define DEBUG(x ...) debug(x)    // UnComment for Debug
+  int btn;
+
+  btn = btnDown();
+  if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
+
+  switch (btn) {
+    case 0: return; // Abort
+    case LT_CUR_BTN: printLineCEL(MENU_ITEM_LINE, P("Left"));  break;
+    case RT_CUR_BTN: printLineCEL(MENU_ITEM_LINE, P("Right")); break;
+    case UP_BTN: displayMode = constrain (displayMode+1, 1, MENU_LAST-1); break;
+    case DN_BTN: displayMode = constrain (displayMode-1, 1, MENU_LAST-1); break;
+    case RT_BTN: switch (getButtonPushMode(btn)) {
+            case DOUBLE_PRESS:    displayMode = TUNER_MODE; break;
+            default: return;
+    }
+    default: return;
+  }
+  DEBUG(P("%s %d: DisplayMode %d"), __func__, __LINE__, displayMode); 
+  refreshDisplay++;
+  updateDisplay();
+  deDounceBtnRelease(); // Wait for Button Release
+}
+
+
+// ###############################################################################
+void checkButtonTuner() {
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int btn;
   char buf[PBUFSIZE]; // A Local buf, used to pass mesg's to send messages
   
   if (inTx) return;    // Do Nothing if in TX-Mode
-  
+
   btn = btnDown();
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
-  
+
   switch (btn) {
     case 0: return; // Abort
     case FN_BTN: decodeFN(btn); break;  
@@ -724,6 +778,7 @@ void checkButton() {
     case DN_BTN: decodeBandUpDown(-1); break; // Band Down
     case RT_BTN: switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS: decodeTune2500Mode(); break;
+            case DOUBLE_PRESS:    displayMode = MENU1_MODE; break;
             case LONG_PRESS:      decodeEditIf(); break;
             case ALT_PRESS_LT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG1));  break;
             case ALT_PRESS_RT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG2));  break;    
@@ -731,7 +786,7 @@ void checkButton() {
             } break;
     //case 8: decodeAux(8); break; // Report Un-Used as AUX Buttons
     default: return;
-  }     
+  }
   refreshDisplay++;
   updateDisplay();
   deDounceBtnRelease(); // Wait for Button Release
@@ -872,7 +927,7 @@ void decodeAux(int btn) {
     
     //debug("%s btn %d", __func__, btn);
     sprintf(c, P("Btn: %.2d"), btn);
-    printLine2CEL(c);
+    printLineCEL(STATUS_LINE, c);
     delay(100);
     deDounceBtnRelease(); // Wait for Release
 }
@@ -948,12 +1003,12 @@ void decodeFN(int btn) {
        case VFO_A :
           vfoB = frequency + ritVal;
           sprintf(c, P("A%sB"), ritVal ? P2("+RIT>"): P2(">"));
-          printLine2CEL(c);
+          printLineCEL(STATUS_LINE, c);
           break;
        default :
           vfoA = frequency + ritVal;
           sprintf(c, P("B%sA"), ritVal ? P2("+RIT>"): P2(">"));
-          printLine2CEL(c);
+          printLineCEL(STATUS_LINE, c);
           break;
        }
        delay(100);
@@ -999,25 +1054,25 @@ void setup() {
 
   lcd.begin(LCD_COL, LCD_ROW);
   cursorOff();
-  printLine1(P("Farhan - Minima"));
-  printLine2(P("  Tranceiver"));
+  printLine(FIRST_LINE, P("Farhan - Minima"));
+  printLine(STATUS_LINE, P("  Tranceiver"));
   delay(2000);
   
   sprintf(b, P("Radiono %s"), P2(RADIONO_VERSION));
-  printLine1CEL(b);
+  printLineCEL(0, b);
   
   sprintf(b, P("Rev: %s"), P2(INC_REV));
-  printLine2CEL(b);
+  printLineCEL(STATUS_LINE, b);
   delay(2000);
   
   //sprintf(b, P("%s"), __DATE__); // Compile Date and Time
   //sprintf(c, "%3.3s%7.7s %5.5s", b, b+4, __TIME__);
-  //printLine2CEL(c);
+  //printLineCEL(STATUS_LINE, c);
   //delay(2000); 
   
   // Print just the File Name, Added by ERB
   //sprintf(c, P("F: %-13.13s"), P2(__FILE__));
-  //printLine2CLE(c);
+  //printLineCLE(STATUS_LINE, c);
   //delay(2000);
 
 
@@ -1029,11 +1084,11 @@ void setup() {
 
   if (vfo->status == SI570_ERROR) {
     // The Si570 is unreachable. Show an error for 3 seconds and continue.
-    printLine2CEL(P("Si570 comm error"));
+    printLineCEL(STATUS_LINE, P("Si570 comm error"));
     delay(3000);
   }
   
-  printLine2CEL(P(" "));
+  printLineCEL(STATUS_LINE, P(" "));
  
   // This will print some debugging info to the serial console.
   vfo->debugSi570();

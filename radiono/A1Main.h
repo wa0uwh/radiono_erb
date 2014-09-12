@@ -10,6 +10,13 @@
     #define BAND_LO_PIN (7)
     #define PA_BAND_CLK (7)
 
+    enum LCDDisplayLines {
+        FIRST_LINE = 0,
+        STATUS_LINE,
+        MEMU_PROMPT_LINE,
+        MENU_ITEM_LINE
+    };
+
     #define DEBUG(x ...)  // Default to NO debug
     //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
  
@@ -60,10 +67,8 @@
     // Functions From Main    
     extern void cursorOff();
     extern void printLineXY(byte x, byte y, char const *c);
-    extern void printLine1CEL(char const *c);
-    extern void printLine2CEL(char const *c);
-    extern void printLine1(char const *c);
-    extern void printLine2(char const *c);
+    extern void printLineCEL(int row, char const *c);
+    extern void printLine(int row, char const *c);
     extern void startSidetone();
     extern void stopSidetone();
     extern void changeToTransmit();

@@ -101,7 +101,7 @@ void eePromIO(int mode) {
         break;
     }
    
-    printLine2CEL(c);
+    printLineCEL(STATUS_LINE, c);
     delay(500);
     deDounceBtnRelease(); // Wait for Release
 } 
@@ -116,9 +116,9 @@ void loadUserPerferences() {
       
     // Check EEPROM for User Saved Preference, Load if available
     // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
-    printLine1CEL(P("User Pref:"));
+    printLineCEL(FIRST_LINE, P("User Pref:"));
     if (!btnDown()) eePromIO(EEP_LOAD);
-    else printLine2CEL(P("Factory Reset"));
+    else printLineCEL(STATUS_LINE, P("Factory Reset"));
     delay(500);
     deDounceBtnRelease(); // Wait for Button Release 
 }
