@@ -48,7 +48,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FRa.04"          // Incremental Rev Code
+#define INC_REV "ERB_FRa.06"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -83,6 +83,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #include "Rf386.h"
 #include "MorseCode.h"
 #include "Macro.h"
+#include "Menus.h"
 
 #ifdef USE_PCA9546
   #define PCA9546_I2C_ADDRESS 0x70
@@ -98,35 +99,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
 #define MAX_FREQ (30000000UL)
-#define DEAD_ZONE (40)
 
-enum DisplayModes {
-    TUNER_MODE = 0,
-    MENU1_MODE,
-    MENU2_MODE,
-    MENU3_MODE,
-    MENU_LAST
-};
-
-
-enum ButtonPressModes { // Button Press Modes
-    MOMENTARY_PRESS = 1,
-    DOUBLE_PRESS,
-    LONG_PRESS,
-    ALT_PRESS_FN,
-    ALT_PRESS_LT,
-    ALT_PRESS_RT,
-};
-
-enum Buttons { // Button Numbers
-    FN_BTN = 1,
-    LT_CUR_BTN,
-    RT_CUR_BTN,
-    LT_BTN,
-    UP_BTN,
-    DN_BTN,
-    RT_BTN,
-};
 
 enum SidebandModes { // Sideband Modes
     AUTO_SIDEBAND_MODE = 0,
@@ -174,7 +147,8 @@ char blinkChar[2];
 byte refreshDisplay = 0;
 unsigned int blinkCount = 0;
 
-byte displayMode = TUNER_MODE;
+byte menuActive = 0;
+byte menuPrev = 0;
 int tuningDir = 0;
 int tuningPosition = 0;
 int tune2500Mode = 0;
@@ -261,29 +235,14 @@ void printLineCEL(int row, char const *c){
     printLineXY(0, row, lbuf);
 }
 
+
 // ###############################################################################
 void updateDisplay(){
-
-    if (displayMode == TUNER_MODE) updateDisplayTuner();
-    else updateDisplayMenu(displayMode);
-}
-
-// -------------------------------------------------------------------------------
-void updateDisplayMenu(int menu){
-  if (refreshDisplay) {
-      refreshDisplay = 0;
-      sprintf(c, P("Menu%d:"), menu);
-      printLineCEL(MEMU_PROMPT_LINE, c);
-      printLineCEL(MENU_ITEM_LINE, P(" "));
-  }
-}
-
-// ###############################################################################
-void updateDisplayTuner(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
   char d[6]; // Buffer for RIT Display Value
   char *vfoLabel;
   
+ 
   if (refreshDisplay) {
       refreshDisplay = 0; 
       blinkCount = 0;
@@ -711,52 +670,13 @@ void deDounceBtnRelease() {
 
 // ###############################################################################
 void checkButton() {
-    switch(displayMode) {
-    case TUNER_MODE:  checkButtonTuner(); break;
-    case MENU1_MODE:
-    case MENU2_MODE:
-    case MENU3_MODE: checkButtonMenu(); break;
-    }
-}
-
-// ###############################################################################
-void checkButtonMenu() {
-#define DEBUG(x ...)
-//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
-//#define DEBUG(x ...) debug(x)    // UnComment for Debug
-  int btn;
-
-  btn = btnDown();
-  if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
-
-  switch (btn) {
-    case 0: return; // Abort
-    case LT_CUR_BTN: printLineCEL(MENU_ITEM_LINE, P("Left"));  break;
-    case RT_CUR_BTN: printLineCEL(MENU_ITEM_LINE, P("Right")); break;
-    case UP_BTN: displayMode = constrain (displayMode+1, 1, MENU_LAST-1); break;
-    case DN_BTN: displayMode = constrain (displayMode-1, 1, MENU_LAST-1); break;
-    case RT_BTN: switch (getButtonPushMode(btn)) {
-            case DOUBLE_PRESS:    displayMode = TUNER_MODE; break;
-            default: return;
-    }
-    default: return;
-  }
-  DEBUG(P("%s %d: DisplayMode %d"), __func__, __LINE__, displayMode); 
-  refreshDisplay++;
-  updateDisplay();
-  deDounceBtnRelease(); // Wait for Button Release
-}
-
-
-// ###############################################################################
-void checkButtonTuner() {
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int btn;
   char buf[PBUFSIZE]; // A Local buf, used to pass mesg's to send messages
   
   if (inTx) return;    // Do Nothing if in TX-Mode
-
+  
   btn = btnDown();
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
 
@@ -776,17 +696,16 @@ void checkButtonTuner() {
             } break;
     case UP_BTN: decodeBandUpDown(+1); break; // Band Up
     case DN_BTN: decodeBandUpDown(-1); break; // Band Down
-    case RT_BTN: switch (getButtonPushMode(btn)) { 
+    case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS: decodeTune2500Mode(); break;
-            case DOUBLE_PRESS:    displayMode = MENU1_MODE; break;
+            case DOUBLE_PRESS:    menuActive = menuPrev ? menuPrev : 5; refreshDisplay++; return;
             case LONG_PRESS:      decodeEditIf(); break;
             case ALT_PRESS_LT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG1));  break;
             case ALT_PRESS_RT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG2));  break;    
             default: return; // Do Nothing
-            } break;
-    //case 8: decodeAux(8); break; // Report Un-Used as AUX Buttons
-    default: return;
+            }
   }
+  if (btn) DEBUG(P("%s %d: btn %d, MenuActive %d"), __func__, __LINE__, btn, menuActive);
   refreshDisplay++;
   updateDisplay();
   deDounceBtnRelease(); // Wait for Button Release
@@ -1125,11 +1044,15 @@ void loop(){
   unsigned long freq;
   
   readTuningPot();
-  checkTuning();
+  
+   // Check if in Menu Mode
+  if (menuActive) doMenus(menuActive);
+  
+  if (!menuActive) checkTuning();
 
   checkTX();
   
-  checkButton();
+  if (!menuActive) checkButton();
 
   if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
       freq = frequency;
@@ -1142,8 +1065,8 @@ void loop(){
   setBandswitch(frequency);
   setRf386BandSignal(frequency);
   
-  updateDisplay();
-   
+  if (!menuActive) updateDisplay();
+  
 }
 
 // ###############################################################################

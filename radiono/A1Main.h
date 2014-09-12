@@ -9,6 +9,10 @@
     #define BAND_MD_PIN (6)
     #define BAND_LO_PIN (7)
     #define PA_BAND_CLK (7)
+    
+    #define DEAD_ZONE (40)
+    
+    #define MENUS (15)
 
     enum LCDDisplayLines {
         FIRST_LINE = 0,
@@ -17,6 +21,25 @@
         MENU_ITEM_LINE
     };
 
+    enum ButtonPressModes { // Button Press Modes
+        MOMENTARY_PRESS = 1,
+        DOUBLE_PRESS,
+        LONG_PRESS,
+        ALT_PRESS_FN,
+        ALT_PRESS_LT,
+        ALT_PRESS_RT,
+    };
+    
+    enum Buttons { // Button Numbers
+        FN_BTN = 1,
+        LT_CUR_BTN,
+        RT_CUR_BTN,
+        LT_BTN,
+        UP_BTN,
+        DN_BTN,
+        RT_BTN,
+    };
+    
     #define DEBUG(x ...)  // Default to NO debug
     //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
  
@@ -30,9 +53,11 @@
     
     extern char b[], c[];  // General Buffers, used mostly for Formating message for LCD
     
-    /* tuning pot stuff */
+    extern byte menuActive;
+    extern byte menuPrev;
     extern byte refreshDisplay;
     
+    /* tuning pot stuff */  
     extern int tuningDir;
     extern int tuningPosition;
     extern int tune2500Mode;
@@ -64,7 +89,8 @@
     extern byte sideBandModeCache[BANDS*2];
     
 
-    // Functions From Main    
+    // Functions From Main
+    extern void updateDisplay();   
     extern void cursorOff();
     extern void printLineXY(byte x, byte y, char const *c);
     extern void printLineCEL(int row, char const *c);
@@ -77,6 +103,7 @@
     extern int isKeyNowClosed();
     extern int isPttPressed();
     extern void setFreq(unsigned long freq);
+    extern int getButtonPushMode(int btn);
     extern void deDounceBtnRelease();
     extern int btnDown();
     
