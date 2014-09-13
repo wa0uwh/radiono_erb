@@ -9,7 +9,7 @@
 #include "NonVol.h"
 #include "debug.h"
 
-#define ID_FLAG (1409121613L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1409131451L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
 // Local Varibles
@@ -31,13 +31,15 @@ void eePromIO(int mode) {
         unsigned long iFreqLSB;
         unsigned long vfoA;
         unsigned long vfoB;
-        byte cw_wpm;
-        unsigned int qrssDitTime;
         byte isLSB;
         byte vfoActive;
         unsigned long freqCache[BANDS*2];
         byte sideBandMode;
         byte sideBandModeCache[BANDS*2];
+        byte cw_wpm;
+        unsigned int qrssDitTime;
+        unsigned long blinkTime;
+        unsigned long blinkRate;
         byte checkSum;
     } E;
     byte checkSum = 0;
@@ -68,13 +70,15 @@ void eePromIO(int mode) {
         iFreqLSB = E.iFreqLSB;
         vfoA = E.vfoA;
         vfoB = E.vfoB;
-        cw_wpm = E.cw_wpm;
-        qrssDitTime = E.qrssDitTime;
         isLSB = E.isLSB;
         vfoActive = E.vfoActive;
         memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
         sideBandMode = E.sideBandMode;
         memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
+        cw_wpm = E.cw_wpm;
+        qrssDitTime = E.qrssDitTime;
+        blinkTime = E.blinkTime;
+        blinkRate = E.blinkRate;
         checkSum = E.checkSum;
        
         sprintf(c, P("Loading %dB"), sizeof(E));      
@@ -89,13 +93,15 @@ void eePromIO(int mode) {
         E.iFreqLSB = iFreqLSB;
         E.vfoA = vfoA;
         E.vfoB = vfoB;
-        E.cw_wpm = cw_wpm;
-        E.qrssDitTime = qrssDitTime;
         E.isLSB = isLSB;
         E.vfoActive = vfoActive;
         memcpy(E.freqCache, freqCache, sizeof(E.freqCache));
         E.sideBandMode = sideBandMode;
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(E.sideBandModeCache));
+        E.cw_wpm = cw_wpm;
+        E.qrssDitTime = qrssDitTime;
+        E.blinkTime = blinkTime;
+        E.blinkRate = blinkRate;
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
         
         // Compute and save the new Checksum of eeProm Struture

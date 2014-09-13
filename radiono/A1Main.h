@@ -40,6 +40,8 @@
     extern byte menuActive;
     extern byte menuPrev;
     extern byte refreshDisplay;
+    extern unsigned long blinkTime;
+    extern int blinkRate;
     
     /* tuning pot stuff */  
     extern int tuningDir;
@@ -83,9 +85,9 @@
     extern void stopSidetone();
     extern void changeToTransmit();
     extern void changeToReceive();
-    extern int inBandLimits(unsigned long freq);
-    extern int isKeyNowClosed();
-    extern int isPttPressed();
+    extern  int inBandLimits(unsigned long freq);
+    extern  int isKeyNowClosed();
+    extern  int isPttPressed();
     extern void setFreq(unsigned long freq);
     
     // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()

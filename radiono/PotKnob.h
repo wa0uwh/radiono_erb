@@ -6,7 +6,7 @@
     #define DEAD_ZONE (40)
 
     void readTuningPot();
-    int doPotKnob();
+     int doPotKnob();
 
 #endif
 

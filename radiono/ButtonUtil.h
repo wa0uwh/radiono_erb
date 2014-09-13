@@ -24,12 +24,13 @@
         UP_BTN,
         DN_BTN,
         RT_BTN,
+        BUTTONS
     };
 
-    extern int btnDown();
+    extern  int btnDown();
     extern void deDounceBtnRelease();
     extern void decodeAux(int btn);
-    extern int getButtonPushMode(int btn);
+    extern  int getButtonPushMode(int btn);
 
 #endif
 

@@ -50,7 +50,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FRa.13"          // Incremental Rev Code
+#define INC_REV "ERB_FRa.18"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -94,15 +94,16 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #endif
 #define SI570_I2C_ADDRESS   0x55
 
-// USB and LSB IF frequencies
+// Default Frequencies
+#define DEFAULT_VFO_FREQ (14285000UL) //  20m - QRP SSB Calling Freq
+#define MAX_FREQ (30000000UL)
+
+// Default USB and LSB IF frequencies
 #define IF_FREQ_USB   (19997000L)
 #define IF_FREQ_LSB   (19992000L)
-//#define IF_FREQ_USB   (0)  // FOR debug ONLY
-//#define IF_FREQ_LSB   (0)  // FOR debug ONLY
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
-#define MAX_FREQ (30000000UL)
 
 
 enum SidebandModes { // Sideband Modes
@@ -134,7 +135,7 @@ Si570 *vfo;
   LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
 #endif
 
-unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
+unsigned long frequency = DEFAULT_VFO_FREQ;
 unsigned long iFreqUSB = IF_FREQ_USB;
 unsigned long iFreqLSB = IF_FREQ_LSB;
 
@@ -147,7 +148,9 @@ char blinkChar[2];
 
 /* tuning pot stuff */
 byte refreshDisplay = 0;
-unsigned int blinkCount = 0;
+unsigned long blinkTimer = 0;
+unsigned long blinkTime = 60000UL; // Default Blink TimeOut, Milli Seconds
+int blinkRate = 750;
 
 byte menuActive = 0;
 byte menuPrev = 0;
@@ -244,11 +247,10 @@ void updateDisplay(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
   char d[6]; // Buffer for RIT Display Value
   char *vfoLabel;
-  
- 
+
   if (refreshDisplay) {
-      refreshDisplay = 0; 
-      blinkCount = 0;
+      if(refreshDisplay > 0) refreshDisplay--;
+      blinkTimer = 0;
       
       // Create Label for Displayed VFO
       vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
@@ -296,14 +298,12 @@ void cursorOff() {
 
 
 // -------------------------------------------------------------------------------
-void updateCursor() {updateCursor(500);}
-
-void updateCursor(int blinkRateMS) {
+void updateCursor() {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
 
-#define BLINK (75) // ON Percen
-#define BLINK_TIMEOUT (1) // In Minutes
+#define BLINK (75) // ON Percent
+
   static unsigned long blinkInterval = 0;
   static boolean toggle = false;
   char blockChar = 0xFF;
@@ -311,11 +311,14 @@ void updateCursor(int blinkRateMS) {
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
   if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
+  if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
+
+  if(!blinkTimer) blinkTimer = millis() + blinkTime;
   
   DEBUG(P("\nStart Blink"));
   if (blinkInterval < millis()) { // Wink OFF
       DEBUG(P("Wink OFF"));
-      blinkInterval = millis() + blinkRateMS;
+      blinkInterval = millis() + blinkRate;
       if (cursorDigitPosition) {
           lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
           if (dialCursorMode) lcd.print(P("_")); 
@@ -323,12 +326,12 @@ void updateCursor(int blinkRateMS) {
       }
       toggle = true;
   } 
-  else if ((blinkInterval - (blinkRateMS/100*BLINK)) < millis() && toggle) { // Wink ON
-      DEBUG(P("Wink ON, %d %d"), (BLINK_TIMEOUT * 600/BLINK * 10), blinkCount);
+  else if ((blinkInterval - (blinkRate/100*BLINK)) < millis() && toggle) { // Wink ON
+      DEBUG(P("Wink ON"));
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(blinkChar);
-      if (++blinkCount > (BLINK_TIMEOUT * 600/BLINK * 10)) { // Stop Blink after Idle period, Minutes * 6000/BLINK 
+      if(blinkTimer < millis()) {
           DEBUG(P("End Blink TIMED OUT"));
           cursorDigitPosition = 0;
           dialCursorMode = true;
@@ -390,7 +393,7 @@ void checkTuning() {
       return;
   }
   
-  tuningDir = doPotKnob(); // Get Tuning Direction from Knob
+  tuningDir = doPotKnob(); // Get Tuning Direction from POT Knob
   if (!tuningDir) return;
 
   
@@ -414,6 +417,8 @@ void checkTuning() {
      return; // Nothing to do here, Abort, Cursor is in Park position
   }
 
+  blinkTimer = 0;
+
   // Select Tuning Mode; Digit or 2500 Step Mode
   if (tune2500Mode) {
       // Inc or Dec Freq by 2.5K, useful when tuning between SSB stations
@@ -428,9 +433,9 @@ void checkTuning() {
       for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
   
       newFreq = frequency + deltaFreq;  // Save Least Digits Mode
+      //newFreq = (frequency / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
   }
-  
-  //newFreq = (frequency / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode 
+
   if (newFreq != frequency) {
       // Update frequency if within range of limits, 
       // Avoiding Nagative underRoll of UnSigned Long, and over-run MAX_FREQ  
@@ -535,14 +540,12 @@ void checkTX() {
     
     if (keyDown) {
         DEBUG(P("%s %d: KEY On"), __func__, __LINE__);
-        blinkCount = 0;
         cwTimeout = CW_TIMEOUT + millis(); // Restat timer
         return;
     } 
       
     if (inPtt && inTx) { // Check PTT
         DEBUG(P("%s %d: PTT"), __func__, __LINE__);
-        blinkCount = 0;
         cwTimeout = CW_TIMEOUT + millis(); // Restat timer
         // It is OK, to stop TX
         if (!isPttPressed()) { // Is PTT Not pushed, then end PTT
@@ -641,15 +644,16 @@ void checkButton() {
     case DN_BTN: decodeBandUpDown(-1); break; // Band Down
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
-            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay++; return;
+            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay++; break;
             case LONG_PRESS:       decodeEditIf(); break;
             case ALT_PRESS_LT:     decodeTune2500Mode(); break;
             case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
             case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
-            default: return; // Do Nothing
+            default: ; // Do Nothing
             }
   }
   if (btn) DEBUG(P("%s %d: btn %d, MenuActive %d"), __func__, __LINE__, btn, menuActive);
+  blinkTimer = 0;
   refreshDisplay++;
   updateDisplay();
   deDounceBtnRelease(); // Wait for Button Release
@@ -694,6 +698,7 @@ void decodeTune2500Mode() {
     
     cursorDigitPosition = 3; // Set default Tuning Digit
     tune2500Mode = !tune2500Mode;
+    dialCursorMode = false;
     if (tune2500Mode) frequency = (frequency / 2500) * 2500;
 }
 
@@ -781,7 +786,9 @@ void decodeMoveCursor(int dir) {
       if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
-      freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable     
+      freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable
+      blinkTimer = 0;
+      if(!cursorDigitPosition) dialCursorMode = true;
       refreshDisplay++;
 }
 
@@ -790,9 +797,7 @@ void decodeFN(int btn) {
 
   switch (getButtonPushMode(btn)) { 
     case MOMENTARY_PRESS:
-       ritOn = !ritOn; ritVal = 0;     
-       refreshDisplay++;
-       updateDisplay();
+       ritOn = !ritOn; ritVal = 0;
        break;
       
     case DOUBLE_PRESS:
@@ -812,9 +817,7 @@ void decodeFN(int btn) {
             frequency = vfoA;
           }
        }
-       ritOn = ritVal = 0;     
-       refreshDisplay++;
-       updateDisplay();
+       ritOn = ritVal = 0;
        break;
       
     case LONG_PRESS:
@@ -833,10 +836,11 @@ void decodeFN(int btn) {
        }
        delay(100);
        break;
-    default :
-       return; // Do Nothing
+    default : return; // Do Nothing
   }
   deDounceBtnRelease(); // Wait for Release
+  refreshDisplay++;
+  updateDisplay();
 }
 
 
