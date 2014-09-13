@@ -9,6 +9,7 @@
 #include "debug.h"
 
 unsigned long menuIdleTimeOut = 0;
+boolean menuCycle = false;
 
 // ###############################################################################
 void checkKnob(int menu) {
@@ -17,12 +18,19 @@ void checkKnob(int menu) {
     dir = doPotKnob();
     
     if (!dir) return;
-    
+ 
     menuIdleTimeOut = 0;
     
+    if (menuCycle) {
+        menuActive += dir;
+        menuActive = constrain (menuActive, 1, MENUS);
+        refreshDisplay++;
+        updateDisplayMenu(menuActive);
+        return;
+    }
+  
     switch(menu) {
         case 6:
-          debug(P("here"));
           cw_wpm += dir;        
           cw_wpm = constrain (cw_wpm, 1, 99);
           refreshDisplay++;
@@ -37,6 +45,7 @@ void checkKnob(int menu) {
           qrssDitTime = constrain (qrssDitTime, 250, 60000);
           refreshDisplay++;
           break;
+        default:;
     }
 }
 
@@ -44,17 +53,18 @@ void checkKnob(int menu) {
 void doMenus(int menu) {
     
     if (!menuIdleTimeOut) menuIdleTimeOut = millis() + 1000L * MENU_IDLE_TIMEOUT_SEC;
-        
-    updateDisplayMenu(menu);
+  
     checkKnob(menu);       
     checkButtonMenu();
     
     if (menuIdleTimeOut && menuIdleTimeOut < millis()) { // If IdleTimeOut, Abort
+      menuCycle = false;
       menuIdleTimeOut = 0;
       menuActive = 0;
-      refreshDisplay+=2;
+      refreshDisplay++;
     }
-  
+      
+    if(menuActive) updateDisplayMenu(menu);
 }
 
 // ###############################################################################
@@ -68,6 +78,7 @@ void updateDisplayMenu(int menu) {
              sprintf(c, P("%0.2dMACRO CW SPD"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              sprintf(c, P("WPM: %0.2d"), cw_wpm);
+             if(!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
           case 7:
@@ -75,6 +86,7 @@ void updateDisplayMenu(int menu) {
              printLineCEL(MENU_PROMPT_LINE, c);
              if (qrssDitTime>=1000) sprintf(c, P(" SECs: %0.2d"), qrssDitTime/1000);
              else sprintf(c, P("MSECs: %d"), qrssDitTime);
+             if(!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
           default: 
@@ -99,12 +111,11 @@ void checkButtonMenu() {
   menuPrev = menuActive;
   switch (btn) {
     case 0: return; // Abort
-    case LT_CUR_BTN: printLineCEL(MENU_ITEM_LINE, P("Left"));  break;
-    case RT_CUR_BTN: printLineCEL(MENU_ITEM_LINE, P("Right")); break;
-    case UP_BTN: menuActive = constrain (menuActive+1, 1, MENUS); break;
-    case DN_BTN: menuActive = constrain (menuActive-1, 1, MENUS); break;
+    case UP_BTN: menuActive = constrain (++menuActive, 1, MENUS); break;
+    case DN_BTN: menuActive = constrain (--menuActive, 1, MENUS); break;
     case RT_BTN: switch (getButtonPushMode(btn)) {
-            case DOUBLE_PRESS: menuActive = 0; refreshDisplay+=2; break; // Return to VFO Display Mode
+            case MOMENTARY_PRESS: menuCycle = !menuCycle; break;
+            case DOUBLE_PRESS: menuActive = 0; menuCycle = false; refreshDisplay++; return; // Return to VFO Display Mode
             default: break;
             }
   }
