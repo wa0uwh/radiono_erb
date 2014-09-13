@@ -4,10 +4,12 @@
 #include <Arduino.h>
 #include <avr/eeprom.h>
 #include "A1Main.h"
+#include "ButtonUtil.h"
+#include "MorseCode.h"
 #include "NonVol.h"
 #include "debug.h"
 
-#define ID_FLAG (1408281941L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1409121613L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
 // Local Varibles
@@ -29,6 +31,8 @@ void eePromIO(int mode) {
         unsigned long iFreqLSB;
         unsigned long vfoA;
         unsigned long vfoB;
+        byte cw_wpm;
+        unsigned int qrssDitTime;
         byte isLSB;
         byte vfoActive;
         unsigned long freqCache[BANDS*2];
@@ -64,6 +68,8 @@ void eePromIO(int mode) {
         iFreqLSB = E.iFreqLSB;
         vfoA = E.vfoA;
         vfoB = E.vfoB;
+        cw_wpm = E.cw_wpm;
+        qrssDitTime = E.qrssDitTime;
         isLSB = E.isLSB;
         vfoActive = E.vfoActive;
         memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
@@ -83,6 +89,8 @@ void eePromIO(int mode) {
         E.iFreqLSB = iFreqLSB;
         E.vfoA = vfoA;
         E.vfoB = vfoB;
+        E.cw_wpm = cw_wpm;
+        E.qrssDitTime = qrssDitTime;
         E.isLSB = isLSB;
         E.vfoActive = vfoActive;
         memcpy(E.freqCache, freqCache, sizeof(E.freqCache));

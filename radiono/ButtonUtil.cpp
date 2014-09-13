@@ -65,8 +65,24 @@ void decodeAux(int btn) {
 
 
 // ###############################################################################
+int checkForAltPress(int btn, int tbtn) {
+    
+    if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
+    if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT_CUR;
+    if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT_CUR;
+    if (btn != LT_BTN     && tbtn == LT_BTN)     return ALT_PRESS_LT;
+    if (btn != UP_BTN     && tbtn == UP_BTN)     return ALT_PRESS_UP;
+    if (btn != DN_BTN     && tbtn == DN_BTN)     return ALT_PRESS_DN;
+    if (btn != RT_BTN     && tbtn == RT_BTN)     return ALT_PRESS_RT;
+    
+    return 0;
+}
+
+
+// -------------------------------------------------------------------------------
 int getButtonPushMode(int btn) {
     int t1, t2, tbtn;
+    int altPress;
   
     t1 = t2 = 0;
 
@@ -74,18 +90,16 @@ int getButtonPushMode(int btn) {
     tbtn = btnDown();
     while (t1 < 20 && btn == tbtn){
         tbtn = btnDown();
-        if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
-        if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
-        if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
+        altPress = checkForAltPress(btn, tbtn);
+        if(altPress) return altPress;
         delay(50);
         t1++;
     }
     // Time between presses
-    while (t2 < 10 && !tbtn){
+    while (t2 < 10 && !tbtn){       
         tbtn = btnDown();
-        if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
-        if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
-        if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
+        altPress = checkForAltPress(btn, tbtn);
+        if(altPress) return altPress;
         delay(50);
         t2++;
     }
@@ -94,5 +108,6 @@ int getButtonPushMode(int btn) {
     if (t2 < 7) return DOUBLE_PRESS; 
     return MOMENTARY_PRESS; 
 }
+
 
 // End

@@ -21,8 +21,10 @@ void checkKnob(int menu) {
     menuIdleTimeOut = 0;
     
     switch(menu) {
-        case 6:           
-          cw_wpm = constrain (cw_wpm += dir, 1, 99);
+        case 6:
+          debug(P("here"));
+          cw_wpm += dir;        
+          cw_wpm = constrain (cw_wpm, 1, 99);
           refreshDisplay++;
           break;
         case 7:
@@ -47,7 +49,7 @@ void doMenus(int menu) {
     checkKnob(menu);       
     checkButtonMenu();
     
-    if (menuIdleTimeOut && menuIdleTimeOut < millis()) {
+    if (menuIdleTimeOut && menuIdleTimeOut < millis()) { // If IdleTimeOut, Abort
       menuIdleTimeOut = 0;
       menuActive = 0;
       refreshDisplay+=2;

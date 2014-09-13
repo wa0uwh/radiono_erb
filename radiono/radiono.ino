@@ -39,7 +39,8 @@
  *   Added Some new LCD Display Format Functions
  *   Added Idle Timeout for Blinking Cursor
  *   Added Sideband Toggle while in Edit-IF-Mode
- *   Added Menu Support
+ *   Added Dial Cursor Movement via Tuning Knob
+ *   Added Menu Support with Idle Timeout
  *
  */
 
@@ -49,7 +50,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FRa.09"          // Incremental Rev Code
+#define INC_REV "ERB_FRa.12"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -122,9 +123,11 @@ enum VFOs { // Available VFOs
 
 
 #ifdef USE_PCA9546
-PCA9546 *mux;
+  PCA9546 *mux;
 #endif
+
 Si570 *vfo;
+
 #ifndef USE_I2C_LCD
   LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 #else
@@ -626,23 +629,23 @@ void checkButton() {
     case LT_CUR_BTN: decodeMoveCursor(+1); break;    
     case RT_CUR_BTN: decodeMoveCursor(-1); break;
     case LT_BTN: switch (getButtonPushMode(btn)) { 
-            case MOMENTARY_PRESS: decodeSideBandMode(btn); break;
-            case DOUBLE_PRESS:    eePromIO(EEP_LOAD); break;
-            case LONG_PRESS:      eePromIO(EEP_SAVE); break;
-            case ALT_PRESS_FN:    toggleAltTxVFO();  break;
-            case ALT_PRESS_LT:    sendMorseMesg(cw_wpm, P(CW_MSG1));  break;
-            case ALT_PRESS_RT:    sendMorseMesg(cw_wpm, P(CW_MSG2));  break;    
+            case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
+            case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
+            case LONG_PRESS:       eePromIO(EEP_SAVE); break;
+            case ALT_PRESS_FN:     toggleAltTxVFO();  break;
+            case ALT_PRESS_LT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG1));  break;
+            case ALT_PRESS_RT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG2));  break;
             default: return; // Do Nothing
             } break;
     case UP_BTN: decodeBandUpDown(+1); break; // Band Up
     case DN_BTN: decodeBandUpDown(-1); break; // Band Down
     case RT_BTN: switch (getButtonPushMode(btn)) {
-            //case MOMENTARY_PRESS: decodeTune2500Mode(); break;
-            case MOMENTARY_PRESS: dialCursorMode = !dialCursorMode; break;
-            case DOUBLE_PRESS:    menuActive = menuPrev ? menuPrev : 5; refreshDisplay++; return;
-            case LONG_PRESS:      decodeEditIf(); break;
-            case ALT_PRESS_LT:    sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
-            case ALT_PRESS_RT:    sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;    
+            case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
+            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay++; return;
+            case LONG_PRESS:       decodeEditIf(); break;
+            case ALT_PRESS_LT:     decodeTune2500Mode(); break;
+            case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
+            case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
             default: return; // Do Nothing
             }
   }

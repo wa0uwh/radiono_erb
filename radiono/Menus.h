@@ -5,7 +5,9 @@
 
     #define MENU_IDLE_TIMEOUT_SEC (2*60)
     
-    #define MENUS (15)
+    #define DEFAULT_MENU (6)
+    
+    #define MENUS (10)
 
     void doMenus(int menu);
     void checkButtonMenu();

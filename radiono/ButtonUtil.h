@@ -8,7 +8,11 @@
         DOUBLE_PRESS,
         LONG_PRESS,
         ALT_PRESS_FN,
+        ALT_PRESS_LT_CUR,
+        ALT_PRESS_RT_CUR,
         ALT_PRESS_LT,
+        ALT_PRESS_UP,
+        ALT_PRESS_DN,
         ALT_PRESS_RT,
     };
     

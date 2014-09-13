@@ -87,10 +87,6 @@
     extern int isKeyNowClosed();
     extern int isPttPressed();
     extern void setFreq(unsigned long freq);
-    extern int getButtonPushMode(int btn);
-    extern void deDounceBtnRelease();
-    extern int btnDown();
-    extern int doKnob();
     
     // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
     #define PBUFSIZE (66)
