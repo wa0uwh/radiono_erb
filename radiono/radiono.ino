@@ -50,7 +50,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FRa.18"          // Incremental Rev Code
+#define INC_REV "ERB_FRa.20"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -151,6 +151,7 @@ byte refreshDisplay = 0;
 unsigned long blinkTimer = 0;
 unsigned long blinkTime = 60000UL; // Default Blink TimeOut, Milli Seconds
 int blinkRate = 750;
+byte blinkRatio = 75;
 
 byte menuActive = 0;
 byte menuPrev = 0;
@@ -302,8 +303,6 @@ void updateCursor() {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
 
-#define BLINK (75) // ON Percent
-
   static unsigned long blinkInterval = 0;
   static boolean toggle = false;
   char blockChar = 0xFF;
@@ -326,7 +325,7 @@ void updateCursor() {
       }
       toggle = true;
   } 
-  else if ((blinkInterval - (blinkRate/100*BLINK)) < millis() && toggle) { // Wink ON
+  else if ((blinkInterval - (blinkRate/100*blinkRatio)) < millis() && toggle) { // Wink ON
       DEBUG(P("Wink ON"));
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 

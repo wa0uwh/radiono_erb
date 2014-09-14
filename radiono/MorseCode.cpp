@@ -5,13 +5,14 @@
 #include <Arduino.h>
 #include "A1Main.h"
 #include "MorseCode.h"
+#include "MorseTable.h"
 
 // Local
 byte cw_wpm = CW_WPM;
 unsigned int qrssDitTime = QRSS_DIT_TIME;
 unsigned int ditLen = 1200/CW_WPM; // Default Speed
 byte txSpeed = 0;
-#include "MorseTable.h"
+
 
 
 // ########################################################

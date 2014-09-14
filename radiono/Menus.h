@@ -7,11 +7,10 @@
     
     #define DEFAULT_MENU (6)
     
-    #define MENUS (10)
+    #define MENUS (15)
 
-    void doMenus(int menu);
-    void checkButtonMenu();
-    void updateDisplayMenu(int menu);
+    // Externally Available Functions
+    extern void doMenus(int menu);
 
 #endif
 

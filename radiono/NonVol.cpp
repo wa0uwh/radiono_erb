@@ -9,7 +9,7 @@
 #include "NonVol.h"
 #include "debug.h"
 
-#define ID_FLAG (1409131451L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1409141141L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
 // Local Varibles
@@ -40,6 +40,7 @@ void eePromIO(int mode) {
         unsigned int qrssDitTime;
         unsigned long blinkTime;
         unsigned long blinkRate;
+        byte blinkRatio;
         byte checkSum;
     } E;
     byte checkSum = 0;
@@ -79,6 +80,7 @@ void eePromIO(int mode) {
         qrssDitTime = E.qrssDitTime;
         blinkTime = E.blinkTime;
         blinkRate = E.blinkRate;
+        blinkRatio = E.blinkRatio;
         checkSum = E.checkSum;
        
         sprintf(c, P("Loading %dB"), sizeof(E));      
@@ -102,6 +104,7 @@ void eePromIO(int mode) {
         E.qrssDitTime = qrssDitTime;
         E.blinkTime = blinkTime;
         E.blinkRate = blinkRate;
+        E.blinkRatio = blinkRatio;
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
         
         // Compute and save the new Checksum of eeProm Struture

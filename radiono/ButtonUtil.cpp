@@ -66,20 +66,10 @@ void decodeAux(int btn) {
 
 // ###############################################################################
 int checkForAltPress(int btn, int altbtn) {
-
-    /*
-    if (btn != FN_BTN     && altbtn == FN_BTN)     return ALT_PRESS_FN;
-    if (btn != LT_CUR_BTN && altbtn == LT_CUR_BTN) return ALT_PRESS_LT_CUR;
-    if (btn != RT_CUR_BTN && altbtn == RT_CUR_BTN) return ALT_PRESS_RT_CUR;
-    if (btn != LT_BTN     && altbtn == LT_BTN)     return ALT_PRESS_LT;
-    if (btn != UP_BTN     && altbtn == UP_BTN)     return ALT_PRESS_UP;
-    if (btn != DN_BTN     && altbtn == DN_BTN)     return ALT_PRESS_DN;
-    if (btn != RT_BTN     && altbtn == RT_BTN)     return ALT_PRESS_RT;
-    */
     
     // Find the First Button that Matches AltBtn, and that is not Btn, else retrun 0
-    for (int b = 1; b < BUTTONS; b++) {
-        if ( b == altbtn && b != btn ) return LONG_PRESS + b;
+    for (int b = 1; b < btn; b++) {
+        if (b == altbtn) return LONG_PRESS + b;
     }
     return 0;
 }

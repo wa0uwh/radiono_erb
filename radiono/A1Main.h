@@ -27,6 +27,8 @@
     #define DEBUG(x ...)  // Default to NO debug
     //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
  
+
+    // Externally Available Variables
     extern unsigned long frequency;
     extern unsigned long iFreqUSB;
     extern unsigned long iFreqLSB;
@@ -42,6 +44,7 @@
     extern byte refreshDisplay;
     extern unsigned long blinkTime;
     extern int blinkRate;
+    extern byte blinkRatio;
     
     /* tuning pot stuff */  
     extern int tuningDir;
@@ -75,7 +78,7 @@
     extern byte sideBandModeCache[BANDS*2];
     
 
-    // Functions From Main
+    // Externally Available Functions
     extern void updateDisplay();   
     extern void cursorOff();
     extern void printLineXY(byte x, byte y, char const *c);
