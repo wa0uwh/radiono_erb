@@ -43,9 +43,9 @@
     extern byte menuPrev;
     extern byte refreshDisplay;
     extern unsigned long blinkTime;
-    extern int blinkRate;
+    extern int blinkPeriod;
     extern byte blinkRatio;
-    
+
     /* tuning pot stuff */  
     extern int tuningDir;
     extern int knobPosition;

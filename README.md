@@ -51,5 +51,8 @@ Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
 	12). Added Non-Volatile Memory Storage
 
 	13). Added Morse Code Functions, MACROs and Beacon
+	
+	14). Added User Menus 
+
 
 --

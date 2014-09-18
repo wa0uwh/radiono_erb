@@ -66,7 +66,7 @@ void decodeAux(int btn) {
 
 // ###############################################################################
 int checkForAltPress(int btn, int altbtn) {
-    
+   
     // Find the First Button that Matches AltBtn, and that is not Btn, else retrun 0
     for (int b = 1; b < btn; b++) {
         if (b == altbtn) return LONG_PRESS + b;

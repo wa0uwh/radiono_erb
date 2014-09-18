@@ -39,7 +39,7 @@ void eePromIO(int mode) {
         byte cw_wpm;
         unsigned int qrssDitTime;
         unsigned long blinkTime;
-        unsigned long blinkRate;
+        unsigned long blinkPeriod;
         byte blinkRatio;
         byte checkSum;
     } E;
@@ -79,7 +79,7 @@ void eePromIO(int mode) {
         cw_wpm = E.cw_wpm;
         qrssDitTime = E.qrssDitTime;
         blinkTime = E.blinkTime;
-        blinkRate = E.blinkRate;
+        blinkPeriod = E.blinkPeriod;
         blinkRatio = E.blinkRatio;
         checkSum = E.checkSum;
        
@@ -103,7 +103,7 @@ void eePromIO(int mode) {
         E.cw_wpm = cw_wpm;
         E.qrssDitTime = qrssDitTime;
         E.blinkTime = blinkTime;
-        E.blinkRate = blinkRate;
+        E.blinkPeriod = blinkPeriod;
         E.blinkRatio = blinkRatio;
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
         

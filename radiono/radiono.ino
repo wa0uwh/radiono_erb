@@ -50,7 +50,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FRa.20"          // Incremental Rev Code
+#define INC_REV "ERB_FRa.26"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -149,8 +149,8 @@ char blinkChar[2];
 /* tuning pot stuff */
 byte refreshDisplay = 0;
 unsigned long blinkTimer = 0;
-unsigned long blinkTime = 60000UL; // Default Blink TimeOut, Milli Seconds
-int blinkRate = 750;
+unsigned long blinkTime = 20000UL; // Default Blink TimeOut, Milli Seconds
+int blinkPeriod = 500;
 byte blinkRatio = 75;
 
 byte menuActive = 0;
@@ -317,7 +317,7 @@ void updateCursor() {
   DEBUG(P("\nStart Blink"));
   if (blinkInterval < millis()) { // Wink OFF
       DEBUG(P("Wink OFF"));
-      blinkInterval = millis() + blinkRate;
+      blinkInterval = millis() + blinkPeriod;
       if (cursorDigitPosition) {
           lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
           if (dialCursorMode) lcd.print(P("_")); 
@@ -325,7 +325,7 @@ void updateCursor() {
       }
       toggle = true;
   } 
-  else if ((blinkInterval - (blinkRate/100*blinkRatio)) < millis() && toggle) { // Wink ON
+  else if ((blinkInterval - (blinkPeriod/100*blinkRatio)) < millis() && toggle) { // Wink ON
       DEBUG(P("Wink ON"));
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
@@ -628,8 +628,8 @@ void checkButton() {
   switch (btn) {
     case 0: return; // Abort
     case FN_BTN: decodeFN(btn); break;  
-    case LT_CUR_BTN: decodeMoveCursor(+1); break;    
-    case RT_CUR_BTN: decodeMoveCursor(-1); break;
+    case LT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(+1); break;    
+    case RT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(-1); break;
     case LT_BTN: switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
             case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
