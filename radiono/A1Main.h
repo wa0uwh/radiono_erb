@@ -3,6 +3,10 @@
 #ifndef A1MAIN_H
 #define A1MAIN_H
 
+    // Set up Units to make coding large numbers easier
+    #define KILO (1000UL)
+    #define MEG (KILO * KILO)
+
     #define BANDS (9)
     
     #define BAND_HI_PIN (5)

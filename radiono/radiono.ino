@@ -39,6 +39,7 @@
  *   Added Some new LCD Display Format Functions
  *   Added Idle Timeout for Blinking Cursor
  *   Added Sideband Toggle while in Edit-IF-Mode
+ *   Added Suffixes KILO and MEG, to make Coding Large Freq Numbers easier
  *
  */
 
@@ -48,7 +49,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FR"          // Incremental Rev Code
+#define INC_REV "ERB_FS"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -68,7 +69,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define LCD_ROW (2)
 //#define LCD_COL (20)
 //#define LCD_ROW (4)
-#define LCD_STR_CEL "%-16.16s"
+#define LCD_STR_CEL "%-16.16s"    // Fmt to implement Clear to End of Line
 //#define LCD_STR_CEL "%-20.20s"  // For 20 Character LCD Display
 
 
@@ -89,15 +90,18 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #endif
 #define SI570_I2C_ADDRESS   0x55
 
+// Default Tune Frequency
+#define DEFAULT_TUNE_FREQ (14.285 * MEG) //  20m - QRP SSB Calling Freq
 // USB and LSB IF frequencies
-#define IF_FREQ_USB   (19997000L)
-#define IF_FREQ_LSB   (19992000L)
-//#define IF_FREQ_USB   (0)  // FOR debug ONLY
-//#define IF_FREQ_LSB   (0)  // FOR debug ONLY
+#define IF_FREQ_USB   (19.997 * MEG)
+#define IF_FREQ_LSB   (19.992 * MEG)
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
-#define MAX_FREQ (30000000UL)
+// Define MAX Tuning Range
+#define MAX_FREQ (32.0 * MEG)
+
+// Tuning POT Dead Zone
 #define DEAD_ZONE (40)
 
 enum ButtonPressModes { // Button Press Modes
@@ -150,7 +154,7 @@ Si570 *vfo;
   LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
 #endif
 
-unsigned long frequency = 14285000UL; //  20m - QRP SSB Calling Freq
+unsigned long frequency = DEFAULT_TUNE_FREQ;
 unsigned long iFreqUSB = IF_FREQ_USB;
 unsigned long iFreqLSB = IF_FREQ_LSB;
 
@@ -173,7 +177,6 @@ int tuningPositionDelta = 0;
 int cursorDigitPosition = 0;
 int tuningPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
-char* const sideBandText[] PROGMEM = {"Auto SB","USB","LSB"};
 byte sideBandMode = 0;
 
 boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
@@ -190,30 +193,30 @@ boolean isAltVFO = 0;
 
 // PROGMEM is used to avoid using the small available variable space
 const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Limits
-      1800000UL,  2000000UL, // 160m
-      3500000UL,  4000000UL, //  80m
-      7000000UL,  7300000UL, //  40m
-     10100000UL, 10150000UL, //  30m
-     14000000UL, 14350000UL, //  20m
-     18068000UL, 18168000UL, //  17m
-     21000000UL, 21450000UL, //  15m
-     24890000UL, 24990000UL, //  12m
-     28000000UL, 29700000UL, //  10m
-   //50000000UL, 54000000UL, //   6m - Will need New Low Pass Filter Support
+      1.80 * MEG,   2.00 * MEG, // 160m
+      3.50 * MEG,   4.00 * MEG, //  80m
+      7.00 * MEG,   7.30 * MEG, //  40m
+     10.10 * MEG,  10.15 * MEG, //  30m
+     14.00 * MEG,  14.35 * MEG, //  20m
+     18.068 * MEG, 18.168 * MEG, //  17m
+     21.00 * MEG,  21.45 * MEG, //  15m
+     24.89 * MEG,  24.99 * MEG, //  12m
+     28.00 * MEG,  29.70 * MEG, //  10m
+   //50.00 * MEG,  54.00 * MEG, //   6m - Will need New Low Pass Filter Support
    };
 
 // An Array to save: A-VFO & B-VFO
 unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
-      1825000UL, 1825000UL,  // 160m - QRP SSB Calling Freq
-      3985000UL, 3985000UL,  //  80m - QRP SSB Calling Freq
-      7285000UL, 7285000UL,  //  40m - QRP SSB Calling Freq
-     10138700UL, 10138700UL, //  30m - QRP QRSS, WSPR and PropNET
-     14285000UL, 14285000UL, //  20m - QRP SSB Calling Freq
-     18130000UL, 18130000UL, //  17m - QRP SSB Calling Freq
-     21385000UL, 21385000UL, //  15m - QRP SSB Calling Freq
-     24950000UL, 24950000UL, //  12m - QRP SSB Calling Freq
-     28385000UL, 28385000UL, //  10m - QRP SSB Calling Freq
-   //50200000UL, 50200000UL, //   6m - QRP SSB Calling Freq
+      1.825 * MEG,   1.825 * MEG,  // 160m - QRP SSB Calling Freq
+      3.985 * MEG,   3.985 * MEG,  //  80m - QRP SSB Calling Freq
+      7.285 * MEG,   7.285 * MEG,  //  40m - QRP SSB Calling Freq
+     10.1387 * MEG, 10.1387 * MEG, //  30m - QRP QRSS, WSPR and PropNET
+     14.285 * MEG,  14.285 * MEG,  //  20m - QRP SSB Calling Freq
+     18.130 * MEG,  18.130 * MEG,  //  17m - QRP SSB Calling Freq
+     21.385 * MEG,  21.385 * MEG,  //  15m - QRP SSB Calling Freq
+     24.950 * MEG,  24.950 * MEG,  //  12m - QRP SSB Calling Freq
+     28.385 * MEG,  28.385 * MEG,  //  10m - QRP SSB Calling Freq
+   //50.20 * MEG, 50.20 * MEG,     //   6m - QRP SSB Calling Freq
    };
 byte sideBandModeCache[BANDS*2] = {0};
 
@@ -247,18 +250,18 @@ void printLine2(char const *c){
 
 // Print LCD Line1 with Clear to End of Line
 void printLine1CEL(char const *c){
-    char buf[16];   
+    char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
-    
+
     sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, 0, lbuf);
 }
 
 // Print LCD Line2 with Clear to End of Line
 void printLine2CEL(char const *c){
-    char buf[16];  
+    char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
-    
+
     sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, 1, lbuf);
 }
@@ -294,7 +297,7 @@ void updateDisplay(){
       
       sprintf(c, P("%3s%1s %-2s %3.3s"),
           isLSB ? P2("LSB") : P2("USB"),
-          sideBandMode > 0 ? P3("*") : P3(" "),
+          sideBandMode ? P3("*") : P3(" "),
           inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
           freqUnStable ? P8(" ") : vfoStatus[vfo->status]
           );
@@ -363,7 +366,8 @@ void decodeSideband(){
   if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
 
   switch(sideBandMode) {
-    case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 10000000UL) ? 1 : 0 ; break; // Automatic Side Band Mode
+   // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
+    case  AUTO_SIDEBAND_MODE: isLSB = (frequency <= 9.99 * MEG) ? 1 : 0 ; break; // Automatic Side Band Mode
     case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
     case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
   }
@@ -378,11 +382,12 @@ void setSideband(){
 
  
 // ###############################################################################
-void setBandswitch(unsigned long freq){ 
+void setBandswitch(unsigned long freq){
 
   if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
 
-  if (freq >= 15000000UL) digitalWrite(BAND_HI_PIN, 1);
+  // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
+  if (freq >= 14.99 * MEG) digitalWrite(BAND_HI_PIN, 1);
   else digitalWrite(BAND_HI_PIN, 0);
 }
 
@@ -994,8 +999,7 @@ void setup() {
   mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
   if (mux->status == PCA9546_ERROR)
   {
-    printLine2(P("PCA9546 init error"));
-    delay(3000);
+    debug(P("PCA9546 init error"));
   }
 #endif
 
@@ -1027,7 +1031,7 @@ void setup() {
   // but it needs to know for what frequency it was calibrated for.
   // Looks like most HAM Si570 are calibrated for 56.320 Mhz.
   // If yours was calibrated for another frequency, you need to change that here
-  vfo = new Si570(SI570_I2C_ADDRESS, 56320000);
+  vfo = new Si570(SI570_I2C_ADDRESS, 56.32 * MEG);
 
   if (vfo->status == SI570_ERROR) {
     // The Si570 is unreachable. Show an error for 3 seconds and continue.
