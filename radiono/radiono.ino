@@ -89,10 +89,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #endif
 #define SI570_I2C_ADDRESS   0x55
 
-// Set up Units to make coding large Frequencies numbers easier
-#define KILO (1000UL)
-#define MEG (KILO * KILO)
-
 // Default Tune Frequency
 #define DEFAULT_TUNE_FREQ (14.285 * MEG) //  20m - QRP SSB Calling Freq
 // USB and LSB IF frequencies
