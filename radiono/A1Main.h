@@ -13,10 +13,26 @@
     #define BAND_MD_PIN (6)
     #define BAND_LO_PIN (7)
     #define PA_BAND_CLK (7)
+    
+    // Pin Numbers for analog inputs
+    #define FN_PIN (A3)
+    #define ANALOG_TUNING (A2)
+    #define ANALOG_KEYER (A1)
 
+
+    enum LCD_DisplayLines {
+        FIRST_LINE = 0,
+        STATUS_LINE,
+        MENU_PROMPT_LINE,
+        MENU_ITEM_LINE
+    };
+
+  
     #define DEBUG(x ...)  // Default to NO debug
     //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
  
+
+    // Externally Available Variables
     extern unsigned long frequency;
     extern unsigned long iFreqUSB;
     extern unsigned long iFreqLSB;
@@ -27,16 +43,21 @@
     
     extern char b[], c[];  // General Buffers, used mostly for Formating message for LCD
     
-    /* tuning pot stuff */
+    extern byte menuActive;
+    extern byte menuPrev;
     extern byte refreshDisplay;
-    
+    extern unsigned long blinkTime;
+    extern int blinkPeriod;
+    extern byte blinkRatio;
+
+    /* tuning pot stuff */  
     extern int tuningDir;
-    extern int tuningPosition;
+    extern int knobPosition;
     extern int tune2500Mode;
     extern int freqUnStable;
-    extern int tuningPositionDelta;
+    extern int knobPositionDelta;
     extern int cursorDigitPosition;
-    extern int tuningPositionPrevious;
+    extern int knobPositionPrevious;
     extern int cursorCol, cursorRow, cursorMode;
     extern char* const sideBandText[] PROGMEM;
     extern byte sideBandMode;
@@ -61,23 +82,20 @@
     extern byte sideBandModeCache[BANDS*2];
     
 
-    // Functions From Main    
+    // Externally Available Functions
+    extern void updateDisplay();   
     extern void cursorOff();
     extern void printLineXY(byte x, byte y, char const *c);
-    extern void printLine1CEL(char const *c);
-    extern void printLine2CEL(char const *c);
-    extern void printLine1(char const *c);
-    extern void printLine2(char const *c);
+    extern void printLineCEL(int row, char const *c);
+    extern void printLine(int row, char const *c);
     extern void startSidetone();
     extern void stopSidetone();
     extern void changeToTransmit();
     extern void changeToReceive();
-    extern int inBandLimits(unsigned long freq);
-    extern int isKeyNowClosed();
-    extern int isPttPressed();
+    extern  int inBandLimits(unsigned long freq);
+    extern  int isKeyNowClosed();
+    extern  int isPttPressed();
     extern void setFreq(unsigned long freq);
-    extern void deDounceBtnRelease();
-    extern int btnDown();
     
     // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
     #define PBUFSIZE (66)

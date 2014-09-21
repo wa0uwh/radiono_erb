@@ -4,10 +4,12 @@
 #include <Arduino.h>
 #include <avr/eeprom.h>
 #include "A1Main.h"
+#include "ButtonUtil.h"
+#include "MorseCode.h"
 #include "NonVol.h"
 #include "debug.h"
 
-#define ID_FLAG (1408281941L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1409141141L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
 // Local Varibles
@@ -34,6 +36,11 @@ void eePromIO(int mode) {
         unsigned long freqCache[BANDS*2];
         byte sideBandMode;
         byte sideBandModeCache[BANDS*2];
+        byte cw_wpm;
+        unsigned int qrssDitTime;
+        unsigned long blinkTime;
+        unsigned long blinkPeriod;
+        byte blinkRatio;
         byte checkSum;
     } E;
     byte checkSum = 0;
@@ -69,6 +76,11 @@ void eePromIO(int mode) {
         memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
         sideBandMode = E.sideBandMode;
         memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
+        cw_wpm = E.cw_wpm;
+        qrssDitTime = E.qrssDitTime;
+        blinkTime = E.blinkTime;
+        blinkPeriod = E.blinkPeriod;
+        blinkRatio = E.blinkRatio;
         checkSum = E.checkSum;
        
         sprintf(c, P("Loading %dB"), sizeof(E));      
@@ -88,6 +100,11 @@ void eePromIO(int mode) {
         memcpy(E.freqCache, freqCache, sizeof(E.freqCache));
         E.sideBandMode = sideBandMode;
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(E.sideBandModeCache));
+        E.cw_wpm = cw_wpm;
+        E.qrssDitTime = qrssDitTime;
+        E.blinkTime = blinkTime;
+        E.blinkPeriod = blinkPeriod;
+        E.blinkRatio = blinkRatio;
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
         
         // Compute and save the new Checksum of eeProm Struture
@@ -101,7 +118,7 @@ void eePromIO(int mode) {
         break;
     }
    
-    printLine2CEL(c);
+    printLineCEL(STATUS_LINE, c);
     delay(500);
     deDounceBtnRelease(); // Wait for Release
 } 
@@ -116,9 +133,9 @@ void loadUserPerferences() {
       
     // Check EEPROM for User Saved Preference, Load if available
     // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
-    printLine1CEL(P("User Pref:"));
+    printLineCEL(FIRST_LINE, P("User Pref:"));
     if (!btnDown()) eePromIO(EEP_LOAD);
-    else printLine2CEL(P("Factory Reset"));
+    else printLineCEL(STATUS_LINE, P("Factory Reset"));
     delay(500);
     deDounceBtnRelease(); // Wait for Button Release 
 }
