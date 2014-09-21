@@ -39,8 +39,11 @@
  *   Added Some new LCD Display Format Functions
  *   Added Idle Timeout for Blinking Cursor
  *   Added Sideband Toggle while in Edit-IF-Mode
+ *   Added Dial Cursor Movement via Tuning Knob
+ *   Added Menu Support with Idle Timeout
  *   Added Suffixes KILO and MEG, to make Coding Large Freq Numbers easier
  *   Added SWL to Display when Outside of HAM Bands
+ *   Added Optional USE_MENUS Support
  *
  */
 
@@ -50,10 +53,11 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FT"          // Incremental Rev Code
+#define INC_REV "ERB_FV"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
+//#define USE_MENUS     1         // Define this symbol to include Menu support
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -79,12 +83,17 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #ifdef USE_PCA9546
   #include "PCA9546.h"
 #endif
+#include "PotKnob.h"
+#include "ButtonUtil.h"
 #include "Si570.h"
 #include "debug.h"
 #include "NonVol.h"
 #include "Rf386.h"
 #include "MorseCode.h"
 #include "Macro.h"
+#ifdef USE_MENUS
+  #include "Menus.h"
+#endif
 
 #ifdef USE_PCA9546
   #define PCA9546_I2C_ADDRESS 0x70
@@ -105,25 +114,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 // Tuning POT Dead Zone
 #define DEAD_ZONE (40)
 
-enum ButtonPressModes { // Button Press Modes
-    MOMENTARY_PRESS = 1,
-    DOUBLE_PRESS,
-    LONG_PRESS,
-    ALT_PRESS_FN,
-    ALT_PRESS_LT,
-    ALT_PRESS_RT,
-};
-
-enum Buttons { // Button Numbers
-    FN_BTN = 1,
-    LT_CUR_BTN,
-    RT_CUR_BTN,
-    LT_BTN,
-    UP_BTN,
-    DN_BTN,
-    RT_BTN,
-};
-
 enum SidebandModes { // Sideband Modes
     AUTO_SIDEBAND_MODE = 0,
     UPPER_SIDEBAND_MODE,
@@ -140,15 +130,13 @@ enum VFOs { // Available VFOs
 #define TX_RX (3)
 #define CW_KEY (4)
 
-// Pin Numbers for analog inputs
-#define FN_PIN (A3)
-#define ANALOG_TUNING (A2)
-#define ANALOG_KEYER (A1)
 
 #ifdef USE_PCA9546
-PCA9546 *mux;
+  PCA9546 *mux;
 #endif
+
 Si570 *vfo;
+
 #ifndef USE_I2C_LCD
   LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
 #else
@@ -168,19 +156,23 @@ char blinkChar[2];
 
 /* tuning pot stuff */
 byte refreshDisplay = 0;
-unsigned int blinkCount = 0;
+unsigned long blinkTimer = 0;
+unsigned long blinkTime = 20000UL; // Default Blink TimeOut, Milli Seconds
+int blinkPeriod = 500;
+byte blinkRatio = 75;
 
 int tuningDir = 0;
-int tuningPosition = 0;
+int knobPosition = 0;
 int tune2500Mode = 0;
 int freqUnStable = 1;
-int tuningPositionDelta = 0;
+int knobPositionDelta = 0;
 int cursorDigitPosition = 0;
-int tuningPositionPrevious = 0;
+int knobPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
 byte sideBandMode = 0;
 
 boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
+boolean dialCursorMode = 1;
 boolean inTx = 0, inPtt = 0;
 boolean keyDown = 0;
 boolean isLSB = 0;
@@ -238,34 +230,23 @@ void printLineXY(byte col, byte row, char const *c) {
     
     //snprintf(lbuf, sizeof(lbuf)-col, "%s", c);
     strncpy(lbuf, c, sizeof(lbuf)-col);
-    lcd.setCursor(col, row);
+    lcd.setCursor(col, row % LCD_ROW);
     lcd.print(lbuf);
 }
 
-void printLine1(char const *c){
-    printLineXY(0, 0, c);
+// -------------------------------------------------------------------------------
+void printLine(int row, char const *c){
+    printLineXY(0, row, c);
 }
 
-void printLine2(char const *c){
-    printLineXY(0, 1, c);
-}
-
-// Print LCD Line1 with Clear to End of Line
-void printLine1CEL(char const *c){
+// -------------------------------------------------------------------------------
+// Print LCD Row with Clear to End of Line
+void printLineCEL(int row, char const *c){
     char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
 
     sprintf(lbuf, P(LCD_STR_CEL), c);
-    printLineXY(0, 0, lbuf);
-}
-
-// Print LCD Line2 with Clear to End of Line
-void printLine2CEL(char const *c){
-    char buf[16];  // Used for local P() Function
-    char lbuf[LCD_COL+2];
-
-    sprintf(lbuf, P(LCD_STR_CEL), c);
-    printLineXY(0, 1, lbuf);
+    printLineXY(0, row, lbuf);
 }
 
 
@@ -274,10 +255,10 @@ void updateDisplay(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
   char d[6]; // Buffer for RIT Display Value
   char *vfoLabel;
-  
+
   if (refreshDisplay) {
-      refreshDisplay = 0; 
-      blinkCount = 0;
+      if(refreshDisplay > 0) refreshDisplay--;
+      blinkTimer = 0;
       
       // Create Label for Displayed VFO
       vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
@@ -292,7 +273,7 @@ void updateDisplay(){
           inTx ? P4(" ") : ritOn ? d : P4(" "),
           tune2500Mode ? P8("*"): P8(" ")
           );
-      printLine1CEL(c);
+      printLineCEL(FIRST_LINE, c);
       
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);   
       sprintf(blinkChar, "%1.1s", c+cursorCol);  // Save Character to Blink
@@ -303,7 +284,7 @@ void updateDisplay(){
           inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
           freqUnStable ? P8(" ") : inBand ? vfoStatus[vfo->status] : P8("SWL")
           );
-      printLine2CEL(c);
+      printLineCEL(STATUS_LINE, c);
       
   }
   updateCursor();
@@ -325,36 +306,41 @@ void cursorOff() {
 
 
 // -------------------------------------------------------------------------------
-void updateCursor() {updateCursor(800);}
-
-void updateCursor(int blinkRateMS) {
+void updateCursor() {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
-#define BLINK (75) // ON Percen
-#define BLINK_TIMEOUT (5) // In Minutes
+
   static unsigned long blinkInterval = 0;
   static boolean toggle = false;
+  char blockChar = 0xFF;
     
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
   if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
+  if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
+
+  if(!blinkTimer) blinkTimer = millis() + blinkTime;
   
   DEBUG(P("\nStart Blink"));
   if (blinkInterval < millis()) { // Wink OFF
       DEBUG(P("Wink OFF"));
-      blinkInterval = millis() + blinkRateMS;
-      lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
-      lcd.print(P(" ")); 
+      blinkInterval = millis() + blinkPeriod;
+      if (cursorDigitPosition) {
+          lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
+          if (dialCursorMode) lcd.print(P("_")); 
+          else lcd.print(blockChar);
+      }
       toggle = true;
   } 
-  else if ((blinkInterval - (blinkRateMS/100*BLINK)) < millis() && toggle) { // Wink ON
-      DEBUG(P("Wink ON, %d %d"), (BLINK_TIMEOUT * 600/BLINK * 10), blinkCount);
+  else if ((blinkInterval - (blinkPeriod/100*blinkRatio)) < millis() && toggle) { // Wink ON
+      DEBUG(P("Wink ON"));
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(blinkChar);
-      if (++blinkCount > (BLINK_TIMEOUT * 600/BLINK * 10)) { // Stop Blink after Idle period, Minutes * 6000/BLINK 
+      if(blinkTimer < millis()) {
           DEBUG(P("End Blink TIMED OUT"));
           cursorDigitPosition = 0;
+          dialCursorMode = true;
           refreshDisplay++;
           updateDisplay();
       }
@@ -394,12 +380,6 @@ void setBandswitch(unsigned long freq){
 }
 
 
-// ###############################################################################
-void readTuningPot(){
-    
-    tuningPosition = analogRead(ANALOG_TUNING);
-}
-
 
 // ###############################################################################
 // An Alternate Tuning Strategy or Method
@@ -407,10 +387,8 @@ void readTuningPot(){
 // Tuning Position by Switches on FN Circuit
 // Author: Eldon R. Brown - WA0UWH, Apr 25, 2014
 void checkTuning() {
-#define AUTOTIMER_RATE_MS (200)
   long deltaFreq;
   unsigned long newFreq;
-  static unsigned long AutoTimer = 0;
 
   // Count Down to Freq Stable, i.e. Freq has not changed recently
   if (freqUnStable && freqUnStable < 5) {
@@ -422,45 +400,35 @@ void checkTuning() {
   // Do Not Change Freq while in Transmit or button opperation
   // Allow Tuning knob to be recentered without changing Frequency
   if (tuningLocked) {
-      tuningPositionPrevious = tuningPosition;
+      knobPositionPrevious = knobPosition;
       return;
   }
   
-  // Compute tuningDaltaPosition from tuningPosition
-  tuningPositionDelta = tuningPosition - tuningPositionPrevious;
-  
-  tuningDir = 0;  // Set Default Tuning Directon to neather Right nor Left
-  
-  if (AutoTimer > millis()) return;
-  
-  if (tuningPosition < DEAD_ZONE * 2 && AutoTimer < millis()) { // We must be at the Low end of the Tuning POT
-      tuningPositionDelta = -DEAD_ZONE;
-      AutoTimer = millis() + AUTOTIMER_RATE_MS;
-      if (tuningPosition > DEAD_ZONE ) AutoTimer += AUTOTIMER_RATE_MS*3/2; // At very end of Tuning POT
-  }
-  if (tuningPosition > 1023 - DEAD_ZONE * 2 && AutoTimer < millis()) { // We must be at the High end of the Tuning POT
-      tuningPositionDelta = +DEAD_ZONE;
-      AutoTimer = millis() + AUTOTIMER_RATE_MS;
-      if (tuningPosition  < 1023 - DEAD_ZONE / 8) AutoTimer += AUTOTIMER_RATE_MS*3/2; // At very end of Tuning POT
-  }
-  
-  // Check to see if Digit Change Action is Required, Otherwise Do Nothing via RETURN 
-  if (abs(tuningPositionDelta) < DEAD_ZONE) return;
+  tuningDir = doPotKnob(); // Get Tuning Direction from POT Knob
+  if (!tuningDir) return;
 
-  tuningDir = tuningPositionDelta < 0 ? -1 : tuningPositionDelta > 0 ? +1 : 0;  
-  if (!tuningDir) return;  // If Neather Direction, Abort
   
   // Decode and implement RIT Tuning
   if (ritOn) {
       ritVal += tuningDir * 10;
       ritVal = constrain(ritVal, -990, +990);
-      tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
+      dialCursorMode = true;
       refreshDisplay++;
       updateDisplay();
       return;
   }
+    
+  if (dialCursorMode) {
+      decodeMoveCursor(-tuningDir); // Move the Cursor with the Dial
+      return;
+  }
   
-  if (cursorDigitPosition < 1) return; // Nothing to do here, Abort, Cursor is in Park position
+  if (cursorDigitPosition < 1) {
+     dialCursorMode = true;
+     return; // Nothing to do here, Abort, Cursor is in Park position
+  }
+
+  blinkTimer = 0;
 
   // Select Tuning Mode; Digit or 2500 Step Mode
   if (tune2500Mode) {
@@ -476,9 +444,9 @@ void checkTuning() {
       for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
   
       newFreq = frequency + deltaFreq;  // Save Least Digits Mode
+      //newFreq = (frequency / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
   }
-  
-  //newFreq = (frequency / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode 
+
   if (newFreq != frequency) {
       // Update frequency if within range of limits, 
       // Avoiding Nagative underRoll of UnSigned Long, and over-run MAX_FREQ  
@@ -488,7 +456,6 @@ void checkTuning() {
         refreshDisplay++;
       }
       freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
-      tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
   }
 }
 
@@ -586,14 +553,12 @@ void checkTX() {
     
     if (keyDown) {
         DEBUG(P("%s %d: KEY On"), __func__, __LINE__);
-        blinkCount = 0;
         cwTimeout = CW_TIMEOUT + millis(); // Restat timer
         return;
     } 
       
     if (inPtt && inTx) { // Check PTT
         DEBUG(P("%s %d: PTT"), __func__, __LINE__);
-        blinkCount = 0;
         cwTimeout = CW_TIMEOUT + millis(); // Restat timer
         // It is OK, to stop TX
         if (!isPttPressed()) { // Is PTT Not pushed, then end PTT
@@ -661,51 +626,6 @@ void stopSidetone() {
 }
 
 
-// ###############################################################################
-int btnDown(){
-#define DEBUG(x ...)
-//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
-  int val = -1, val2 = -2;
-  
-  val = analogRead(FN_PIN);
-  while (val != val2) { // DeBounce Button Press
-      delay(10);
-      val2 = val;
-      val = analogRead(FN_PIN);
-  }
-  
-  if (val>1000) return 0;
-  
-  tuningLocked = 1; // Holdoff Tuning until button is processed
-  // 47K Pull-up, and 4.7K switch resistors,
-  // Val should be approximately = (btnN×4700)÷(47000+4700)×1023
-
-  DEBUG(P("%s %d: btn Val= %d"), __func__, __LINE__, val);
-
-  if (val > 350) return 7;
-  if (val > 300) return 6;
-  if (val > 250) return 5;
-  if (val > 200) return 4;
-  if (val > 150) return 3;
-  if (val >  50) return 2;
-  return 1;
-}
-
-
-// -------------------------------------------------------------------------------
-void deDounceBtnRelease() {
-  int i = 2;
-    
-    while (i--) { // DeBounce Button Release, Check twice
-      while (btnDown()) delay(20);
-    }
-    // The following allows the user to re-center the
-    // Tuning POT during any Key Press-n-hold without changing Freq.
-    readTuningPot();
-    tuningPositionPrevious = tuningPosition;
-    tuningLocked = 0; // Allow Tuning to Proceed
-}
-
 
 // ###############################################################################
 void checkButton() {
@@ -718,33 +638,37 @@ void checkButton() {
   
   btn = btnDown();
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
-  
+
   switch (btn) {
     case 0: return; // Abort
     case FN_BTN: decodeFN(btn); break;  
-    case LT_CUR_BTN: decodeMoveCursor(+1); break;    
-    case RT_CUR_BTN: decodeMoveCursor(-1); break;
+    case LT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(+1); break;    
+    case RT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(-1); break;
     case LT_BTN: switch (getButtonPushMode(btn)) { 
-            case MOMENTARY_PRESS: decodeSideBandMode(btn); break;
-            case DOUBLE_PRESS:    eePromIO(EEP_SAVE); break;
-            case LONG_PRESS:      eePromIO(EEP_LOAD); break;
-            case ALT_PRESS_FN:    toggleAltTxVFO();  break;
-            case ALT_PRESS_LT:    sendMorseMesg(CW_WPM, P(CW_MSG1));  break;
-            case ALT_PRESS_RT:    sendMorseMesg(CW_WPM, P(CW_MSG2));  break;    
+            case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
+            case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
+            case LONG_PRESS:       eePromIO(EEP_SAVE); break;
+            case ALT_PRESS_FN:     toggleAltTxVFO();  break;
+            case ALT_PRESS_LT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG1));  break;
+            case ALT_PRESS_RT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG2));  break;
             default: return; // Do Nothing
             } break;
     case UP_BTN: decodeBandUpDown(+1); break; // Band Up
     case DN_BTN: decodeBandUpDown(-1); break; // Band Down
-    case RT_BTN: switch (getButtonPushMode(btn)) { 
-            case MOMENTARY_PRESS: decodeTune2500Mode(); break;
-            case LONG_PRESS:      decodeEditIf(); break;
-            case ALT_PRESS_LT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG1));  break;
-            case ALT_PRESS_RT:    sendQrssMesg(QRSS_DIT_TIME, QRSS_SHIFT, P(QRSS_MSG2));  break;    
-            default: return; // Do Nothing
-            } break;
-    //case 8: decodeAux(8); break; // Report Un-Used as AUX Buttons
-    default: return;
-  }     
+    case RT_BTN: switch (getButtonPushMode(btn)) {
+            case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
+            #ifdef USE_MENUS
+            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay+=2; break;
+            #endif
+            case LONG_PRESS:       decodeEditIf(); break;
+            case ALT_PRESS_LT:     decodeTune2500Mode(); break;
+            case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
+            case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
+            default: ; // Do Nothing
+            }
+  }
+  if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
+  blinkTimer = 0;
   refreshDisplay++;
   updateDisplay();
   deDounceBtnRelease(); // Wait for Button Release
@@ -789,6 +713,7 @@ void decodeTune2500Mode() {
     
     cursorDigitPosition = 3; // Set default Tuning Digit
     tune2500Mode = !tune2500Mode;
+    dialCursorMode = false;
     if (tune2500Mode) frequency = (frequency / 2500) * 2500;
 }
 
@@ -873,65 +798,22 @@ void decodeSideBandMode(int btn) {
 // ###############################################################################
 void decodeMoveCursor(int dir) {
 
-      tuningPositionPrevious = tuningPosition;
+      knobPositionPrevious = knobPosition;
       if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
-      freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable     
+      freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable
+      blinkTimer = 0;
+      if(!cursorDigitPosition) dialCursorMode = true;
       refreshDisplay++;
 }
-
-// -------------------------------------------------------------------------------
-void decodeAux(int btn) {
-    
-    //debug("%s btn %d", __func__, btn);
-    sprintf(c, P("Btn: %.2d"), btn);
-    printLine2CEL(c);
-    delay(100);
-    deDounceBtnRelease(); // Wait for Release
-}
-
-
-// ###############################################################################
-int getButtonPushMode(int btn) {
-    int t1, t2, tbtn;
-  
-    t1 = t2 = 0;
-
-    // Time for first press
-    tbtn = btnDown();
-    while (t1 < 20 && btn == tbtn){
-        tbtn = btnDown();
-        if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
-        if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
-        if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
-        delay(50);
-        t1++;
-    }
-    // Time between presses
-    while (t2 < 10 && !tbtn){
-        tbtn = btnDown();
-        if (btn != FN_BTN     && tbtn == FN_BTN)     return ALT_PRESS_FN;
-        if (btn != LT_CUR_BTN && tbtn == LT_CUR_BTN) return ALT_PRESS_LT;
-        if (btn != RT_CUR_BTN && tbtn == RT_CUR_BTN) return ALT_PRESS_RT;
-        delay(50);
-        t2++;
-    }
-
-    if (t1 > 10) return LONG_PRESS;
-    if (t2 < 7) return DOUBLE_PRESS; 
-    return MOMENTARY_PRESS; 
-}
-
 
 // ###############################################################################
 void decodeFN(int btn) {
 
   switch (getButtonPushMode(btn)) { 
     case MOMENTARY_PRESS:
-       ritOn = !ritOn; ritVal = 0;     
-       refreshDisplay++;
-       updateDisplay();
+       ritOn = !ritOn; ritVal = 0;
        break;
       
     case DOUBLE_PRESS:
@@ -962,21 +844,22 @@ void decodeFN(int btn) {
        case VFO_A :
           vfoB = frequency + ritVal;
           sprintf(c, P("A%sB"), ritVal ? P2("+RIT>"): P2(">"));
-          printLine2CEL(c);
+          printLineCEL(STATUS_LINE, c);
           break;
        default :
           vfoA = frequency + ritVal;
           sprintf(c, P("B%sA"), ritVal ? P2("+RIT>"): P2(">"));
-          printLine2CEL(c);
+          printLineCEL(STATUS_LINE, c);
           break;
        }
        delay(100);
        break;
-    default :
-       return; // Do Nothing
+    default : return; // Do Nothing
   }
   inBandLimits(frequency);
   deDounceBtnRelease(); // Wait for Release
+  refreshDisplay++;
+  updateDisplay();
 }
 
 
@@ -1014,25 +897,25 @@ void setup() {
 
   lcd.begin(LCD_COL, LCD_ROW);
   cursorOff();
-  printLine1(P("Farhan - Minima"));
-  printLine2(P("  Tranceiver"));
+  printLine(FIRST_LINE, P("Farhan - Minima"));
+  printLine(STATUS_LINE, P("  Tranceiver"));
   delay(2000);
   
   sprintf(b, P("Radiono %s"), P2(RADIONO_VERSION));
-  printLine1CEL(b);
+  printLineCEL(0, b);
   
   sprintf(b, P("Rev: %s"), P2(INC_REV));
-  printLine2CEL(b);
+  printLineCEL(STATUS_LINE, b);
   delay(2000);
   
   //sprintf(b, P("%s"), __DATE__); // Compile Date and Time
   //sprintf(c, "%3.3s%7.7s %5.5s", b, b+4, __TIME__);
-  //printLine2CEL(c);
+  //printLineCEL(STATUS_LINE, c);
   //delay(2000); 
   
   // Print just the File Name, Added by ERB
   //sprintf(c, P("F: %-13.13s"), P2(__FILE__));
-  //printLine2CLE(c);
+  //printLineCLE(STATUS_LINE, c);
   //delay(2000);
 
 
@@ -1044,11 +927,11 @@ void setup() {
 
   if (vfo->status == SI570_ERROR) {
     // The Si570 is unreachable. Show an error for 3 seconds and continue.
-    printLine2CEL(P("Si570 comm error"));
+    printLineCEL(STATUS_LINE, P("Si570 comm error"));
     delay(3000);
   }
   
-  printLine2CEL(P(" "));
+  printLineCEL(STATUS_LINE, P(" "));
  
   // This will print some debugging info to the serial console.
   vfo->debugSi570();
@@ -1074,7 +957,7 @@ void setup() {
   loadUserPerferences();
   
   // Setup the First Tuning POT Position
-  tuningPositionPrevious = tuningPosition = analogRead(ANALOG_TUNING);
+  knobPositionPrevious = knobPosition = analogRead(ANALOG_TUNING);
   refreshDisplay++; 
 }
 
@@ -1085,10 +968,16 @@ void loop(){
   unsigned long freq;
   
   readTuningPot();
+  
+  #ifdef USE_MENUS
+       // Check if in Menu Mode
+      if (menuActive) { doMenus(menuActive); return; };
+  #endif
+  
   checkTuning();
 
   checkTX();
-  
+ 
   checkButton();
 
   if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
@@ -1103,7 +992,7 @@ void loop(){
   setRf386BandSignal(frequency);
   
   updateDisplay();
-   
+  
 }
 
 // ###############################################################################

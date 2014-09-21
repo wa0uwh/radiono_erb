@@ -25,7 +25,7 @@ Arduino |
         |    |
 --------+    v
 
-            "FN"       "Left"    "Right"   "SBand"    "Up"     "Down"     btn7
+            "FN"       "Left"    "Right"   "SBand"    "Up"     "Down"     btn7*
            (btn1)      (btn2)    (btn3)    (btn4)    (btn5)    (btn6)    (btn7)
 
 
@@ -60,6 +60,10 @@ When used with my Alternate Tuning Method Sketch:
    "Left" and "Right" buttons moves the Cursor
    "SBand" selects the Side Band Mode; "Auto SB", "USB", or "LSB".
    "Up" and "Down" switches Ham Band, and saves the current
+
+
+Note btn7*: When a Encoder is used, btn7 is wired to the included Encoder Push Button
+
 
 See: http://wa0uwh.blogspot.com/search/label/Minima
 

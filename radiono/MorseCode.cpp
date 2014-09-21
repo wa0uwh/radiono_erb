@@ -5,11 +5,14 @@
 #include <Arduino.h>
 #include "A1Main.h"
 #include "MorseCode.h"
+#include "MorseTable.h"
 
 // Local
-long ditLen = 1200/13; // Default Speed
+byte cw_wpm = CW_WPM;
+unsigned int qrssDitTime = QRSS_DIT_TIME;
+unsigned int ditLen = 1200/CW_WPM; // Default Speed
 byte txSpeed = 0;
-#include "MorseTable.h"
+
 
 
 // ########################################################
@@ -64,22 +67,22 @@ void sendMesg(int mode, int freqShift, char *msg) {
     inTx = 1; 
     changeToTransmit();
     
-    printLine2CEL(" "); // Clear Line 2
+    printLineCEL(STATUS_LINE," "); // Clear Line
     sprintf(c, P("%s"), mode == MOD_QRSS ? P8("QR"): P8("CW"));
     if (mode == MOD_QRSS && ditLen < 1000) sprintf(c+1, P(".%2.2d"), ditLen/10);
     else sprintf(c, P("%s%02.2d"), c, txSpeed);
-    printLineXY(12, 0, c);
+    printLineXY(12, FIRST_LINE, c);
     delay(50);
      
     if(mode == MOD_QRSS) startSidetone();        
-    printLine2CEL(msg); // Scroll Message on Line 2
+    printLineCEL(STATUS_LINE, msg); // Scroll Message
     bitTimer(ditLen);
     
     while(*msg) {
         if (isKeyNowClosed()) return; // Abort Message
         if (*msg == ' ') {
            msg++;
-           printLine2CEL(msg); // Scroll Message on Line 2
+           printLineCEL(STATUS_LINE, msg); // Scroll Message on Line #2
            bitTimer(ditLen * 4); // 3 for previous character + 4 for word = 7 total
         }
         else {
@@ -91,7 +94,7 @@ void sendMesg(int mode, int freqShift, char *msg) {
                 bits /= 2;
             }
             msg++;
-            printLine2CEL(msg); // Scroll Message on Line 2
+            printLineCEL(STATUS_LINE, msg); // Scroll Message on Line #2
             bitTimer(ditLen * 2); // 1 + 2 added between characters
         } 
         cwTimeout = ditLen * 10 + millis();
@@ -101,7 +104,7 @@ void sendMesg(int mode, int freqShift, char *msg) {
 // ########################################################
 void sendQrssMesg(long len, int freqShift, char *msg) {
     
-    ditLen = len < 0 ? -len : len * 1000; // Len is -MS or +Seconds
+    ditLen = len; // Len is MS
     txSpeed = ditLen / 1000;
     sendMesg(MOD_QRSS, freqShift, msg);
 }
