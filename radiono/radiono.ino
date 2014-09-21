@@ -56,7 +56,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
-#define USE_MENUS     1         // Define this symbol to include Menu support
+//#define USE_MENUS     1         // Define this symbol to include Menu support
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
