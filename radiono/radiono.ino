@@ -40,6 +40,7 @@
  *   Added Idle Timeout for Blinking Cursor
  *   Added Sideband Toggle while in Edit-IF-Mode
  *   Added Suffixes KILO and MEG, to make Coding Large Freq Numbers easier
+ *   Added SWL to Display when Outside of HAM Bands
  *
  */
 
@@ -49,7 +50,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FS"          // Incremental Rev Code
+#define INC_REV "ERB_FT"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
@@ -184,6 +185,7 @@ boolean inTx = 0, inPtt = 0;
 boolean keyDown = 0;
 boolean isLSB = 0;
 boolean vfoActive = VFO_A;
+byte inBand = 0;
 
 /* modes */
 int ritVal = 0;
@@ -299,7 +301,7 @@ void updateDisplay(){
           isLSB ? P2("LSB") : P2("USB"),
           sideBandMode ? P3("*") : P3(" "),
           inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
-          freqUnStable ? P8(" ") : vfoStatus[vfo->status]
+          freqUnStable ? P8(" ") : inBand ? vfoStatus[vfo->status] : P8("SWL")
           );
       printLine2CEL(c);
       
@@ -411,8 +413,11 @@ void checkTuning() {
   static unsigned long AutoTimer = 0;
 
   // Count Down to Freq Stable, i.e. Freq has not changed recently
-  if (freqUnStable && freqUnStable < 5) refreshDisplay++;
-  freqUnStable = max(--freqUnStable, 0);
+  if (freqUnStable && freqUnStable < 5) {
+      refreshDisplay++;
+      inBandLimits(frequency);
+  }
+  freqUnStable = max(freqUnStable - 1, 0);
   
   // Do Not Change Freq while in Transmit or button opperation
   // Allow Tuning knob to be recentered without changing Frequency
@@ -482,7 +487,7 @@ void checkTuning() {
         if (!editIfMode) vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
         refreshDisplay++;
       }
-      freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
+      freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
       tuningPositionPrevious = tuningPosition; // Set up for the next Iteration
   }
 }
@@ -502,12 +507,14 @@ int inBandLimits(unsigned long freq){
        //if (freq == freqPrev) return bandPrev;
        //freqPrev = freq;
        
+       inBand = 0;
        for (int band = 0; band < BANDS; band++) {
          lower = band * 2;
          upper = lower + 1;
          if (freq >= pgm_read_dword(&bandLimits[lower]) &&
              freq <= pgm_read_dword(&bandLimits[upper]) ) {
              band++;
+             inBand = (byte) band;
              //bandPrev = band;
              DEBUG(P("In Band %d"), band);
              return band;
@@ -831,6 +838,7 @@ void decodeBandUpDown(int dir) {
      } // End else
      
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
+   inBandLimits(frequency);
    ritOn = ritVal = 0;
    decodeSideband();
 }
@@ -943,7 +951,7 @@ void decodeFN(int btn) {
             frequency = vfoA;
           }
        }
-       ritOn = ritVal = 0;     
+       ritOn = ritVal = 0;  
        refreshDisplay++;
        updateDisplay();
        break;
@@ -967,6 +975,7 @@ void decodeFN(int btn) {
     default :
        return; // Do Nothing
   }
+  inBandLimits(frequency);
   deDounceBtnRelease(); // Wait for Release
 }
 
