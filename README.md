@@ -52,7 +52,7 @@ Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
 
 	13). Added Morse Code Functions, MACROs and Beacon
 	
-	14). Added User Menus 
+	14). Added Optional User Menus 
 
 
 --

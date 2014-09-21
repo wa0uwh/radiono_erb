@@ -24,6 +24,8 @@ enum Menu_BlinkParams {
 };
 
 
+byte menuActive = 0;
+byte menuPrev = 0;
 unsigned long menuIdleTimeOut = 0;
 boolean menuCycle = true;
 

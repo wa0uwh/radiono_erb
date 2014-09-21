@@ -42,6 +42,7 @@
  *   Added Dial Cursor Movement via Tuning Knob
  *   Added Menu Support with Idle Timeout
  *   Added Suffixes KILO and MEG, to make Coding Large Freq Numbers easier
+ *   Added Optional USE_MENUS Support
  *
  */
 
@@ -51,10 +52,11 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FSe.01"          // Incremental Rev Code
+#define INC_REV "ERB_FSe.11"          // Incremental Rev Code
 
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
 //#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
+#define USE_MENUS     1         // Define this symbol to include Menu support
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -88,7 +90,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #include "Rf386.h"
 #include "MorseCode.h"
 #include "Macro.h"
-#include "Menus.h"
+#ifdef USE_MENUS
+  #include "Menus.h"
+#endif
 
 #ifdef USE_PCA9546
   #define PCA9546_I2C_ADDRESS 0x70
@@ -156,8 +160,6 @@ unsigned long blinkTime = 20000UL; // Default Blink TimeOut, Milli Seconds
 int blinkPeriod = 500;
 byte blinkRatio = 75;
 
-byte menuActive = 0;
-byte menuPrev = 0;
 int tuningDir = 0;
 int knobPosition = 0;
 int tune2500Mode = 0;
@@ -648,7 +650,9 @@ void checkButton() {
     case DN_BTN: decodeBandUpDown(-1); break; // Band Down
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
-            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay++; break;
+            #ifdef USE_MENUS
+            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay+=2; break;
+            #endif
             case LONG_PRESS:       decodeEditIf(); break;
             case ALT_PRESS_LT:     decodeTune2500Mode(); break;
             case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
@@ -656,7 +660,7 @@ void checkButton() {
             default: ; // Do Nothing
             }
   }
-  if (btn) DEBUG(P("%s %d: btn %d, MenuActive %d"), __func__, __LINE__, btn, menuActive);
+  if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   blinkTimer = 0;
   refreshDisplay++;
   updateDisplay();
@@ -954,14 +958,16 @@ void loop(){
   
   readTuningPot();
   
-   // Check if in Menu Mode
-  if (menuActive) doMenus(menuActive); 
+  #ifdef USE_MENUS
+       // Check if in Menu Mode
+      if (menuActive) { doMenus(menuActive); return; };
+  #endif
   
-  if (!menuActive) checkTuning();
+  checkTuning();
 
   checkTX();
  
-  if (!menuActive) checkButton();
+  checkButton();
 
   if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
       freq = frequency;
@@ -974,7 +980,7 @@ void loop(){
   setBandswitch(frequency);
   setRf386BandSignal(frequency);
   
-  if (!menuActive) updateDisplay();
+  updateDisplay();
   
 }
 

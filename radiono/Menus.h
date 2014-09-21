@@ -9,6 +9,10 @@
     
     #define MENUS (15)
 
+    // Externally Available Variables
+    extern byte menuActive;
+    extern byte menuPrev;
+    
     // Externally Available Functions
     extern void doMenus(int menu);
 
