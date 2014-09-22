@@ -54,7 +54,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GA"          // Incremental Rev Code
+#define INC_REV "ERB_GA.01"          // Incremental Rev Code
 
 // Optional USER Configurations
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
@@ -171,7 +171,7 @@ unsigned long cwTimeout = 0;
 boolean editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
-char blinkChar[2];
+char blinkChar;
 
 /* tuning pot stuff */
 byte refreshDisplay = 0;
@@ -263,7 +263,7 @@ void printLine(int row, char const *c){
 void printLineCEL(int row, char const *c){
     char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
-
+    
     sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, row, lbuf);
 }
@@ -294,8 +294,8 @@ void updateDisplay(){
           );
       printLineCEL(FIRST_LINE, c);
       
-      saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);   
-      sprintf(blinkChar, "%1.1s", c+cursorCol);  // Save Character to Blink
+      saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
+      blinkChar = c[cursorCol];
       
       sprintf(c, P("%3s%1s %-2s %3.3s"),
           isLSB ? P2("LSB") : P2("USB"),
@@ -374,7 +374,7 @@ void decodeSideband(){
 
   switch(sideBandMode) {
    // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
-    case  AUTO_SIDEBAND_MODE: isLSB = (frequency <= 9.99 * MEG) ? 1 : 0 ; break; // Automatic Side Band Mode
+    case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 9.99 * MEG) ? 1 : 0 ; break; // Automatic Side Band Mode
     case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
     case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
   }
@@ -394,7 +394,7 @@ void setBandswitch(unsigned long freq){
   if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
 
   // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
-  if (freq >= 14.99 * MEG) digitalWrite(BAND_HI_PIN, 1);
+  if (freq > 14.99 * MEG) digitalWrite(BAND_HI_PIN, 1);
   else digitalWrite(BAND_HI_PIN, 0);
 }
 
