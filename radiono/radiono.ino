@@ -44,6 +44,7 @@
  *   Added Suffixes KILO and MEG, to make Coding Large Freq Numbers easier
  *   Added SWL to Display when Outside of HAM Bands
  *   Added Optional USE_MENUS Support
+ *   Added Optional USER Configuration Support, via #ifdef
  *
  */
 
@@ -53,11 +54,15 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_FV"          // Incremental Rev Code
+#define INC_REV "ERB_GB"          // Incremental Rev Code
 
+// Optional USER Configurations
 //#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
-//#define USE_I2C_LCD	1         // Define this symbol to include i2c LCD support
-//#define USE_MENUS     1         // Define this symbol to include Menu support
+//#define USE_I2C_LCD   1         // Define this symbol to include i2c LCD support
+#define USE_RF386     1         // Define this symbol to include RF386 support
+#define USE_BEACONS   1         // Define this symbol to include Beacons, CW and QRSS support
+#define USE_EEPROM    1         // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
+#define USE_MENUS     1         // Define this symbol to include Menu support
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -87,17 +92,31 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #include "ButtonUtil.h"
 #include "Si570.h"
 #include "debug.h"
-#include "NonVol.h"
-#include "Rf386.h"
-#include "MorseCode.h"
-#include "Macro.h"
+
+#ifdef USE_EEPROM
+  #include "NonVol.h"
+#endif // USE_EEPROM
+
+#ifdef USE_RF386
+  #include "Rf386.h"
+#endif // USE_RF386
+
+#ifdef USE_BEACONS
+  #include "MorseCode.h"
+  #include "Macro.h"
+#endif // USE_BEACONS
+
 #ifdef USE_MENUS
   #include "Menus.h"
-#endif
+#endif // USE_MENUS
+
+
+
 
 #ifdef USE_PCA9546
   #define PCA9546_I2C_ADDRESS 0x70
-#endif
+#endif // USE_PCA9546
+
 #define SI570_I2C_ADDRESS   0x55
 
 // Default Tune Frequency
@@ -152,7 +171,7 @@ unsigned long cwTimeout = 0;
 boolean editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
-char blinkChar[2];
+char blinkChar;
 
 /* tuning pot stuff */
 byte refreshDisplay = 0;
@@ -244,7 +263,7 @@ void printLine(int row, char const *c){
 void printLineCEL(int row, char const *c){
     char buf[16];  // Used for local P() Function
     char lbuf[LCD_COL+2];
-
+    
     sprintf(lbuf, P(LCD_STR_CEL), c);
     printLineXY(0, row, lbuf);
 }
@@ -275,14 +294,15 @@ void updateDisplay(){
           );
       printLineCEL(FIRST_LINE, c);
       
-      saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);   
-      sprintf(blinkChar, "%1.1s", c+cursorCol);  // Save Character to Blink
+      saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
+      blinkChar = c[cursorCol];
       
-      sprintf(c, P("%3s%1s %-2s %3.3s"),
+      sprintf(c, P("%3s %-2s %3.3s"),
+          sideBandMode ? 
+          isLSB ? P2("Lsb") : P2("Usb") :
           isLSB ? P2("LSB") : P2("USB"),
-          sideBandMode ? P3("*") : P3(" "),
-          inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
-          freqUnStable ? P8(" ") : inBand ? vfoStatus[vfo->status] : P8("SWL")
+          inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
+          freqUnStable ? P4(" ") : inBand ? vfoStatus[vfo->status] : P4("SWL")
           );
       printLineCEL(STATUS_LINE, c);
       
@@ -355,7 +375,7 @@ void decodeSideband(){
 
   switch(sideBandMode) {
    // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
-    case  AUTO_SIDEBAND_MODE: isLSB = (frequency <= 9.99 * MEG) ? 1 : 0 ; break; // Automatic Side Band Mode
+    case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 9.99 * MEG) ? 1 : 0 ; break; // Automatic Side Band Mode
     case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
     case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
   }
@@ -375,7 +395,7 @@ void setBandswitch(unsigned long freq){
   if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
 
   // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
-  if (freq >= 14.99 * MEG) digitalWrite(BAND_HI_PIN, 1);
+  if (freq > 14.99 * MEG) digitalWrite(BAND_HI_PIN, 1);
   else digitalWrite(BAND_HI_PIN, 0);
 }
 
@@ -417,7 +437,9 @@ void checkTuning() {
       updateDisplay();
       return;
   }
-    
+ 
+  blinkTimer = 0;  
+  
   if (dialCursorMode) {
       decodeMoveCursor(-tuningDir); // Move the Cursor with the Dial
       return;
@@ -427,8 +449,6 @@ void checkTuning() {
      dialCursorMode = true;
      return; // Nothing to do here, Abort, Cursor is in Park position
   }
-
-  blinkTimer = 0;
 
   // Select Tuning Mode; Digit or 2500 Step Mode
   if (tune2500Mode) {
@@ -646,24 +666,30 @@ void checkButton() {
     case RT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(-1); break;
     case LT_BTN: switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
+        #ifdef USE_EEPROM
             case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
             case LONG_PRESS:       eePromIO(EEP_SAVE); break;
+        #endif // USE_EEPROM
             case ALT_PRESS_FN:     toggleAltTxVFO();  break;
+        #ifdef USE_BEACONS
             case ALT_PRESS_LT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG1));  break;
             case ALT_PRESS_RT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG2));  break;
+        #endif // USE_BEACONS
             default: return; // Do Nothing
             } break;
     case UP_BTN: decodeBandUpDown(+1); break; // Band Up
     case DN_BTN: decodeBandUpDown(-1); break; // Band Down
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
-            #ifdef USE_MENUS
+        #ifdef USE_MENUS
             case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay+=2; break;
-            #endif
+        #endif // USE_MENUS
             case LONG_PRESS:       decodeEditIf(); break;
             case ALT_PRESS_LT:     decodeTune2500Mode(); break;
+        #ifdef USE_BEACONS
             case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
             case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
+        #endif // USE_BEACONS
             default: ; // Do Nothing
             }
   }
@@ -953,8 +979,10 @@ void setup() {
   pinMode(FN_PIN, INPUT);
   digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
   
-  DEBUG(P("Pre Load EEPROM"));
-  loadUserPerferences();
+  #ifdef USE_EEPROM
+     DEBUG(P("Pre Load EEPROM"));
+     loadUserPerferences();
+  #endif // USE_EEPROM
   
   // Setup the First Tuning POT Position
   knobPositionPrevious = knobPosition = analogRead(ANALOG_TUNING);
@@ -989,7 +1017,10 @@ void loop(){
   
   decodeSideband();
   setBandswitch(frequency);
-  setRf386BandSignal(frequency);
+  
+  #ifdef USE_RF386
+    setRf386BandSignal(frequency);
+  #endif
   
   updateDisplay();
   
