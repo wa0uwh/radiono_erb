@@ -297,11 +297,12 @@ void updateDisplay(){
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
       blinkChar = c[cursorCol];
       
-      sprintf(c, P("%3s%1s %-2s %3.3s"),
+      sprintf(c, P("%3s %-2s %3.3s"),
+          sideBandMode ? 
+          isLSB ? P2("Lsb") : P2("Usb") :
           isLSB ? P2("LSB") : P2("USB"),
-          sideBandMode ? P3("*") : P3(" "),
-          inTx ? (inPtt ? P4("PT") : P4("CW")) : P4("RX"),
-          freqUnStable ? P8(" ") : inBand ? vfoStatus[vfo->status] : P8("SWL")
+          inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
+          freqUnStable ? P4(" ") : inBand ? vfoStatus[vfo->status] : P4("SWL")
           );
       printLineCEL(STATUS_LINE, c);
       
@@ -436,7 +437,9 @@ void checkTuning() {
       updateDisplay();
       return;
   }
-    
+ 
+  blinkTimer = 0;  
+  
   if (dialCursorMode) {
       decodeMoveCursor(-tuningDir); // Move the Cursor with the Dial
       return;
@@ -446,8 +449,6 @@ void checkTuning() {
      dialCursorMode = true;
      return; // Nothing to do here, Abort, Cursor is in Park position
   }
-
-  blinkTimer = 0;
 
   // Select Tuning Mode; Digit or 2500 Step Mode
   if (tune2500Mode) {
