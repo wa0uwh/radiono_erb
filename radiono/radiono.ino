@@ -159,6 +159,7 @@ unsigned long blinkTimer = 0;
 unsigned long blinkTime = 20000UL; // Default Blink TimeOut, Milli Seconds
 int blinkPeriod = 500;
 byte blinkRatio = 75;
+unsigned long menuIdleTimeOut = 60;
 
 int tuningDir = 0;
 int knobPosition = 0;

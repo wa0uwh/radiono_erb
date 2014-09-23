@@ -20,13 +20,14 @@ enum Menu_BlinkParams {
     M_BLINK_PERIOD = Last_Menu_TxSpeeds +1,  // Note: +1 was used to skip a Menu Item, Just to show how.
     M_BLINK_RATIO,
     M_BLINK_TIMEOUT,
-    Last_Menu_BlinkParams
+    M_TIMEOUT,
+    Last_MenuParams
 };
 
 
 byte menuActive = 0;
 byte menuPrev = 0;
-unsigned long menuIdleTimeOut = 0;
+unsigned long menuIdleTimer = 0;
 boolean menuCycle = true;
 
 // Local Functions
@@ -37,14 +38,14 @@ void updateDisplayMenu(int menu);
 // ###############################################################################
 void doMenus(int menu) {
 
-    if (!menuIdleTimeOut) menuIdleTimeOut = millis() + 1000L * MENU_IDLE_TIMEOUT_SEC;
+    if (!menuIdleTimer) menuIdleTimer = millis() + 1000L * menuIdleTimeOut;
 
     checkKnob(menu);
     checkButtonMenu();
 
-    if (menuIdleTimeOut && menuIdleTimeOut < millis()) { // If IdleTimeOut, Abort
+    if (menuIdleTimer && menuIdleTimer < millis()) { // If IdleTimeOut, Abort
       menuCycle = true;
-      menuIdleTimeOut = 0;
+      menuIdleTimer = 0;
       menuActive = 0;
       refreshDisplay++;
     }
@@ -61,7 +62,7 @@ void checkKnob(int menu) {
     
     if (!dir) return;
  
-    menuIdleTimeOut = 0;
+    menuIdleTimer = 0;
     
     if (menuCycle) { // Cycle or Page Through Menus
         menuActive = constrain (menuActive + dir, 1, MENUS);
@@ -96,6 +97,10 @@ void checkKnob(int menu) {
         case M_BLINK_RATIO:
           blinkRatio += dir * 5;
           blinkRatio = constrain (blinkRatio, 20, 95);
+          break;
+        case M_TIMEOUT:
+          menuIdleTimeOut += dir * 5;
+          menuIdleTimeOut = constrain (menuIdleTimeOut, 20, 120);
           break;
 
         default:;
@@ -156,6 +161,13 @@ void updateDisplayMenu(int menu) {
              if(!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
+          case M_TIMEOUT:
+             sprintf(c, P("%0.2dMenu Timeout"), menu);
+             printLineCEL(MENU_PROMPT_LINE, c);
+             sprintf(c, P("SECs: %d%"), menuIdleTimeOut);
+             if(!menuCycle) sprintf(c, P2("%s<"), c);
+             printLineCEL(MENU_ITEM_LINE, c);
+             break;
 
           default: // A Blank Menu Item
              sprintf(c, P("%0.2dMenu:"), menu);
@@ -183,7 +195,7 @@ void checkButtonMenu() {
     case DN_BTN: menuCycle = true; menuActive = constrain (menuActive-1, 1, MENUS); break;
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS: menuCycle = !menuCycle; break;
-            case DOUBLE_PRESS: menuCycle = true; menuActive = 0; refreshDisplay++; break; // Return to VFO Display Mode
+            case DOUBLE_PRESS: menuCycle = true; menuActive = 0; menuIdleTimer = 0; refreshDisplay++; break; // Return to VFO Display Mode
             default: break;
             }
   }

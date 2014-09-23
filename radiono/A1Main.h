@@ -49,6 +49,7 @@
     extern unsigned long blinkTime;
     extern int blinkPeriod;
     extern byte blinkRatio;
+    extern unsigned long menuIdleTimeOut;
 
     /* tuning pot stuff */  
     extern int tuningDir;

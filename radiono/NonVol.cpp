@@ -6,6 +6,7 @@
 #include "A1Main.h"
 #include "ButtonUtil.h"
 #include "MorseCode.h"
+#include "Menus.h"
 #include "NonVol.h"
 #include "debug.h"
 
@@ -41,6 +42,7 @@ void eePromIO(int mode) {
         unsigned long blinkTime;
         unsigned long blinkPeriod;
         byte blinkRatio;
+        unsigned long menuIdleTimeOut;
         byte checkSum;
     } E;
     byte checkSum = 0;
@@ -81,6 +83,7 @@ void eePromIO(int mode) {
         blinkTime = E.blinkTime;
         blinkPeriod = E.blinkPeriod;
         blinkRatio = E.blinkRatio;
+        menuIdleTimeOut = E.menuIdleTimeOut;
         checkSum = E.checkSum;
        
         sprintf(c, P("Loading %dB"), sizeof(E));      
@@ -105,6 +108,7 @@ void eePromIO(int mode) {
         E.blinkTime = blinkTime;
         E.blinkPeriod = blinkPeriod;
         E.blinkRatio = blinkRatio;
+        E.menuIdleTimeOut = menuIdleTimeOut;
         E.checkSum = checkSum;   // Not necessary, used here as an Optical Place Holder
         
         // Compute and save the new Checksum of eeProm Struture
