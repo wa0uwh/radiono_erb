@@ -195,11 +195,12 @@ void checkButtonMenu() {
     case DN_BTN: menuCycle = true; menuActive = constrain (menuActive-1, 1, MENUS); break;
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS: menuCycle = !menuCycle; break;
-            case DOUBLE_PRESS: menuCycle = true; menuActive = 0; menuIdleTimer = 0; refreshDisplay++; break; // Return to VFO Display Mode
+            case DOUBLE_PRESS: menuCycle = true; menuActive = 0; refreshDisplay+=2; break; // Return to VFO Display Mode
             default: break;
             }
   }
   DEBUG(P("%s %d: MenuActive %d"), __func__, __LINE__, menuActive);
+  menuIdleTimer = 0;
   refreshDisplay++;
   updateDisplayMenu(menuActive);
   deDounceBtnRelease(); // Wait for Button Release
