@@ -45,6 +45,7 @@
  *   Added SWL to Display when Outside of HAM Bands
  *   Added Optional USE_MENUS Support
  *   Added Optional USER Configuration Support, via #ifdef
+ *   Added Initial Rotary Encoder01 Support
  *
  */
 
@@ -54,15 +55,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GB.M01"          // Incremental Rev Code
-
-// Optional USER Configurations
-//#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
-//#define USE_I2C_LCD   1         // Define this symbol to include i2c LCD support
-#define USE_RF386     1         // Define this symbol to include RF386 support
-#define USE_BEACONS   1         // Define this symbol to include Beacons, CW and QRSS support
-#define USE_EEPROM    1         // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
-#define USE_MENUS     1         // Define this symbol to include Menu support
+#define INC_REV "ERB_GB.E04"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -85,13 +78,13 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 #include <avr/io.h>
 #include "A1Main.h"
-#ifdef USE_PCA9546
-  #include "PCA9546.h"
-#endif
-#include "PotKnob.h"
 #include "ButtonUtil.h"
 #include "Si570.h"
 #include "debug.h"
+
+#ifdef USE_PCA9546
+  #include "PCA9546.h"
+#endif
 
 #ifdef USE_EEPROM
   #include "NonVol.h"
@@ -106,11 +99,17 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
   #include "Macro.h"
 #endif // USE_BEACONS
 
+#ifdef USE_POT_KNOB
+  #include "PotKnob.h"
+#endif // USE_POT_KNOB
+
 #ifdef USE_MENUS
   #include "Menus.h"
 #endif // USE_MENUS
 
-
+#ifdef USE_ENCODER01
+  #include "Encoder01.h"
+#endif // USE_ENCODER01
 
 
 #ifdef USE_PCA9546
@@ -303,7 +302,7 @@ void updateDisplay(){
           isLSB ? P2("Lsb") : P2("Usb") :
           isLSB ? P2("LSB") : P2("USB"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
-          freqUnStable ? P4(" ") : inBand ? vfoStatus[vfo->status] : P4("SWL")
+          freqUnStable || editIfMode ? P4(" ") : inBand ? vfoStatus[vfo->status] : P4("SWL")
           );
       printLineCEL(STATUS_LINE, c);
       
@@ -348,8 +347,9 @@ void updateCursor() {
       blinkInterval = millis() + blinkPeriod;
       if (cursorDigitPosition) {
           lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
-          if (dialCursorMode) lcd.print(P("_")); 
-          else lcd.print(blockChar);
+          if (dialCursorMode) lcd.print(blockChar); 
+          else lcd.print('_');
+          //else lcd.print(blockChar);
       }
       toggle = true;
   } 
@@ -385,11 +385,9 @@ void decodeSideband(){
 
 // -------------------------------------------------------------------------------
 void setSideband(){  
-  pinMode(LSB, OUTPUT);
-  digitalWrite(LSB, isLSB);
+  pinMode(LSB, OUTPUT); digitalWrite(LSB, isLSB);
 }
 
- 
 // ###############################################################################
 void setBandswitch(unsigned long freq){
 
@@ -401,7 +399,6 @@ void setBandswitch(unsigned long freq){
 }
 
 
-
 // ###############################################################################
 // An Alternate Tuning Strategy or Method
 // This method somewhat emulates a normal Radio Tuning Dial
@@ -410,6 +407,7 @@ void setBandswitch(unsigned long freq){
 void checkTuning() {
   long deltaFreq;
   unsigned long newFreq;
+  static int encoderA_Prev = 1;
 
   // Count Down to Freq Stable, i.e. Freq has not changed recently
   if (freqUnStable && freqUnStable < 5) {
@@ -425,7 +423,16 @@ void checkTuning() {
       return;
   }
   
-  tuningDir = doPotKnob(); // Get Tuning Direction from POT Knob
+  tuningDir = 0;
+
+  #ifdef USE_POT_KNOB
+      tuningDir = doPotKnob(); // Get Tuning Direction from POT Knob
+  #endif // USE_POT_KNOB
+  
+  #ifdef USE_ENCODER01
+      tuningDir = getEncDir(); // Get Tuning Direction from Encoder Knob
+  #endif // USE_ENCODER01
+
   if (!tuningDir) return;
 
   
@@ -485,16 +492,12 @@ void checkTuning() {
 int inBandLimits(unsigned long freq){
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
-    //static unsigned long freqPrev = 0;
-    //static byte bandPrev = 0;
+
     int upper, lower = 0;
     
        if (AltTxVFO) freq = (vfoActive == VFO_A) ? vfoB : vfoA;
        DEBUG(P("%s %d: A,B: %lu, %lu, %lu"), __func__, __LINE__, freq, vfoA, vfoB);
-       
-       //if (freq == freqPrev) return bandPrev;
-       //freqPrev = freq;
-       
+            
        inBand = 0;
        for (int band = 0; band < BANDS; band++) {
          lower = band * 2;
@@ -612,6 +615,7 @@ int isPttPressed() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
     return !digitalRead(TX_RX); // Is PTT pushed  
 }
+
 void changeToReceive() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
     stopSidetone();
@@ -645,7 +649,6 @@ void stopSidetone() {
     pinMode(CW_KEY, OUTPUT);
     digitalWrite(CW_KEY, 0); // stop the side-tone
 }
-
 
 
 // ###############################################################################
@@ -693,6 +696,8 @@ void checkButton() {
         #endif // USE_BEACONS
             default: ; // Do Nothing
             }
+     case ENC_KNOB: getKnob(btn); break;
+     default: decodeAux(btn); break;
   }
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   blinkTimer = 0;
@@ -713,6 +718,8 @@ void toggleAltTxVFO() {
 void decodeEditIf() {  // Set the IF Frequency
     static int vfoActivePrev = VFO_A;
     static boolean sbActivePrev;
+
+    cursorDigitPosition = 0;
 
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
         frequency += ritVal;
@@ -846,6 +853,7 @@ void decodeFN(int btn) {
     case DOUBLE_PRESS:
        if (editIfMode) { // Abort Edit IF Mode, Reload Active VFO
           editIfMode = false;
+          cursorDigitPosition = 0;
           frequency = (vfoActive == VFO_A) ? vfoA : vfoB; break;
        } 
        else { // Save Current VFO, Load Other VFO
@@ -916,10 +924,7 @@ void setup() {
 #ifdef USE_PCA9546
   // Initialize the PCA9546 multiplexer and select channel 1 
   mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
-  if (mux->status == PCA9546_ERROR)
-  {
-    debug(P("PCA9546 init error"));
-  }
+  if (mux->status == PCA9546_ERROR) debug(P("PCA9546 init error"));
 #endif
 
   lcd.begin(LCD_COL, LCD_ROW);
@@ -975,18 +980,26 @@ void setup() {
   // Setup to read Tuning POT
   pinMode(ANALOG_TUNING, INPUT);
   digitalWrite(ANALOG_TUNING, 1); //old way to enable the built-in pull-ups
+   
+  #ifdef USE_POT_KNOB
+    // Setup the First Tuning POT Position
+    knobPositionPrevious = knobPosition = analogRead(ANALOG_TUNING);
+  #endif // USE_POT_KNOB
   
   // Setup to read Buttons
   pinMode(FN_PIN, INPUT);
   digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
+  
+  #ifdef USE_ENCODER01
+     DEBUG(P("Init Encoder"));
+     initEncoder(); // Initialize Simple Encoder
+  #endif // USE_ENCODER01
   
   #ifdef USE_EEPROM
      DEBUG(P("Pre Load EEPROM"));
      loadUserPerferences();
   #endif // USE_EEPROM
   
-  // Setup the First Tuning POT Position
-  knobPositionPrevious = knobPosition = analogRead(ANALOG_TUNING);
   refreshDisplay++; 
 }
 
@@ -996,8 +1009,14 @@ void setup() {
 void loop(){
   unsigned long freq;
   
-  readTuningPot();
-  
+  #ifdef USE_POT_KNOB
+      readTuningPot();
+  #endif // USE_POT_KNOB
+   
+  #ifdef USE_ENCODER01
+      getKnob(ENC_KNOB);
+  #endif // USE_ENCODER01
+   
   #ifdef USE_MENUS
        // Check if in Menu Mode
       if (menuActive) { doMenus(menuActive); return; };
@@ -1009,6 +1028,7 @@ void loop(){
  
   checkButton();
 
+
   if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
       freq = frequency;
       if (ritOn) freq += ritVal;
@@ -1017,6 +1037,7 @@ void loop(){
   } else setFreq(frequency);
   
   decodeSideband();
+  
   setBandswitch(frequency);
   
   #ifdef USE_RF386

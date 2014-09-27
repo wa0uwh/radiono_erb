@@ -4,6 +4,7 @@
 #include "A1Main.h"
 #include "Menus.h"
 #include "PotKnob.h"
+#include "Encoder01.h"
 #include "ButtonUtil.h"
 #include "MorseCode.h"
 #include "debug.h"
@@ -58,7 +59,16 @@ void doMenus(int menu) {
 void checkKnob(int menu) {
     int dir;
     
-    dir = doPotKnob();
+    dir = 0;
+      
+    #ifdef USE_POT_KNOB
+        dir += doPotKnob(); // Get Tuning Direction from POT Knob
+    #endif // USE_POT_KNOB
+      
+    #ifdef USE_ENCODER01
+        //getKnob(ENC_KNOB+10);
+        dir += getEncDir(); // Get Tuning Direction from Encoder Knob
+    #endif // USE_ENCODER01
     
     if (!dir) return;
  
@@ -119,6 +129,7 @@ void updateDisplayMenu(int menu) {
       //printLineCEL(MENU_PROMPT_LINE, c);
       switch (menu) {
           case 0: // Exit Menu System
+             cursorDigitPosition = 0;
              sprintf(c, P("Exit Menu"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              printLineCEL(MENU_ITEM_LINE, P(" "));
@@ -198,6 +209,8 @@ void checkButtonMenu() {
             case DOUBLE_PRESS: menuCycle = true; menuActive = 0; refreshDisplay+=2; break; // Return to VFO Display Mode
             default: break;
             }
+     case ENC_KNOB: getKnob(btn); break;
+     default: decodeAux(btn); break;
   }
   DEBUG(P("%s %d: MenuActive %d"), __func__, __LINE__, menuActive);
   menuIdleTimer = 0;
