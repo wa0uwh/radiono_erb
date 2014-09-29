@@ -24,6 +24,7 @@
         UP_BTN,
         DN_BTN,
         RT_BTN,
+        ENC_KNOB,
         BUTTONS
     };
 

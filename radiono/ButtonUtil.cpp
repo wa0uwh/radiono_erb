@@ -15,7 +15,7 @@ int btnDown(){
   
   val = analogRead(FN_PIN);
   while (val != val2) { // DeBounce Button Press
-      delay(10);
+      // delay(10);
       val2 = val;
       val = analogRead(FN_PIN);
   }
@@ -24,10 +24,11 @@ int btnDown(){
   
   tuningLocked = 1; // Holdoff Tuning until button is processed
   // 47K Pull-up, and 4.7K switch resistors,
-  // Val should be approximately = (btnN×4700)÷(47000+4700)×1023
+  // Val should be approximately = 1024*(btnN*4700)÷(47000+((btnN-1)*4700))
 
   DEBUG(P("%s %d: btn Val= %d"), __func__, __LINE__, val);
-
+  
+  if (val > 400) return 8; // Used by the Rotary Encoder
   if (val > 350) return 7;
   if (val > 300) return 6;
   if (val > 250) return 5;
@@ -44,22 +45,24 @@ void deDounceBtnRelease() {
     
     while (i--) { // DeBounce Button Release, Check twice
       while (btnDown()) delay(20);
-    }
-    // The following allows the user to re-center the
-    // Tuning POT during any Key Press-n-hold without changing Freq.
-    readTuningPot();
-    knobPositionPrevious = knobPosition;
+    }  
+    #ifdef USE_POT_KNOB
+      // The following allows the user to re-center the
+      // Tuning POT during any Key Press-n-hold without changing Freq.
+      readTuningPot();
+      knobPositionPrevious = knobPosition;
+    #endif // USE_POT_KNOB
     tuningLocked = 0; // Allow Tuning to Proceed
 }
 
 
 // -------------------------------------------------------------------------------
-void decodeAux(int btn) {
+void decodeAux(int btn) { 
     
-    //debug("%s btn %d", __func__, btn);
-    sprintf(c, P("Btn: %.2d"), btn);
-    printLineCEL(STATUS_LINE, c);
-    delay(100);
+    debug("%s btn %d", __func__, btn);
+    //sprintf(c, P("Btn: %.2d"), btn);
+    //printLineCEL(STATUS_LINE, c);
+    //delay(100);
     deDounceBtnRelease(); // Wait for Release
 }
 
