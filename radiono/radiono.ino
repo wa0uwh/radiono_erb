@@ -55,7 +55,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GB_E11"          // Incremental Rev Code
+#define INC_REV "ERB_GB_E12"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -63,11 +63,12 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
  */
 #include <Wire.h>
 
-#ifndef USE_I2C_LCD
-  #include <LiquidCrystal.h>
-#else
-  #include <LiquidTWI.h>
-#endif
+
+#include <avr/io.h>
+#include "A1Main.h"
+#include "ButtonUtil.h"
+#include "Si570.h"
+#include "debug.h"
 
 #define LCD_COL (16)
 #define LCD_ROW (2)
@@ -77,11 +78,12 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define LCD_STR_CEL "%-20.20s"  // For 20 Character LCD Display
 
 
-#include <avr/io.h>
-#include "A1Main.h"
-#include "ButtonUtil.h"
-#include "Si570.h"
-#include "debug.h"
+// Set the following Conditional Compile Flags in the "A1Main.h" file.
+#ifndef USE_I2C_LCD
+  #include <LiquidCrystal.h>
+#else
+  #include <LiquidTWI.h>
+#endif
 
 #ifdef USE_PCA9546
   #include "PCA9546.h"
@@ -112,10 +114,12 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
   #include "Encoder01.h"
 #endif // USE_ENCODER01
 
-
 #ifdef USE_PCA9546
   #define PCA9546_I2C_ADDRESS 0x70
 #endif // USE_PCA9546
+
+
+
 
 #define SI570_I2C_ADDRESS   0x55
 
