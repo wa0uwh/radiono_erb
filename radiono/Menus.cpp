@@ -9,22 +9,9 @@
 #include "MorseCode.h"
 #include "debug.h"
 
-
-// Menu Indexes
-enum Menu_TxSpeeds {
-    M_CW_WPM = 6,
-    M_QRSS_DIT_TIME,
-    Last_Menu_TxSpeeds,
-};
-
-enum Menu_BlinkParams {
-    M_BLINK_PERIOD = Last_Menu_TxSpeeds +1,  // Note: +1 was used to skip a Menu Item, Just to show how.
-    M_BLINK_RATIO,
-    M_BLINK_TIMEOUT,
-    M_TIMEOUT,
-    Last_MenuParams
-};
-
+#ifdef USE_EEPROM
+  #include "NonVol.h"
+#endif // USE_EEPROM
 
 byte menuActive = 0;
 byte menuPrev = 0;
@@ -67,7 +54,7 @@ void checkKnob(int menu) {
       
     #ifdef USE_ENCODER01
         //getKnob(ENC_KNOB+10);
-        dir += getEncDir(); // Get Tuning Direction from Encoder Knob
+        dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
     #endif // USE_ENCODER01
     
     if (!dir) return;
@@ -75,7 +62,7 @@ void checkKnob(int menu) {
     menuIdleTimer = 0;
     
     if (menuCycle) { // Cycle or Page Through Menus
-        menuActive = constrain (menuActive + dir, 1, MENUS);
+        menuActive = constrain (menuActive + dir, 1, MENUS-1);
         refreshDisplay++;
         updateDisplayMenu(menuActive);
         return;
@@ -129,7 +116,6 @@ void updateDisplayMenu(int menu) {
       //printLineCEL(MENU_PROMPT_LINE, c);
       switch (menu) {
           case 0: // Exit Menu System
-             cursorDigitPosition = 0;
              sprintf(c, P("Exit Menu"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              printLineCEL(MENU_ITEM_LINE, P(" "));
@@ -172,6 +158,7 @@ void updateDisplayMenu(int menu) {
              if(!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
+             
           case M_TIMEOUT:
              sprintf(c, P("%0.2dMenu Timeout"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
@@ -202,14 +189,21 @@ void checkButtonMenu() {
   menuPrev = menuActive;
   switch (btn) {
     case 0: return; // Abort
-    case UP_BTN: menuCycle = true; menuActive = constrain (menuActive+1, 1, MENUS); break;
-    case DN_BTN: menuCycle = true; menuActive = constrain (menuActive-1, 1, MENUS); break;
+    case UP_BTN: menuCycle = true; menuActive = constrain (menuActive+1, 1, MENUS-1); break;
+    case DN_BTN: menuCycle = true; menuActive = constrain (menuActive-1, 1, MENUS-1); break;
+    case LT_BTN: switch (getButtonPushMode(btn)) { 
+            #ifdef USE_EEPROM
+                case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
+                case LONG_PRESS:       eePromIO(EEP_SAVE); break;
+            #endif // USE_EEPROM
+            default: break;
+            } break;
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS: menuCycle = !menuCycle; break;
             case DOUBLE_PRESS: menuCycle = true; menuActive = 0; refreshDisplay+=2; break; // Return to VFO Display Mode
             default: break;
-            }
-     case ENC_KNOB: getKnob(btn); break;
+            } break;
+     case ENC_KNOB: getEncoderKnob(btn); break;
      default: decodeAux(btn); break;
   }
   DEBUG(P("%s %d: MenuActive %d"), __func__, __LINE__, menuActive);

@@ -55,13 +55,14 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GB.E04"          // Incremental Rev Code
+#define INC_REV "ERB_GB_E11"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
  * the Arduino environment knows we need it.
  */
 #include <Wire.h>
+
 #ifndef USE_I2C_LCD
   #include <LiquidCrystal.h>
 #else
@@ -206,30 +207,30 @@ boolean isAltVFO = 0;
 
 // PROGMEM is used to avoid using the small available variable space
 const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Limits
-      1.80 * MEG,   2.00 * MEG, // 160m
-      3.50 * MEG,   4.00 * MEG, //  80m
-      7.00 * MEG,   7.30 * MEG, //  40m
-     10.10 * MEG,  10.15 * MEG, //  30m
-     14.00 * MEG,  14.35 * MEG, //  20m
-     18.068 * MEG, 18.168 * MEG, //  17m
-     21.00 * MEG,  21.45 * MEG, //  15m
-     24.89 * MEG,  24.99 * MEG, //  12m
-     28.00 * MEG,  29.70 * MEG, //  10m
-   //50.00 * MEG,  54.00 * MEG, //   6m - Will need New Low Pass Filter Support
+      1.80  * MEG,   2.00  * MEG, // 160m
+      3.50  * MEG,   4.00  * MEG, //  80m
+      7.00  * MEG,   7.30  * MEG, //  40m
+     10.10  * MEG,  10.15  * MEG, //  30m
+     14.00  * MEG,  14.35  * MEG, //  20m
+     18.068 * MEG,  18.168 * MEG, //  17m
+     21.00  * MEG,  21.45  * MEG, //  15m
+     24.89  * MEG,  24.99  * MEG, //  12m
+     28.00  * MEG,  29.70  * MEG, //  10m
+   //50.00  * MEG,  54.00  * MEG, //   6m - Will need New Low Pass Filter Support
    };
 
 // An Array to save: A-VFO & B-VFO
 unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
-      1.825 * MEG,   1.825 * MEG,  // 160m - QRP SSB Calling Freq
-      3.985 * MEG,   3.985 * MEG,  //  80m - QRP SSB Calling Freq
-      7.285 * MEG,   7.285 * MEG,  //  40m - QRP SSB Calling Freq
-     10.1387 * MEG, 10.1387 * MEG, //  30m - QRP QRSS, WSPR and PropNET
-     14.285 * MEG,  14.285 * MEG,  //  20m - QRP SSB Calling Freq
-     18.130 * MEG,  18.130 * MEG,  //  17m - QRP SSB Calling Freq
-     21.385 * MEG,  21.385 * MEG,  //  15m - QRP SSB Calling Freq
-     24.950 * MEG,  24.950 * MEG,  //  12m - QRP SSB Calling Freq
-     28.385 * MEG,  28.385 * MEG,  //  10m - QRP SSB Calling Freq
-   //50.20 * MEG, 50.20 * MEG,     //   6m - QRP SSB Calling Freq
+      1.825  * MEG,  1.825  * MEG,  // 160m - QRP SSB Calling Freq
+      3.985  * MEG,  3.985  * MEG,  //  80m - QRP SSB Calling Freq
+      7.285  * MEG,  7.285  * MEG,  //  40m - QRP SSB Calling Freq
+     10.1387 * MEG, 10.1387 * MEG,  //  30m - QRP QRSS, WSPR and PropNET
+     14.285  * MEG, 14.285  * MEG,  //  20m - QRP SSB Calling Freq
+     18.130  * MEG, 18.130  * MEG,  //  17m - QRP SSB Calling Freq
+     21.385  * MEG, 21.385  * MEG,  //  15m - QRP SSB Calling Freq
+     24.950  * MEG, 24.950  * MEG,  //  12m - QRP SSB Calling Freq
+     28.385  * MEG, 28.385  * MEG,  //  10m - QRP SSB Calling Freq
+   //50.20   * MEG, 50.20   * MEG,  //   6m - QRP SSB Calling Freq
    };
 byte sideBandModeCache[BANDS*2] = {0};
 
@@ -426,11 +427,11 @@ void checkTuning() {
   tuningDir = 0;
 
   #ifdef USE_POT_KNOB
-      tuningDir = doPotKnob(); // Get Tuning Direction from POT Knob
+      tuningDir += doPotKnob(); // Get Tuning Direction from POT Knob
   #endif // USE_POT_KNOB
   
   #ifdef USE_ENCODER01
-      tuningDir = getEncDir(); // Get Tuning Direction from Encoder Knob
+      tuningDir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
   #endif // USE_ENCODER01
 
   if (!tuningDir) return;
@@ -686,7 +687,7 @@ void checkButton() {
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
         #ifdef USE_MENUS
-            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay+=2; break;
+            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
         #endif // USE_MENUS
             case LONG_PRESS:       decodeEditIf(); break;
             case ALT_PRESS_LT:     decodeTune2500Mode(); break;
@@ -696,7 +697,9 @@ void checkButton() {
         #endif // USE_BEACONS
             default: ; // Do Nothing
             }
-     case ENC_KNOB: getKnob(btn); break;
+     #ifdef USE_ENCODER01
+        case ENC_KNOB: getEncoderKnob(btn); break;
+     #endif // USE_ENCODER01
      default: decodeAux(btn); break;
   }
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
@@ -734,6 +737,7 @@ void decodeEditIf() {  // Set the IF Frequency
         frequency = isLSB ? iFreqLSB : iFreqUSB;
     }
     editIfMode = !editIfMode;  // Toggle Edit IF Mode
+    cursorDigitPosition = 0; 
     tune2500Mode = 0;
     ritOn = ritVal = 0;
 }
@@ -757,7 +761,7 @@ void decodeBandUpDown(int dir) {
     int j;
     
    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
-      
+    
     if(dir > 0) {  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
          j = i*2 + vfoActive;
@@ -798,6 +802,7 @@ void decodeBandUpDown(int dir) {
      
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    inBandLimits(frequency);
+   cursorDigitPosition = 0; 
    ritOn = ritVal = 0;
    decodeSideband();
 }
@@ -1014,7 +1019,7 @@ void loop(){
   #endif // USE_POT_KNOB
    
   #ifdef USE_ENCODER01
-      getKnob(ENC_KNOB);
+      getEncoderKnob(ENC_KNOB);
   #endif // USE_ENCODER01
    
   #ifdef USE_MENUS

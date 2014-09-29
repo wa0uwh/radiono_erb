@@ -13,9 +13,9 @@
     
     // Externally Available Functions
     extern void initEncoder();
-    extern int readEncoder();
-    extern int getEncDir();
-    extern int getKnob(int btn);
+    //extern int readEncoder();
+    extern int getEncoderDir();
+    extern int getEncoderKnob(int btn);
 
 #endif
 

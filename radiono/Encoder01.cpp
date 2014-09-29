@@ -117,11 +117,11 @@ int readEncoder5() {
 */
 
 // ###############################################################################
-int getEncDir() {
+int getEncoderDir() {
     int dir = 0;
     
     if (knob) {
-        dir = knob > 250 ? -1 : +1;
+        dir = knob > 50 ? -1 : +1;
         //debug("%s btn %d", __func__, knob);    
         //debug("%s dir %d", __func__, dir);
         knob = 0;
@@ -130,7 +130,7 @@ int getEncDir() {
 }
 
 // ###############################################################################
-int getKnob(int btn) {
+int getEncoderKnob(int btn) {
     
     if(btnDown() == ENC_KNOB) {
         knob = analogRead(ANALOG_TUNING);
