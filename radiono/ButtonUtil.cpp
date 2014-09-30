@@ -15,7 +15,7 @@ int btnDown(){
   
   val = analogRead(FN_PIN);
   while (val != val2) { // DeBounce Button Press
-      delay(10);
+      // delay(10);
       val2 = val;
       val = analogRead(FN_PIN);
   }
@@ -24,16 +24,26 @@ int btnDown(){
   
   tuningLocked = 1; // Holdoff Tuning until button is processed
   // 47K Pull-up, and 4.7K switch resistors,
-  // Val should be approximately = (btnN×4700)÷(47000+4700)×1023
+  // Val should be approximately = 1024*btnN*4700/(47000+(btnN*4700))
+  // N = 0 to Number of button - 1
 
   DEBUG(P("%s %d: btn Val= %d"), __func__, __LINE__, val);
-
+  
+ /* // Old Code
+  if (val > 400) return 8; // Btn8 Used by the Rotary Encoder
   if (val > 350) return 7;
   if (val > 300) return 6;
   if (val > 250) return 5;
   if (val > 200) return 4;
   if (val > 150) return 3;
   if (val >  50) return 2;
+  return 1;
+ */ 
+
+  // 1024L*b*4700L/(47000L+(b*4700L))   >>>  1024*b/(10+b);
+  for(int b = MAX_BUTTONS - 1; b >= 0; b--) {
+      if(val + 15 > 1024*b/(10+b)) return b+1;
+  }
   return 1;
 }
 
@@ -44,22 +54,24 @@ void deDounceBtnRelease() {
     
     while (i--) { // DeBounce Button Release, Check twice
       while (btnDown()) delay(20);
-    }
-    // The following allows the user to re-center the
-    // Tuning POT during any Key Press-n-hold without changing Freq.
-    readTuningPot();
-    knobPositionPrevious = knobPosition;
+    }  
+    #ifdef USE_POT_KNOB
+      // The following allows the user to re-center the
+      // Tuning POT during any Key Press-n-hold without changing Freq.
+      readPot();
+      knobPositionPrevious = knobPosition;
+    #endif // USE_POT_KNOB
     tuningLocked = 0; // Allow Tuning to Proceed
 }
 
 
 // -------------------------------------------------------------------------------
-void decodeAux(int btn) {
+void decodeAux(int btn) { 
     
-    //debug("%s btn %d", __func__, btn);
-    sprintf(c, P("Btn: %.2d"), btn);
-    printLineCEL(STATUS_LINE, c);
-    delay(100);
+    debug("%s btn %d", __func__, btn);
+    //sprintf(c, P("Btn: %.2d"), btn);
+    //printLineCEL(STATUS_LINE, c);
+    //delay(100);
     deDounceBtnRelease(); // Wait for Release
 }
 

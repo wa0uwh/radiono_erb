@@ -45,6 +45,7 @@
  *   Added SWL to Display when Outside of HAM Bands
  *   Added Optional USE_MENUS Support
  *   Added Optional USER Configuration Support, via #ifdef
+ *   Added Initial Rotary Encoder01 Support
  *
  */
 
@@ -54,26 +55,20 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GB"          // Incremental Rev Code
-
-// Optional USER Configurations
-//#define USE_PCA9546	1         // Define this symbol to include PCA9546 support
-//#define USE_I2C_LCD   1         // Define this symbol to include i2c LCD support
-#define USE_RF386     1         // Define this symbol to include RF386 support
-#define USE_BEACONS   1         // Define this symbol to include Beacons, CW and QRSS support
-#define USE_EEPROM    1         // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
-#define USE_MENUS     1         // Define this symbol to include Menu support
+#define INC_REV "ERB_GB_E15"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
  * the Arduino environment knows we need it.
  */
 #include <Wire.h>
-#ifndef USE_I2C_LCD
-  #include <LiquidCrystal.h>
-#else
-  #include <LiquidTWI.h>
-#endif
+
+
+#include <avr/io.h>
+#include "A1Main.h"
+#include "ButtonUtil.h"
+#include "Si570.h"
+#include "debug.h"
 
 #define LCD_COL (16)
 #define LCD_ROW (2)
@@ -83,15 +78,16 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define LCD_STR_CEL "%-20.20s"  // For 20 Character LCD Display
 
 
-#include <avr/io.h>
-#include "A1Main.h"
+// Set the following Conditional Compile Flags in the "A1Main.h" file.
+#ifndef USE_I2C_LCD
+  #include <LiquidCrystal.h>
+#else
+  #include <LiquidTWI.h>
+#endif
+
 #ifdef USE_PCA9546
   #include "PCA9546.h"
 #endif
-#include "PotKnob.h"
-#include "ButtonUtil.h"
-#include "Si570.h"
-#include "debug.h"
 
 #ifdef USE_EEPROM
   #include "NonVol.h"
@@ -106,16 +102,24 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
   #include "Macro.h"
 #endif // USE_BEACONS
 
+#ifdef USE_POT_KNOB
+  #include "PotKnob.h"
+#endif // USE_POT_KNOB
+
 #ifdef USE_MENUS
   #include "Menus.h"
 #endif // USE_MENUS
 
-
-
+#ifdef USE_ENCODER01
+  #include "Encoder01.h"
+#endif // USE_ENCODER01
 
 #ifdef USE_PCA9546
   #define PCA9546_I2C_ADDRESS 0x70
 #endif // USE_PCA9546
+
+
+
 
 #define SI570_I2C_ADDRESS   0x55
 
@@ -179,6 +183,7 @@ unsigned long blinkTimer = 0;
 unsigned long blinkTime = 20000UL; // Default Blink TimeOut, Milli Seconds
 int blinkPeriod = 500;
 byte blinkRatio = 75;
+unsigned long menuIdleTimeOut = 60;
 
 int tuningDir = 0;
 int knobPosition = 0;
@@ -206,30 +211,30 @@ boolean isAltVFO = 0;
 
 // PROGMEM is used to avoid using the small available variable space
 const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Limits
-      1.80 * MEG,   2.00 * MEG, // 160m
-      3.50 * MEG,   4.00 * MEG, //  80m
-      7.00 * MEG,   7.30 * MEG, //  40m
-     10.10 * MEG,  10.15 * MEG, //  30m
-     14.00 * MEG,  14.35 * MEG, //  20m
-     18.068 * MEG, 18.168 * MEG, //  17m
-     21.00 * MEG,  21.45 * MEG, //  15m
-     24.89 * MEG,  24.99 * MEG, //  12m
-     28.00 * MEG,  29.70 * MEG, //  10m
-   //50.00 * MEG,  54.00 * MEG, //   6m - Will need New Low Pass Filter Support
+      1.80  * MEG,   2.00  * MEG, // 160m
+      3.50  * MEG,   4.00  * MEG, //  80m
+      7.00  * MEG,   7.30  * MEG, //  40m
+     10.10  * MEG,  10.15  * MEG, //  30m
+     14.00  * MEG,  14.35  * MEG, //  20m
+     18.068 * MEG,  18.168 * MEG, //  17m
+     21.00  * MEG,  21.45  * MEG, //  15m
+     24.89  * MEG,  24.99  * MEG, //  12m
+     28.00  * MEG,  29.70  * MEG, //  10m
+   //50.00  * MEG,  54.00  * MEG, //   6m - Will need New Low Pass Filter Support
    };
 
 // An Array to save: A-VFO & B-VFO
 unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
-      1.825 * MEG,   1.825 * MEG,  // 160m - QRP SSB Calling Freq
-      3.985 * MEG,   3.985 * MEG,  //  80m - QRP SSB Calling Freq
-      7.285 * MEG,   7.285 * MEG,  //  40m - QRP SSB Calling Freq
-     10.1387 * MEG, 10.1387 * MEG, //  30m - QRP QRSS, WSPR and PropNET
-     14.285 * MEG,  14.285 * MEG,  //  20m - QRP SSB Calling Freq
-     18.130 * MEG,  18.130 * MEG,  //  17m - QRP SSB Calling Freq
-     21.385 * MEG,  21.385 * MEG,  //  15m - QRP SSB Calling Freq
-     24.950 * MEG,  24.950 * MEG,  //  12m - QRP SSB Calling Freq
-     28.385 * MEG,  28.385 * MEG,  //  10m - QRP SSB Calling Freq
-   //50.20 * MEG, 50.20 * MEG,     //   6m - QRP SSB Calling Freq
+      1.825  * MEG,  1.825  * MEG,  // 160m - QRP SSB Calling Freq
+      3.985  * MEG,  3.985  * MEG,  //  80m - QRP SSB Calling Freq
+      7.285  * MEG,  7.285  * MEG,  //  40m - QRP SSB Calling Freq
+     10.1387 * MEG, 10.1387 * MEG,  //  30m - QRP QRSS, WSPR and PropNET
+     14.285  * MEG, 14.285  * MEG,  //  20m - QRP SSB Calling Freq
+     18.130  * MEG, 18.130  * MEG,  //  17m - QRP SSB Calling Freq
+     21.385  * MEG, 21.385  * MEG,  //  15m - QRP SSB Calling Freq
+     24.950  * MEG, 24.950  * MEG,  //  12m - QRP SSB Calling Freq
+     28.385  * MEG, 28.385  * MEG,  //  10m - QRP SSB Calling Freq
+   //50.20   * MEG, 50.20   * MEG,  //   6m - QRP SSB Calling Freq
    };
 byte sideBandModeCache[BANDS*2] = {0};
 
@@ -302,7 +307,7 @@ void updateDisplay(){
           isLSB ? P2("Lsb") : P2("Usb") :
           isLSB ? P2("LSB") : P2("USB"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
-          freqUnStable ? P4(" ") : inBand ? vfoStatus[vfo->status] : P4("SWL")
+          freqUnStable || editIfMode ? P4(" ") : inBand ? vfoStatus[vfo->status] : P4("SWL")
           );
       printLineCEL(STATUS_LINE, c);
       
@@ -347,8 +352,9 @@ void updateCursor() {
       blinkInterval = millis() + blinkPeriod;
       if (cursorDigitPosition) {
           lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
-          if (dialCursorMode) lcd.print(P("_")); 
-          else lcd.print(blockChar);
+          if (dialCursorMode) lcd.print(blockChar); 
+          else lcd.print('_');
+          //else lcd.print(blockChar);
       }
       toggle = true;
   } 
@@ -384,11 +390,9 @@ void decodeSideband(){
 
 // -------------------------------------------------------------------------------
 void setSideband(){  
-  pinMode(LSB, OUTPUT);
-  digitalWrite(LSB, isLSB);
+  pinMode(LSB, OUTPUT); digitalWrite(LSB, isLSB);
 }
 
- 
 // ###############################################################################
 void setBandswitch(unsigned long freq){
 
@@ -400,7 +404,6 @@ void setBandswitch(unsigned long freq){
 }
 
 
-
 // ###############################################################################
 // An Alternate Tuning Strategy or Method
 // This method somewhat emulates a normal Radio Tuning Dial
@@ -409,6 +412,7 @@ void setBandswitch(unsigned long freq){
 void checkTuning() {
   long deltaFreq;
   unsigned long newFreq;
+  static int encoderA_Prev = 1;
 
   // Count Down to Freq Stable, i.e. Freq has not changed recently
   if (freqUnStable && freqUnStable < 5) {
@@ -424,7 +428,16 @@ void checkTuning() {
       return;
   }
   
-  tuningDir = doPotKnob(); // Get Tuning Direction from POT Knob
+  tuningDir = 0;
+
+  #ifdef USE_POT_KNOB
+      tuningDir += getPotDir(); // Get Tuning Direction from POT Knob
+  #endif // USE_POT_KNOB
+  
+  #ifdef USE_ENCODER01
+      tuningDir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
+  #endif // USE_ENCODER01
+
   if (!tuningDir) return;
 
   
@@ -484,16 +497,12 @@ void checkTuning() {
 int inBandLimits(unsigned long freq){
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
-    //static unsigned long freqPrev = 0;
-    //static byte bandPrev = 0;
+
     int upper, lower = 0;
     
        if (AltTxVFO) freq = (vfoActive == VFO_A) ? vfoB : vfoA;
        DEBUG(P("%s %d: A,B: %lu, %lu, %lu"), __func__, __LINE__, freq, vfoA, vfoB);
-       
-       //if (freq == freqPrev) return bandPrev;
-       //freqPrev = freq;
-       
+            
        inBand = 0;
        for (int band = 0; band < BANDS; band++) {
          lower = band * 2;
@@ -611,6 +620,7 @@ int isPttPressed() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
     return !digitalRead(TX_RX); // Is PTT pushed  
 }
+
 void changeToReceive() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
     stopSidetone();
@@ -644,7 +654,6 @@ void stopSidetone() {
     pinMode(CW_KEY, OUTPUT);
     digitalWrite(CW_KEY, 0); // stop the side-tone
 }
-
 
 
 // ###############################################################################
@@ -682,7 +691,7 @@ void checkButton() {
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
         #ifdef USE_MENUS
-            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; refreshDisplay+=2; break;
+            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
         #endif // USE_MENUS
             case LONG_PRESS:       decodeEditIf(); break;
             case ALT_PRESS_LT:     decodeTune2500Mode(); break;
@@ -692,6 +701,10 @@ void checkButton() {
         #endif // USE_BEACONS
             default: ; // Do Nothing
             }
+     #ifdef USE_ENCODER01
+        case ENC_KNOB: readEncoder(btn); break;
+     #endif // USE_ENCODER01
+     default: decodeAux(btn); break;
   }
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   blinkTimer = 0;
@@ -713,6 +726,8 @@ void decodeEditIf() {  // Set the IF Frequency
     static int vfoActivePrev = VFO_A;
     static boolean sbActivePrev;
 
+    cursorDigitPosition = 0;
+
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
         frequency += ritVal;
         isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
@@ -726,6 +741,7 @@ void decodeEditIf() {  // Set the IF Frequency
         frequency = isLSB ? iFreqLSB : iFreqUSB;
     }
     editIfMode = !editIfMode;  // Toggle Edit IF Mode
+    cursorDigitPosition = 0; 
     tune2500Mode = 0;
     ritOn = ritVal = 0;
 }
@@ -749,7 +765,7 @@ void decodeBandUpDown(int dir) {
     int j;
     
    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
-      
+    
     if(dir > 0) {  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
          j = i*2 + vfoActive;
@@ -790,6 +806,7 @@ void decodeBandUpDown(int dir) {
      
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    inBandLimits(frequency);
+   cursorDigitPosition = 0; 
    ritOn = ritVal = 0;
    decodeSideband();
 }
@@ -845,6 +862,7 @@ void decodeFN(int btn) {
     case DOUBLE_PRESS:
        if (editIfMode) { // Abort Edit IF Mode, Reload Active VFO
           editIfMode = false;
+          cursorDigitPosition = 0;
           frequency = (vfoActive == VFO_A) ? vfoA : vfoB; break;
        } 
        else { // Save Current VFO, Load Other VFO
@@ -915,10 +933,7 @@ void setup() {
 #ifdef USE_PCA9546
   // Initialize the PCA9546 multiplexer and select channel 1 
   mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
-  if (mux->status == PCA9546_ERROR)
-  {
-    debug(P("PCA9546 init error"));
-  }
+  if (mux->status == PCA9546_ERROR) debug(P("PCA9546 init error"));
 #endif
 
   lcd.begin(LCD_COL, LCD_ROW);
@@ -974,18 +989,26 @@ void setup() {
   // Setup to read Tuning POT
   pinMode(ANALOG_TUNING, INPUT);
   digitalWrite(ANALOG_TUNING, 1); //old way to enable the built-in pull-ups
+   
+  #ifdef USE_POT_KNOB
+    // Setup the First Tuning POT Position
+    knobPositionPrevious = knobPosition = analogRead(ANALOG_TUNING);
+  #endif // USE_POT_KNOB
   
   // Setup to read Buttons
   pinMode(FN_PIN, INPUT);
   digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
+  
+  #ifdef USE_ENCODER01
+     DEBUG(P("Init Encoder"));
+     initEncoder(); // Initialize Simple Encoder
+  #endif // USE_ENCODER01
   
   #ifdef USE_EEPROM
      DEBUG(P("Pre Load EEPROM"));
      loadUserPerferences();
   #endif // USE_EEPROM
   
-  // Setup the First Tuning POT Position
-  knobPositionPrevious = knobPosition = analogRead(ANALOG_TUNING);
   refreshDisplay++; 
 }
 
@@ -995,8 +1018,14 @@ void setup() {
 void loop(){
   unsigned long freq;
   
-  readTuningPot();
-  
+  #ifdef USE_POT_KNOB
+      readPot();
+  #endif // USE_POT_KNOB
+   
+  #ifdef USE_ENCODER01
+      readEncoder(ENC_KNOB);
+  #endif // USE_ENCODER01
+   
   #ifdef USE_MENUS
        // Check if in Menu Mode
       if (menuActive) { doMenus(menuActive); return; };
@@ -1008,6 +1037,7 @@ void loop(){
  
   checkButton();
 
+
   if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
       freq = frequency;
       if (ritOn) freq += ritVal;
@@ -1016,6 +1046,7 @@ void loop(){
   } else setFreq(frequency);
   
   decodeSideband();
+  
   setBandswitch(frequency);
   
   #ifdef USE_RF386

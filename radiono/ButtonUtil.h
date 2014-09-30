@@ -13,7 +13,7 @@
         ALT_PRESS_LT,
         ALT_PRESS_UP,
         ALT_PRESS_DN,
-        ALT_PRESS_RT,
+        ALT_PRESS_RT
     };
     
     enum Buttons { // Button Numbers
@@ -24,7 +24,8 @@
         UP_BTN,
         DN_BTN,
         RT_BTN,
-        BUTTONS
+        ENC_KNOB,
+        MAX_BUTTONS
     };
 
     extern  int btnDown();

@@ -3,12 +3,26 @@
 #ifndef A1MAIN_H
 #define A1MAIN_H
 
+    // Optional USER Configurations
+    //#define USE_PCA9546   1         // Define this symbol to include PCA9546 support
+    //#define USE_I2C_LCD   1         // Define this symbol to include i2c LCD support
+    #define USE_RF386     1         // Define this symbol to include RF386 support
+    #define USE_BEACONS   1         // Define this symbol to include Beacons, CW and QRSS support
+    #define USE_EEPROM    1         // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
+    #define USE_MENUS     1         // Define this symbol to include Menu support
+    //#define USE_POT_KNOB  1         // Define this symbol to include POT support
+    #define USE_ENCODER01 1         // Define this symbol to include Simple Encoder01 support
+
+
+
     // Set up Units to make coding large numbers easier
     #define KILO (1000UL)
     #define MEG (KILO * KILO)
 
+    // The Number of Ham Bands
     #define BANDS (9)
     
+    // Output Filter Control Lines
     #define BAND_HI_PIN (5)
     #define BAND_MD_PIN (6)
     #define BAND_LO_PIN (7)
@@ -49,6 +63,7 @@
     extern unsigned long blinkTime;
     extern int blinkPeriod;
     extern byte blinkRatio;
+    extern unsigned long menuIdleTimeOut;
 
     /* tuning pot stuff */  
     extern int tuningDir;
