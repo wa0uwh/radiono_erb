@@ -19,8 +19,10 @@
     #define KILO (1000UL)
     #define MEG (KILO * KILO)
 
+    // The Number of Ham Bands
     #define BANDS (9)
     
+    // Output Filter Control Lines
     #define BAND_HI_PIN (5)
     #define BAND_MD_PIN (6)
     #define BAND_LO_PIN (7)

@@ -32,9 +32,9 @@ int getEncoderDir() {
 }
 
 // ###############################################################################
-int getEncoderKnob(int btn) {
+int readEncoder(int btn) {
     
-    if(btnDown() == ENC_KNOB) {
+    if(btnDown() == btn) {
         knob = analogRead(ANALOG_TUNING);
         //debug("%s btn %d", __func__, btn);    
         //debug("%s val %d", __func__, knob);

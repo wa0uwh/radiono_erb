@@ -55,7 +55,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GB_E13"          // Incremental Rev Code
+#define INC_REV "ERB_GB_E15"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -431,7 +431,7 @@ void checkTuning() {
   tuningDir = 0;
 
   #ifdef USE_POT_KNOB
-      tuningDir += doPotKnob(); // Get Tuning Direction from POT Knob
+      tuningDir += getPotDir(); // Get Tuning Direction from POT Knob
   #endif // USE_POT_KNOB
   
   #ifdef USE_ENCODER01
@@ -702,7 +702,7 @@ void checkButton() {
             default: ; // Do Nothing
             }
      #ifdef USE_ENCODER01
-        case ENC_KNOB: getEncoderKnob(btn); break;
+        case ENC_KNOB: readEncoder(btn); break;
      #endif // USE_ENCODER01
      default: decodeAux(btn); break;
   }
@@ -1019,11 +1019,11 @@ void loop(){
   unsigned long freq;
   
   #ifdef USE_POT_KNOB
-      readTuningPot();
+      readPot();
   #endif // USE_POT_KNOB
    
   #ifdef USE_ENCODER01
-      getEncoderKnob(ENC_KNOB);
+      readEncoder(ENC_KNOB);
   #endif // USE_ENCODER01
    
   #ifdef USE_MENUS

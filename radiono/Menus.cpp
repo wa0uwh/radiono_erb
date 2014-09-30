@@ -3,15 +3,12 @@
 #include <Arduino.h>
 #include "A1Main.h"
 #include "Menus.h"
+#include "NonVol.h"
 #include "PotKnob.h"
 #include "Encoder01.h"
 #include "ButtonUtil.h"
 #include "MorseCode.h"
 #include "debug.h"
-
-#ifdef USE_EEPROM
-  #include "NonVol.h"
-#endif // USE_EEPROM
 
 byte menuActive = 0;
 byte menuPrev = 0;
@@ -49,11 +46,10 @@ void checkKnob(int menu) {
     dir = 0;
       
     #ifdef USE_POT_KNOB
-        dir += doPotKnob(); // Get Tuning Direction from POT Knob
+        dir += getPotDir(); // Get Tuning Direction from POT Knob
     #endif // USE_POT_KNOB
       
     #ifdef USE_ENCODER01
-        //getKnob(ENC_KNOB+10);
         dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
     #endif // USE_ENCODER01
     
@@ -203,7 +199,7 @@ void checkButtonMenu() {
             case DOUBLE_PRESS: menuCycle = true; menuActive = 0; refreshDisplay+=2; break; // Return to VFO Display Mode
             default: break;
             } break;
-     case ENC_KNOB: getEncoderKnob(btn); break;
+     case ENC_KNOB: readEncoder(btn); break;
      default: decodeAux(btn); break;
   }
   DEBUG(P("%s %d: MenuActive %d"), __func__, __LINE__, menuActive);
