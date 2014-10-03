@@ -138,7 +138,7 @@ void loadUserPerferences() {
     // Check EEPROM for User Saved Preference, Load if available
     // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
     printLineCEL(FIRST_LINE, P("User Pref:"));
-    if (!btnDown()) eePromIO(EEP_LOAD);
+    if (btnDown() != FN_BTN) eePromIO(EEP_LOAD);
     else printLineCEL(STATUS_LINE, P("Factory Reset"));
     delay(500);
     deDounceBtnRelease(); // Wait for Button Release 
