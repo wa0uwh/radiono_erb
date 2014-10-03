@@ -9,14 +9,14 @@
 
 
 // ###############################################################################
-void readTuningPot(){
+void readPot(){
     
     knobPosition = analogRead(ANALOG_TUNING);
 }
 
 
 // ###############################################################################
-int doPotKnob() {
+int getPotDir() {
 #define AUTOTIMER_RATE_MS (200)
   static unsigned long AutoTimer = 0;
   

@@ -1,0 +1,54 @@
+The following circuit should be added to implement a Rotary Encoder and
+Multiple Push-Button Switches parallel to the original FN Switch. The original
+Tuning POT has been removed to accommodate the Encoder.
+
+--------+
+Arduino |
+        |
+    AVCC|--------+---1K---- +5V
+        |        |                       +--------4K7-----+
+        |        = 100nF                 |                |
+        |        |                       |   +--------+   |
+        |        G                       +---|B      C|---+--------------------+
+        |                              G-----|G  ENC  |                        |
+ Tune A2|--------+---------------------------|A      G|---+                    |
+        |        |                           +--------+   |                    |
+        |        = 1nF                                    G                    |
+        |        |                                                             |
+        |        G                                                             |
+        |                                                                      |
+    AREF|----+-------+                                                         |
+        |    |       |                                                         |
+        |   47K      = 100nF                                                   |
+        |    |       |                                                         |
+        |    |       G                                                         |
+        |    |                                                                 |
+        |    |                                                                 |
+        |    |                                                                 |
+        |    |                                                                 |
+        |    |                                                                 |
+   pin26|----+-----+---4K7---+---4K7---+---4K7---+---4K7---+---4K7---+---4K7---+
+        |    |     |         |         |         |         |         |         |
+        |   FNS    = 1nF     S         S         S         S         S         S
+        |    |     |         |         |         |         |         |         |
+    AGND|----+-----+---------+---------+---------+---------+---------+---------+
+        |    |
+--------+    G
+
+            "FN"           "Left"   "Right"   "SBand"     "Up"     "Down"     btn7
+           (btn1)          (btn2)    (btn3)   (btn4)     (btn5)    (btn6)    (btn7)
+
+
+Where:
+  4K7 is a 4.7K ohm resistor
+  47K is a 47K ohm resistor
+  FNS is the original FN switch
+    S is a new switch
+    = is a capacitor
+    G is a ground and AGND
+  ENC is the Rotary Encoder with Push Button
+
+Note: The Encoder pins A and B, can be exchanged to reverse the Encoders electrical rotation.
+
+-
+

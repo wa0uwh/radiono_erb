@@ -3,30 +3,16 @@
 #include <Arduino.h>
 #include "A1Main.h"
 #include "Menus.h"
+#include "NonVol.h"
 #include "PotKnob.h"
+#include "Encoder01.h"
 #include "ButtonUtil.h"
 #include "MorseCode.h"
 #include "debug.h"
 
-
-// Menu Indexes
-enum Menu_TxSpeeds {
-    M_CW_WPM = 6,
-    M_QRSS_DIT_TIME,
-    Last_Menu_TxSpeeds,
-};
-
-enum Menu_BlinkParams {
-    M_BLINK_PERIOD = Last_Menu_TxSpeeds +1,  // Note: +1 was used to skip a Menu Item, Just to show how.
-    M_BLINK_RATIO,
-    M_BLINK_TIMEOUT,
-    Last_Menu_BlinkParams
-};
-
-
 byte menuActive = 0;
 byte menuPrev = 0;
-unsigned long menuIdleTimeOut = 0;
+unsigned long menuIdleTimer = 0;
 boolean menuCycle = true;
 
 // Local Functions
@@ -37,14 +23,14 @@ void updateDisplayMenu(int menu);
 // ###############################################################################
 void doMenus(int menu) {
 
-    if (!menuIdleTimeOut) menuIdleTimeOut = millis() + 1000L * MENU_IDLE_TIMEOUT_SEC;
+    if (!menuIdleTimer) menuIdleTimer = millis() + 1000L * menuIdleTimeOut;
 
     checkKnob(menu);
     checkButtonMenu();
 
-    if (menuIdleTimeOut && menuIdleTimeOut < millis()) { // If IdleTimeOut, Abort
+    if (menuIdleTimer && menuIdleTimer < millis()) { // If IdleTimeOut, Abort
       menuCycle = true;
-      menuIdleTimeOut = 0;
+      menuIdleTimer = 0;
       menuActive = 0;
       refreshDisplay++;
     }
@@ -57,14 +43,22 @@ void doMenus(int menu) {
 void checkKnob(int menu) {
     int dir;
     
-    dir = doPotKnob();
+    dir = 0;
+      
+    #ifdef USE_POT_KNOB
+        dir += getPotDir(); // Get Tuning Direction from POT Knob
+    #endif // USE_POT_KNOB
+      
+    #ifdef USE_ENCODER01
+        dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
+    #endif // USE_ENCODER01
     
     if (!dir) return;
  
-    menuIdleTimeOut = 0;
+    menuIdleTimer = 0;
     
     if (menuCycle) { // Cycle or Page Through Menus
-        menuActive = constrain (menuActive + dir, 1, MENUS);
+        menuActive = constrain (menuActive + dir, 1, MENUS-1);
         refreshDisplay++;
         updateDisplayMenu(menuActive);
         return;
@@ -96,6 +90,10 @@ void checkKnob(int menu) {
         case M_BLINK_RATIO:
           blinkRatio += dir * 5;
           blinkRatio = constrain (blinkRatio, 20, 95);
+          break;
+        case M_TIMEOUT:
+          menuIdleTimeOut += dir * 5;
+          menuIdleTimeOut = constrain (menuIdleTimeOut, 20, 120);
           break;
 
         default:;
@@ -156,6 +154,14 @@ void updateDisplayMenu(int menu) {
              if(!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
+             
+          case M_TIMEOUT:
+             sprintf(c, P("%0.2dMenu Timeout"), menu);
+             printLineCEL(MENU_PROMPT_LINE, c);
+             sprintf(c, P("SECs: %d%"), menuIdleTimeOut);
+             if(!menuCycle) sprintf(c, P2("%s<"), c);
+             printLineCEL(MENU_ITEM_LINE, c);
+             break;
 
           default: // A Blank Menu Item
              sprintf(c, P("%0.2dMenu:"), menu);
@@ -179,15 +185,25 @@ void checkButtonMenu() {
   menuPrev = menuActive;
   switch (btn) {
     case 0: return; // Abort
-    case UP_BTN: menuCycle = true; menuActive = constrain (menuActive+1, 1, MENUS); break;
-    case DN_BTN: menuCycle = true; menuActive = constrain (menuActive-1, 1, MENUS); break;
+    case UP_BTN: menuCycle = true; menuActive = constrain (menuActive+1, 1, MENUS-1); break;
+    case DN_BTN: menuCycle = true; menuActive = constrain (menuActive-1, 1, MENUS-1); break;
+    case LT_BTN: switch (getButtonPushMode(btn)) { 
+            #ifdef USE_EEPROM
+                case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
+                case LONG_PRESS:       eePromIO(EEP_SAVE); break;
+            #endif // USE_EEPROM
+            default: break;
+            } break;
     case RT_BTN: switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS: menuCycle = !menuCycle; break;
-            case DOUBLE_PRESS: menuCycle = true; menuActive = 0; refreshDisplay++; break; // Return to VFO Display Mode
+            case DOUBLE_PRESS: menuCycle = true; menuActive = 0; refreshDisplay+=2; break; // Return to VFO Display Mode
             default: break;
-            }
+            } break;
+     case ENC_KNOB: readEncoder(btn); break;
+     default: decodeAux(btn); break;
   }
   DEBUG(P("%s %d: MenuActive %d"), __func__, __LINE__, menuActive);
+  menuIdleTimer = 0;
   refreshDisplay++;
   updateDisplayMenu(menuActive);
   deDounceBtnRelease(); // Wait for Button Release
