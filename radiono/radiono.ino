@@ -780,6 +780,7 @@ void decodeBandUpDown(int dir) {
            sideBandMode = sideBandModeCache[0];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
        } else
+       // Normal Case
        for (int i = 0; i < BANDS; i++) {
          j = i*2 + vfoActive;
          if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
@@ -805,6 +806,7 @@ void decodeBandUpDown(int dir) {
            sideBandMode = sideBandModeCache[BANDS-1];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
        } else
+       // Normal Case
        for (int i = BANDS-1; i > 0; i--) {
          j = i*2 + vfoActive;
          if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
