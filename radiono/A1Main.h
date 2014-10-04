@@ -14,10 +14,50 @@
     #define USE_ENCODER01 1         // Define this symbol to include Simple Encoder01 support
 
 
+    // Set the following Conditional Compile Flags Above
+    #ifdef USE_PCA9546
+      #include "PCA9546.h"
+    #endif
+    
+    #ifdef USE_EEPROM
+      #include "NonVol.h"
+    #endif // USE_EEPROM
+    
+    #ifdef USE_RF386
+      #include "Rf386.h"
+    #endif // USE_RF386
+    
+    #ifdef USE_BEACONS
+      #include "MorseCode.h"
+      #include "Macro.h"
+    #endif // USE_BEACONS
+    
+    #ifdef USE_POT_KNOB
+      #include "PotKnob.h"
+    #endif // USE_POT_KNOB
+    
+    #ifdef USE_MENUS
+      #include "Menus.h"
+    #endif // USE_MENUS
+    
+    #ifdef USE_ENCODER01
+      #include "Encoder01.h"
+    #endif // USE_ENCODER01
+    
+    #ifdef USE_PCA9546
+      #define PCA9546_I2C_ADDRESS 0x70
+    #endif // USE_PCA9546
+
 
     // Set up Units to make coding large numbers easier
     #define KILO (1000UL)
     #define MEG (KILO * KILO)
+    
+    #define SEC (1000UL)  // MSEC's 
+    #define MIN (SEC * 60)
+    #define HR  (MIN * 60)
+    #define DAY (HR * 24)
+    #define WK  (DAY * 7)
 
     // The Number of Ham Bands
     #define BANDS (9)
