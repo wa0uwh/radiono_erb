@@ -6,19 +6,28 @@
     // Optional USER Configurations
     //#define USE_PCA9546   1         // Define this symbol to include PCA9546 support
     //#define USE_I2C_LCD   1         // Define this symbol to include i2c LCD support
-    #define USE_RF386     1         // Define this symbol to include RF386 support
-    #define USE_BEACONS   1         // Define this symbol to include Beacons, CW and QRSS support
-    #define USE_EEPROM    1         // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
-    #define USE_MENUS     1         // Define this symbol to include Menu support
+    #define USE_RF386       1       // Define this symbol to include RF386 support
+    #define USE_BEACONS     1       // Define this symbol to include Beacons, CW and QRSS support
+    #define USE_EEPROM      1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
+    #define USE_MENUS       1       // Define this symbol to include Menu support
     //#define USE_POT_KNOB  1         // Define this symbol to include POT support
-    #define USE_ENCODER01 1         // Define this symbol to include Simple Encoder01 support
-
+    #define USE_ENCODER01   1       // Define this symbol to include Simple Encoder01 support
+    #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
 
 
     // Set up Units to make coding large numbers easier
     #define KILO (1000UL)
     #define MEG (KILO * KILO)
 
+
+    #ifdef USE_PARK_CURSOR
+       #define DEFAULT_BLINK_TIMEOUT (20000UL) // Set as desired
+       #define DEFAULT_CURSOR_POSITION (0)     // Power Up Cursor Position, Park is Zero
+    #else
+       #define DEFAULT_BLINK_TIMEOUT (0)
+       #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
+    #endif // USE_PARK_CURSOR
+    
     // The Number of Ham Bands
     #define BANDS (9)
     
