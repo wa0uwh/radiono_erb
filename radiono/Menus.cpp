@@ -26,6 +26,8 @@ void doMenus(int menu) {
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
 
     DEBUG(P("%s/%d: Start Menu"), __func__, __LINE__);
+    
+    if (menuIdleTimeOut < 5 * SEC) menuIdleTimeOut = 0;
 
     if (!menuIdleTimer) menuIdleTimer = millis() + menuIdleTimeOut;
 
