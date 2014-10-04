@@ -57,7 +57,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GI"          // Incremental Rev Code
+#define INC_REV "ERB_GI_M03"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -79,53 +79,13 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define LCD_STR_CEL "%-16.16s"    // Fmt to implement Clear to End of Line
 //#define LCD_STR_CEL "%-20.20s"  // For 20 Character LCD Display
 
-
 // Set the following Conditional Compile Flags in the "A1Main.h" file.
 #ifndef USE_I2C_LCD
   #include <LiquidCrystal.h>
 #else
   #include <LiquidTWI.h>
 #endif
-
-#ifdef USE_PCA9546
-  #include "PCA9546.h"
-#endif
-
-#ifdef USE_EEPROM
-  #include "NonVol.h"
-#endif // USE_EEPROM
-
-#ifdef USE_HAMBANDS
-  #include "HamBands.h"
-#endif // USE_HAMBANDS
-
-#ifdef USE_RF386
-  #include "Rf386.h"
-#endif // USE_RF386
-
-#ifdef USE_BEACONS
-  #include "MorseCode.h"
-  #include "Macro.h"
-#endif // USE_BEACONS
-
-#ifdef USE_POT_KNOB
-  #include "PotKnob.h"
-#endif // USE_POT_KNOB
-
-#ifdef USE_MENUS
-  #include "Menus.h"
-#endif // USE_MENUS
-
-#ifdef USE_ENCODER01
-  #include "Encoder01.h"
-#endif // USE_ENCODER01
-
-#ifdef USE_PCA9546
-  #define PCA9546_I2C_ADDRESS 0x70
-#endif // USE_PCA9546
-
-
-
+    
 
 #define SI570_I2C_ADDRESS   0x55
 
@@ -182,9 +142,9 @@ char blinkChar;
 byte refreshDisplay = 0;
 unsigned long blinkTimer = 0;
 unsigned long blinkTimeOut = DEFAULT_BLINK_TIMEOUT; // Default Blink TimeOut, Milli Seconds
-int blinkPeriod = 500;
-byte blinkRatio = 75;
-unsigned long menuIdleTimeOut = 60;
+int blinkPeriod = 500;  // MSECs
+byte blinkRatio = 75;   // Persent
+unsigned long menuIdleTimeOut = 60 * SEC;
 
 int tuningDir = 0;
 int knobPosition = 0;
