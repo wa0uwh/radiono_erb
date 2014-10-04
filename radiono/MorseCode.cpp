@@ -4,6 +4,7 @@
 
 #include <Arduino.h>
 #include "A1Main.h"
+#include "HamBands.h"
 #include "MorseCode.h"
 #include "MorseTable.h"
 
@@ -60,8 +61,10 @@ void sendMesg(int mode, int freqShift, char *msg) {
     unsigned long timeOut;
     
     if (AltTxVFO) return; // Macros and Beacons not allowed in Split Mode, for now.
-    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode       
-    if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
+    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode 
+    #ifdef USE_HAMBANDS   
+        if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
+    #endif // USE_HAMBANDS
     if (isKeyNowClosed()) return; // Abort Message
     
     inTx = 1; 
