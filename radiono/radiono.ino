@@ -774,6 +774,12 @@ void decodeBandUpDown(int dir) {
    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
     
     if(dir > 0) {  // For Band Change, Up
+       // Special Case where VFO is below first Band
+       if (frequency < pgm_read_dword(&bandLimits[0])) {
+           frequency = freqCache[0];
+           sideBandMode = sideBandModeCache[0];
+           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
+       } else
        for (int i = 0; i < BANDS; i++) {
          j = i*2 + vfoActive;
          if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
@@ -793,6 +799,12 @@ void decodeBandUpDown(int dir) {
      } // End fi
      
      else { // For Band Change, Down
+       // Special Case where VFO is above first Band
+       if (frequency > pgm_read_dword(&bandLimits[BANDS*2-1])) {
+           frequency = freqCache[BANDS*2-1];
+           sideBandMode = sideBandModeCache[BANDS-1];
+           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
+       } else
        for (int i = BANDS-1; i > 0; i--) {
          j = i*2 + vfoActive;
          if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
