@@ -12,8 +12,12 @@
     #define USE_MENUS       1       // Define this symbol to include Menu support
     //#define USE_POT_KNOB  1         // Define this symbol to include POT support
     #define USE_ENCODER01   1       // Define this symbol to include Simple Encoder01 support
-    //#define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
 
+
+    // Set up Units to make coding large numbers easier
+    #define KILO (1000UL)
+    #define MEG (KILO * KILO)
 
 
     #ifdef USE_PARK_CURSOR
@@ -24,12 +28,6 @@
        #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_PARK_CURSOR
     
-    
-
-    // Set up Units to make coding large numbers easier
-    #define KILO (1000UL)
-    #define MEG (KILO * KILO)
-
     // The Number of Ham Bands
     #define BANDS (9)
     
