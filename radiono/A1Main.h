@@ -15,13 +15,57 @@
     #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
     #define USE_HAMBANDS    1       // Define this symbol to include Ham Band and Ham Band Limits
 
+    // Set the following Conditional Compile Flags Above
+    #ifdef USE_PCA9546
+      #include "PCA9546.h"
+    #endif
+    
+    #ifdef USE_HAMBANDS
+      #include "HamBands.h"
+    #endif // USE_HAMBANDS
+    
+    #ifdef USE_EEPROM
+      #include "NonVol.h"
+    #endif // USE_EEPROM
+    
+    #ifdef USE_RF386
+      #include "Rf386.h"
+    #endif // USE_RF386
+    
+    #ifdef USE_BEACONS
+      #include "MorseCode.h"
+      #include "Macro.h"
+    #endif // USE_BEACONS
+    
+    #ifdef USE_POT_KNOB
+      #include "PotKnob.h"
+    #endif // USE_POT_KNOB
+    
+    #ifdef USE_MENUS
+      #include "Menus.h"
+    #endif // USE_MENUS
+    
+    #ifdef USE_ENCODER01
+      #include "Encoder01.h"
+    #endif // USE_ENCODER01
+    
+    #ifdef USE_PCA9546
+      #define PCA9546_I2C_ADDRESS 0x70
+    #endif // USE_PCA9546
+
 
     // Set up Units to make coding large numbers easier
     #define KILO (1000UL)
     #define MEG (KILO * KILO)
+    
+    #define SEC (1000UL)  // MSEC's 
+    #define MIN (SEC * 60)
+    #define HR  (MIN * 60)
+    #define DAY (HR * 24)
+    #define WK  (DAY * 7)
 
     #ifdef USE_PARK_CURSOR
-       #define DEFAULT_BLINK_TIMEOUT (20000UL) // Set as desired
+       #define DEFAULT_BLINK_TIMEOUT (20 * SEC) // Set as desired
        #define DEFAULT_CURSOR_POSITION (0)     // Power Up Cursor Position, Park is Zero
     #else
        #define DEFAULT_BLINK_TIMEOUT (0)
