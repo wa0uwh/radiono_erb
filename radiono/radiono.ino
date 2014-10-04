@@ -56,7 +56,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GC_PC05"          // Incremental Rev Code
+#define INC_REV "ERB_GG"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -781,9 +781,10 @@ void decodeBandUpDown(int dir) {
              // Save Current Ham frequency and sideBandMode
              freqCache[j] = frequency;
              sideBandModeCache[j] = sideBandMode;
+             i++;
            }
            // Load From Next Cache Up Band
-           j += 2;
+           j = i*2 + vfoActive;
            frequency = freqCache[min(j,BANDS*2-1)];
            sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
@@ -800,9 +801,10 @@ void decodeBandUpDown(int dir) {
              // Save Current Ham frequency and sideBandMode
              freqCache[j] = frequency;
              sideBandModeCache[j] = sideBandMode;
+             i--;
            }
            // Load From Next Cache Down Band
-           j -= 2;
+           j = i*2 + vfoActive;
            frequency = freqCache[max(j,vfoActive)];
            sideBandMode = sideBandModeCache[max(j,vfoActive)];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
