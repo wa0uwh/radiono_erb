@@ -80,8 +80,8 @@ void checkKnob(int menu) {
           break;
           
         case M_BLINK_TIMEOUT:
-          blinkTime += dir * 1000;
-          blinkTime = constrain (blinkTime, 5000, 300000);
+          blinkTimeOut += dir * 1000;
+          blinkTimeOut = constrain (blinkTimeOut, 5000, 300000);
           break;
         case M_BLINK_PERIOD:
           blinkPeriod += dir * 10;
@@ -136,7 +136,7 @@ void updateDisplayMenu(int menu) {
           case M_BLINK_TIMEOUT:
              sprintf(c, P("%0.2dBlink TimeOut"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
-             sprintf(c, P("SECs: %d"), blinkTime/1000);
+             sprintf(c, P("SECs: %d"), blinkTimeOut/1000);
              if(!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
