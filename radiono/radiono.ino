@@ -627,7 +627,8 @@ void checkButton() {
     case FN_BTN: decodeFN(btn); break;  
     case LT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(+1); break;    
     case RT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(-1); break;
-    case LT_BTN: switch (getButtonPushMode(btn)) { 
+    case LT_BTN:
+        switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
         #ifdef USE_EEPROM
             case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
@@ -640,11 +641,12 @@ void checkButton() {
         #endif // USE_BEACONS
             default: return; // Do Nothing
             } break;
-    #ifdef USE_HAMBANDS
-        case UP_BTN: decodeBandUpDown(+1); break; // Band Up
-        case DN_BTN: decodeBandUpDown(-1); break; // Band Down
-    #endif // USE_HAMBANDS
-    case RT_BTN: switch (getButtonPushMode(btn)) {
+        #ifdef USE_HAMBANDS
+            case UP_BTN: decodeBandUpDown(+1); break; // Band Up
+            case DN_BTN: decodeBandUpDown(-1); break; // Band Down
+        #endif // USE_HAMBANDS
+    case RT_BTN: 
+        switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
         #ifdef USE_MENUS
             case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
@@ -751,6 +753,7 @@ void decodeMoveCursor(int dir) {
 
       knobPositionPrevious = knobPosition;
       if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
+      
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
       freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable
@@ -795,16 +798,16 @@ void decodeFN(int btn) {
     case LONG_PRESS:
        if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
        switch (vfoActive) {
-       case VFO_A :
-          vfoB = frequency + ritVal;
-          sprintf(c, P("A%sB"), ritVal ? P2("+RIT>"): P2(">"));
-          printLineCEL(STATUS_LINE, c);
-          break;
-       default :
-          vfoA = frequency + ritVal;
-          sprintf(c, P("B%sA"), ritVal ? P2("+RIT>"): P2(">"));
-          printLineCEL(STATUS_LINE, c);
-          break;
+           case VFO_A :
+              vfoB = frequency + ritVal;
+              sprintf(c, P("A%sB"), ritVal ? P2("+RIT>"): P2(">"));
+              printLineCEL(STATUS_LINE, c);
+              break;
+           default :
+              vfoA = frequency + ritVal;
+              sprintf(c, P("B%sA"), ritVal ? P2("+RIT>"): P2(">"));
+              printLineCEL(STATUS_LINE, c);
+              break;
        }
        delay(100);
        break;
