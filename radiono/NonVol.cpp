@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <avr/eeprom.h>
 #include "A1Main.h"
+#include "HamBands.h"
 #include "ButtonUtil.h"
 #include "MorseCode.h"
 #include "Menus.h"

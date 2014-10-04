@@ -13,12 +13,12 @@
     //#define USE_POT_KNOB  1         // Define this symbol to include POT support
     #define USE_ENCODER01   1       // Define this symbol to include Simple Encoder01 support
     #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    #define USE_HAMBANDS    1       // Define this symbol to include Ham Band and Ham Band Limits
 
 
     // Set up Units to make coding large numbers easier
     #define KILO (1000UL)
     #define MEG (KILO * KILO)
-
 
     #ifdef USE_PARK_CURSOR
        #define DEFAULT_BLINK_TIMEOUT (20000UL) // Set as desired
@@ -31,6 +31,11 @@
     // The Number of Ham Bands
     #define BANDS (9)
     
+    enum VFOs { // Available VFOs
+        VFO_A = 0,
+        VFO_B,
+    };
+
     // Output Filter Control Lines
     #define BAND_HI_PIN (5)
     #define BAND_MD_PIN (6)
@@ -97,14 +102,7 @@
     extern boolean ritOn;
     extern boolean AltTxVFO;
     extern boolean isAltVFO;
-    
-    // PROGMEM is used to avoid using the small available variable space
-    extern const unsigned long bandLimits[BANDS*2] PROGMEM;
-    
-    // An Array to save: A-VFO & B-VFO
-    extern unsigned long freqCache[BANDS*2];
-    extern byte sideBandModeCache[BANDS*2];
-    
+
 
     // Externally Available Functions
     extern void updateDisplay();   
@@ -114,9 +112,9 @@
     extern void printLine(int row, char const *c);
     extern void startSidetone();
     extern void stopSidetone();
+    extern void decodeSideband();
     extern void changeToTransmit();
     extern void changeToReceive();
-    extern  int inBandLimits(unsigned long freq);
     extern  int isKeyNowClosed();
     extern  int isPttPressed();
     extern void setFreq(unsigned long freq);
