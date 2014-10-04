@@ -69,7 +69,7 @@
     extern byte menuActive;
     extern byte menuPrev;
     extern byte refreshDisplay;
-    extern unsigned long blinkTime;
+    extern unsigned long blinkTimeOut;
     extern int blinkPeriod;
     extern byte blinkRatio;
     extern unsigned long menuIdleTimeOut;

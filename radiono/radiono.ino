@@ -181,7 +181,7 @@ char blinkChar;
 /* tuning pot stuff */
 byte refreshDisplay = 0;
 unsigned long blinkTimer = 0;
-unsigned long blinkTime = DEFAULT_BLINK_TIMEOUT; // Default Blink TimeOut, Milli Seconds
+unsigned long blinkTimeOut = DEFAULT_BLINK_TIMEOUT; // Default Blink TimeOut, Milli Seconds
 int blinkPeriod = 500;
 byte blinkRatio = 75;
 unsigned long menuIdleTimeOut = 60;
@@ -345,7 +345,7 @@ void updateCursor() {
   if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
   if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
 
-  if(!blinkTimer) blinkTimer = millis() + blinkTime;
+  if(!blinkTimer) blinkTimer = millis() + blinkTimeOut;
   
   DEBUG(P("\nStart Blink"));
   if (blinkInterval < millis()) { // Wink OFF
@@ -364,15 +364,13 @@ void updateCursor() {
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(blinkChar);
-      #ifdef USE_PARK_CURSOR
-          if(blinkTime && blinkTimer < millis()) {
-              DEBUG(P("End Blink TIMED OUT"));
-              cursorDigitPosition = 0;
-              dialCursorMode = true;
-              refreshDisplay++;
-              updateDisplay();
-          }
-      #endif // USE_PARK_CURSOR
+      if(blinkTimeOut && blinkTimer < millis()) {
+          DEBUG(P("End Blink TIMED OUT"));
+          cursorDigitPosition = 0;
+          dialCursorMode = true;
+          refreshDisplay++;
+          updateDisplay();
+      }
   }
   return;
 }
