@@ -6,18 +6,23 @@
     // Optional USER Configurations
     //#define USE_PCA9546   1         // Define this symbol to include PCA9546 support
     //#define USE_I2C_LCD   1         // Define this symbol to include i2c LCD support
-    #define USE_RF386     1         // Define this symbol to include RF386 support
-    #define USE_BEACONS   1         // Define this symbol to include Beacons, CW and QRSS support
-    #define USE_EEPROM    1         // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
-    #define USE_MENUS     1         // Define this symbol to include Menu support
+    #define USE_RF386       1       // Define this symbol to include RF386 support
+    #define USE_BEACONS     1       // Define this symbol to include Beacons, CW and QRSS support
+    #define USE_EEPROM      1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
+    #define USE_MENUS       1       // Define this symbol to include Menu support
     //#define USE_POT_KNOB  1         // Define this symbol to include POT support
-    #define USE_ENCODER01 1         // Define this symbol to include Simple Encoder01 support
-
+    #define USE_ENCODER01   1       // Define this symbol to include Simple Encoder01 support
+    #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    #define USE_HAMBANDS    1       // Define this symbol to include Ham Band and Ham Band Limits
 
     // Set the following Conditional Compile Flags Above
     #ifdef USE_PCA9546
       #include "PCA9546.h"
     #endif
+    
+    #ifdef USE_HAMBANDS
+      #include "HamBands.h"
+    #endif // USE_HAMBANDS
     
     #ifdef USE_EEPROM
       #include "NonVol.h"
@@ -59,9 +64,22 @@
     #define DAY (HR * 24)
     #define WK  (DAY * 7)
 
+    #ifdef USE_PARK_CURSOR
+       #define DEFAULT_BLINK_TIMEOUT (20 * SEC) // Set as desired
+       #define DEFAULT_CURSOR_POSITION (0)     // Power Up Cursor Position, Park is Zero
+    #else
+       #define DEFAULT_BLINK_TIMEOUT (0)
+       #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
+    #endif // USE_PARK_CURSOR
+    
     // The Number of Ham Bands
     #define BANDS (9)
     
+    enum VFOs { // Available VFOs
+        VFO_A = 0,
+        VFO_B,
+    };
+
     // Output Filter Control Lines
     #define BAND_HI_PIN (5)
     #define BAND_MD_PIN (6)
@@ -100,7 +118,7 @@
     extern byte menuActive;
     extern byte menuPrev;
     extern byte refreshDisplay;
-    extern unsigned long blinkTime;
+    extern unsigned long blinkTimeOut;
     extern int blinkPeriod;
     extern byte blinkRatio;
     extern unsigned long menuIdleTimeOut;
@@ -128,14 +146,7 @@
     extern boolean ritOn;
     extern boolean AltTxVFO;
     extern boolean isAltVFO;
-    
-    // PROGMEM is used to avoid using the small available variable space
-    extern const unsigned long bandLimits[BANDS*2] PROGMEM;
-    
-    // An Array to save: A-VFO & B-VFO
-    extern unsigned long freqCache[BANDS*2];
-    extern byte sideBandModeCache[BANDS*2];
-    
+
 
     // Externally Available Functions
     extern void updateDisplay();   
@@ -145,9 +156,9 @@
     extern void printLine(int row, char const *c);
     extern void startSidetone();
     extern void stopSidetone();
+    extern void decodeSideband();
     extern void changeToTransmit();
     extern void changeToReceive();
-    extern  int inBandLimits(unsigned long freq);
     extern  int isKeyNowClosed();
     extern  int isPttPressed();
     extern void setFreq(unsigned long freq);

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <avr/eeprom.h>
 #include "A1Main.h"
+#include "HamBands.h"
 #include "ButtonUtil.h"
 #include "MorseCode.h"
 #include "Menus.h"
@@ -39,7 +40,7 @@ void eePromIO(int mode) {
         byte sideBandModeCache[BANDS*2];
         byte cw_wpm;
         unsigned int qrssDitTime;
-        unsigned long blinkTime;
+        unsigned long blinkTimeOut;
         unsigned long blinkPeriod;
         byte blinkRatio;
         unsigned long menuIdleTimeOut;
@@ -80,7 +81,7 @@ void eePromIO(int mode) {
         memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
         cw_wpm = E.cw_wpm;
         qrssDitTime = E.qrssDitTime;
-        blinkTime = E.blinkTime;
+        blinkTimeOut = E.blinkTimeOut;
         blinkPeriod = E.blinkPeriod;
         blinkRatio = E.blinkRatio;
         menuIdleTimeOut = E.menuIdleTimeOut;
@@ -105,7 +106,7 @@ void eePromIO(int mode) {
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(E.sideBandModeCache));
         E.cw_wpm = cw_wpm;
         E.qrssDitTime = qrssDitTime;
-        E.blinkTime = blinkTime;
+        E.blinkTimeOut = blinkTimeOut;
         E.blinkPeriod = blinkPeriod;
         E.blinkRatio = blinkRatio;
         E.menuIdleTimeOut = menuIdleTimeOut;
