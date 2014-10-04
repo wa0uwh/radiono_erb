@@ -56,7 +56,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GC_PC03"          // Incremental Rev Code
+#define INC_REV "ERB_GC_PC05"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -181,7 +181,7 @@ char blinkChar;
 /* tuning pot stuff */
 byte refreshDisplay = 0;
 unsigned long blinkTimer = 0;
-unsigned long blinkTime = 20000UL; // Default Blink TimeOut, Milli Seconds
+unsigned long blinkTime = DEFAULT_BLINK_TIMEOUT; // Default Blink TimeOut, Milli Seconds
 int blinkPeriod = 500;
 byte blinkRatio = 75;
 unsigned long menuIdleTimeOut = 60;
@@ -365,7 +365,7 @@ void updateCursor() {
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(blinkChar);
       #ifdef USE_PARK_CURSOR
-          if(blinkTimer < millis()) {
+          if(blinkTime && blinkTimer < millis()) {
               DEBUG(P("End Blink TIMED OUT"));
               cursorDigitPosition = 0;
               dialCursorMode = true;
