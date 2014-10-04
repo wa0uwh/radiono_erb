@@ -81,9 +81,10 @@ void decodeBandUpDown(int dir) {
              // Save Current Ham frequency and sideBandMode
              freqCache[j] = frequency;
              sideBandModeCache[j] = sideBandMode;
+             i++;
            }
            // Load From Next Cache Up Band
-           j += 2;
+           j = i*2 + vfoActive;
            frequency = freqCache[min(j,BANDS*2-1)];
            sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
@@ -100,9 +101,10 @@ void decodeBandUpDown(int dir) {
              // Save Current Ham frequency and sideBandMode
              freqCache[j] = frequency;
              sideBandModeCache[j] = sideBandMode;
+             i--;
            }
            // Load From Next Cache Down Band
-           j -= 2;
+           j = i*2 + vfoActive;
            frequency = freqCache[max(j,vfoActive)];
            sideBandMode = sideBandModeCache[max(j,vfoActive)];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;

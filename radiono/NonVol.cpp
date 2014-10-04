@@ -40,7 +40,7 @@ void eePromIO(int mode) {
         byte sideBandModeCache[BANDS*2];
         byte cw_wpm;
         unsigned int qrssDitTime;
-        unsigned long blinkTime;
+        unsigned long blinkTimeOut;
         unsigned long blinkPeriod;
         byte blinkRatio;
         unsigned long menuIdleTimeOut;
@@ -81,7 +81,7 @@ void eePromIO(int mode) {
         memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
         cw_wpm = E.cw_wpm;
         qrssDitTime = E.qrssDitTime;
-        blinkTime = E.blinkTime;
+        blinkTimeOut = E.blinkTimeOut;
         blinkPeriod = E.blinkPeriod;
         blinkRatio = E.blinkRatio;
         menuIdleTimeOut = E.menuIdleTimeOut;
@@ -106,7 +106,7 @@ void eePromIO(int mode) {
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(E.sideBandModeCache));
         E.cw_wpm = cw_wpm;
         E.qrssDitTime = qrssDitTime;
-        E.blinkTime = blinkTime;
+        E.blinkTimeOut = blinkTimeOut;
         E.blinkPeriod = blinkPeriod;
         E.blinkRatio = blinkRatio;
         E.menuIdleTimeOut = menuIdleTimeOut;
@@ -139,7 +139,7 @@ void loadUserPerferences() {
     // Check EEPROM for User Saved Preference, Load if available
     // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
     printLineCEL(FIRST_LINE, P("User Pref:"));
-    if (!btnDown()) eePromIO(EEP_LOAD);
+    if (btnDown() != FN_BTN) eePromIO(EEP_LOAD);
     else printLineCEL(STATUS_LINE, P("Factory Reset"));
     delay(500);
     deDounceBtnRelease(); // Wait for Button Release 
