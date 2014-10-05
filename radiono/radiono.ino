@@ -590,17 +590,18 @@ void checkButton() {
     case LT_BTN:
         switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
-        #ifdef USE_EEPROM
-            case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
-            case LONG_PRESS:       eePromIO(EEP_SAVE); break;
-        #endif // USE_EEPROM
-            case ALT_PRESS_FN:     toggleAltTxVFO();  break;
-        #ifdef USE_BEACONS
-            case ALT_PRESS_LT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG1));  break;
-            case ALT_PRESS_RT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG2));  break;
-        #endif // USE_BEACONS
-            default: return; // Do Nothing
-            } break;
+            #ifdef USE_EEPROM
+                case DOUBLE_PRESS:     eePromIO(EEP_LOAD); break;
+                case LONG_PRESS:       eePromIO(EEP_SAVE); break;
+            #endif // USE_EEPROM
+                case ALT_PRESS_FN:     toggleAltTxVFO();  break;
+            #ifdef USE_BEACONS
+                case ALT_PRESS_LT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG1));  break;
+                case ALT_PRESS_RT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG2));  break;
+            #endif // USE_BEACONS
+            default: ; // Do Nothing
+            }
+        break;
         #ifdef USE_HAMBANDS
             case UP_BTN: decodeBandUpDown(+1); break; // Band Up
             case DN_BTN: decodeBandUpDown(-1); break; // Band Down
@@ -608,21 +609,22 @@ void checkButton() {
     case RT_BTN: 
         switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
-        #ifdef USE_MENUS
-            case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
-        #endif // USE_MENUS
-            case LONG_PRESS:       decodeEditIf(); break;
-            case ALT_PRESS_LT:     decodeTune2500Mode(); break;
-        #ifdef USE_BEACONS
-            case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
-            case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
-        #endif // USE_BEACONS
+            #ifdef USE_MENUS
+                case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
+            #endif // USE_MENUS
+                case LONG_PRESS:       decodeEditIf(); break;
+                case ALT_PRESS_LT:     decodeTune2500Mode(); break;
+            #ifdef USE_BEACONS
+                case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
+                case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
+            #endif // USE_BEACONS
             default: ; // Do Nothing
             }
-     #ifdef USE_ENCODER01
+        break;
+    #ifdef USE_ENCODER01
         case ENC_KNOB: readEncoder(btn); break;
-     #endif // USE_ENCODER01
-     default: decodeAux(btn); break;
+    #endif // USE_ENCODER01
+    default: decodeAux(btn); break;
   }
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   blinkTimer = 0;
