@@ -10,10 +10,11 @@
     #define USE_BEACONS     1       // Define this symbol to include Beacons, CW and QRSS support
     #define USE_EEPROM      1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
     #define USE_MENUS       1       // Define this symbol to include Menu support
-    //#define USE_POT_KNOB  1         // Define this symbol to include POT support
+    #define USE_POT_KNOB  1         // Define this symbol to include POT support
     #define USE_ENCODER01   1       // Define this symbol to include Simple Encoder01 support
     #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
     #define USE_HAMBANDS    1       // Define this symbol to include Ham Band and Ham Band Limits
+    #define USE_EDITIF      1       // Define this symbol to include EditIF function
 
     // Set the following Conditional Compile Flags Above
     #ifdef USE_PCA9546
@@ -48,6 +49,10 @@
     #ifdef USE_ENCODER01
       #include "Encoder01.h"
     #endif // USE_ENCODER01
+    
+    #ifdef USE_EDITIF
+      #include "EditIF.h"
+    #endif // USE_EDITIF
     
     #ifdef USE_PCA9546
       #define PCA9546_I2C_ADDRESS 0x70
