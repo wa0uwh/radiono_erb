@@ -4,16 +4,17 @@
 #define A1MAIN_H
 
     // Optional USER Configurations
-    //#define USE_PCA9546   1         // Define this symbol to include PCA9546 support
-    //#define USE_I2C_LCD   1         // Define this symbol to include i2c LCD support
-    #define USE_RF386       1       // Define this symbol to include RF386 support
-    #define USE_BEACONS     1       // Define this symbol to include Beacons, CW and QRSS support
-    #define USE_EEPROM      1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
-    #define USE_MENUS       1       // Define this symbol to include Menu support
-    //#define USE_POT_KNOB  1         // Define this symbol to include POT support
-    #define USE_ENCODER01   1       // Define this symbol to include Simple Encoder01 support
-    #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
-    #define USE_HAMBANDS    1       // Define this symbol to include Ham Band and Ham Band Limits
+    //#define USE_PCA9546     1         // Define this symbol to include PCA9546 support
+    //#define USE_I2C_LCD     1         // Define this symbol to include i2c LCD support
+    #define USE_RF386         1       // Define this symbol to include RF386 support
+    #define USE_BEACONS       1       // Define this symbol to include Beacons, CW and QRSS support
+    #define USE_EEPROM        1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
+    #define USE_MENUS         1       // Define this symbol to include Menu support
+    //#define USE_POT_KNOB    1         // Define this symbol to include POT support
+    #define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
+    #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    #define USE_HAMBANDS      1       // Define this symbol to include Ham Band and Ham Band Limits
+    //#define USE_TUNE2500_MODE 1       // Define this symbol to include Tune2500Hz Mode
 
     // Set the following Conditional Compile Flags Above
     #ifdef USE_PCA9546
@@ -52,17 +53,22 @@
     #ifdef USE_PCA9546
       #define PCA9546_I2C_ADDRESS 0x70
     #endif // USE_PCA9546
+    
+    #ifdef USE_TUNE2500_MODE
+      #include "Tune2500.h"
+    #endif // USE_TUNE2500_MODE
 
 
     // Set up Units to make coding large numbers easier
     #define KILO (1000UL)
     #define MEG (KILO * KILO)
     
-    #define SEC (1000UL)  // MSEC's 
+    // Set up Units for Timers
+    #define SEC (1000UL)  // in MSEC's 
     #define MIN (SEC * 60)
     #define HR  (MIN * 60)
-    #define DAY (HR * 24)
-    #define WK  (DAY * 7)
+    #define DAY (HR  * 24)
+    #define WK  (DAY *  7)
 
     #ifdef USE_PARK_CURSOR
        #define DEFAULT_BLINK_TIMEOUT (20 * SEC) // Set as desired
@@ -126,7 +132,6 @@
     /* tuning pot stuff */  
     extern int tuningDir;
     extern int knobPosition;
-    extern int tune2500Mode;
     extern int freqUnStable;
     extern int knobPositionDelta;
     extern int cursorDigitPosition;
@@ -136,6 +141,7 @@
     extern byte sideBandMode;
     
     extern boolean tuningLocked; //the tuning can be locked: wait until Freq Stable before unlocking it
+    extern boolean dialCursorMode;
     extern boolean inTx, inPtt;
     extern boolean keyDown0;
     extern boolean isLSB;

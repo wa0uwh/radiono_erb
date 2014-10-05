@@ -148,7 +148,7 @@ unsigned long menuIdleTimeOut = 60 * SEC;
 
 int tuningDir = 0;
 int knobPosition = 0;
-int tune2500Mode = 0;
+//int tune2500Mode = 0;
 int freqUnStable = 1;
 int knobPositionDelta = 0;
 int cursorDigitPosition = DEFAULT_CURSOR_POSITION;
@@ -226,7 +226,10 @@ void updateDisplay(){
       sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"), vfoLabel,
           b,  b+2,
           inTx ? P4(" ") : ritOn ? d : P4(" "),
-          tune2500Mode ? P8("*"): P8(" ")
+          #ifdef USE_TUNE2500_MODE
+              tune2500Mode ? P8("*"):
+          #endif // USE_TUNE2500_MODE 
+          P8(" ")
           );
       printLineCEL(FIRST_LINE, c);
       
@@ -278,7 +281,9 @@ void updateCursor() {
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
   if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
-  if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
+  #ifdef USE_TUNE2500_MODE
+      if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
+  #endif // USE_TUNE2500_MODE
 
   if(!blinkTimer) blinkTimer = millis() + blinkTimeOut;
   
@@ -400,16 +405,19 @@ void checkTuning() {
      dialCursorMode = true;
      return; // Nothing to do here, Abort, Cursor is in Park position
   }
-
-  // Select Tuning Mode; Digit or 2500 Step Mode
-  if (tune2500Mode) {
-      // Inc or Dec Freq by 2.5K, useful when tuning between SSB stations
-      cursorDigitPosition = 3;
-      deltaFreq += tuningDir * 2500;
-      
-      newFreq = (frequency / 2500) * 2500 + deltaFreq;
-  }
-  else {
+  
+  #ifdef USE_TUNE2500_MODE
+      // Select Tuning Mode; Digit or 2500 Step Mode
+      if (tune2500Mode) {
+          // Inc or Dec Freq by 2.5K, useful when tuning between SSB stations
+          cursorDigitPosition = 3;
+          deltaFreq += tuningDir * 2500;
+          
+          newFreq = (frequency / 2500) * 2500 + deltaFreq;
+      }
+      else
+  #endif // USE_TUNE2500_MODE
+  {
       // Compute deltaFreq based on current Cursor Position Digit
       deltaFreq = tuningDir;
       for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
@@ -432,7 +440,7 @@ void checkTuning() {
 
   
 // ###############################################################################
-void toggleAltVfo(int mode) {
+void toggleAltVfo() {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
     
@@ -459,7 +467,7 @@ void checkTX() {
         //Change the radio back to receive
         changeToReceive();
         inTx = inPtt = cwTimeout = tuningLocked = 0;
-        if (AltTxVFO) toggleAltVfo(inTx);  // Clear Alt VFO if needed
+        if (AltTxVFO) toggleAltVfo();  // Clear Alt VFO if needed
         refreshDisplay++;
         return;
     }
@@ -472,7 +480,7 @@ void checkTX() {
         if (!inTx){
             //put the  TX_RX line to transmit
             changeToTransmit();
-            if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFI if Needed
+            if (AltTxVFO) toggleAltVfo(); // Set Alt VFI if Needed
             refreshDisplay++;
             //give the T/R relays a few ms to settle
             delay(50);
@@ -517,7 +525,7 @@ void checkTX() {
                 if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
             #endif // USE_HAMBANDS 
             DEBUG(P("\nFunc: %s %d: Start PTT"), __func__, __LINE__); 
-            if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFO if Needed
+            if (AltTxVFO) toggleAltVfo(); // Set Alt VFO if Needed
             inTx = inPtt = tuningLocked = 1;
             delay(50);
             cwTimeout = CW_TIMEOUT + millis(); // Restat timer
@@ -612,7 +620,9 @@ void checkButton() {
             case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
         #endif // USE_MENUS
             case LONG_PRESS:       decodeEditIf(); break;
+        #ifdef USE_TUNE2500_MODE
             case ALT_PRESS_LT:     decodeTune2500Mode(); break;
+        #endif // USE_TUNE2500_MODE
         #ifdef USE_BEACONS
             case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
             case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
@@ -664,21 +674,10 @@ void decodeEditIf() {  // Set the IF Frequency
     #ifdef USE_PARK_CURSOR
         cursorDigitPosition = 0;
     #endif // USE_PARK_CURSOR 
-    tune2500Mode = 0;
+    #ifdef USE_TUNE2500_MODE
+        tune2500Mode = 0;
+    #endif // USE_TUNE2500_MODE
     ritOn = ritVal = 0;
-}
-
-
-// ###############################################################################
-void decodeTune2500Mode() {
-    
-    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode   
-    if (ritOn) return; // Do Nothing if in RIT Mode
-    
-    cursorDigitPosition = 3; // Set default Tuning Digit
-    tune2500Mode = !tune2500Mode;
-    dialCursorMode = false;
-    if (tune2500Mode) frequency = (frequency / 2500) * 2500;
 }
 
 
@@ -712,7 +711,9 @@ void decodeSideBandMode(int btn) {
 void decodeMoveCursor(int dir) {
 
       knobPositionPrevious = knobPosition;
-      if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
+      #ifdef USE_TUNE2500_MODE
+          if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
+      #endif // USE_TUNE2500_MODE
       
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
