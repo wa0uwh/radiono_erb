@@ -223,6 +223,9 @@ void updateDisplay(){
       // Top Line of LCD
       sprintf(d, P("%+03.3d"), ritVal);  
       sprintf(b, P("%08ld"), frequency);
+      #ifdef USE_HIDELEAST
+        if (cursorDigitPosition>1) b[10-cursorDigitPosition] = 0;
+      #endif // USE_HIDELEAST
       sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"), vfoLabel,
           b,  b+2,
           inTx ? P4(" ") : ritOn ? d : P4(" "),
@@ -599,13 +602,13 @@ void checkButton() {
                 case ALT_PRESS_LT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG1));  break;
                 case ALT_PRESS_RT_CUR: sendMorseMesg(cw_wpm, P(CW_MSG2));  break;
             #endif // USE_BEACONS
-            default: ; // Do Nothing
+            default: break; // Do Nothing
             }
         break;
-        #ifdef USE_HAMBANDS
-            case UP_BTN: decodeBandUpDown(+1); break; // Band Up
-            case DN_BTN: decodeBandUpDown(-1); break; // Band Down
-        #endif // USE_HAMBANDS
+    #ifdef USE_HAMBANDS
+        case UP_BTN: decodeBandUpDown(+1); break; // Band Up
+        case DN_BTN: decodeBandUpDown(-1); break; // Band Down
+    #endif // USE_HAMBANDS
     case RT_BTN: 
         switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
@@ -618,7 +621,7 @@ void checkButton() {
                 case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
                 case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
             #endif // USE_BEACONS
-            default: ; // Do Nothing
+            default: break; // Do Nothing
             }
         break;
     #ifdef USE_ENCODER01
@@ -885,6 +888,13 @@ void setup() {
      DEBUG(P("Pre Load EEPROM"));
      loadUserPerferences();
   #endif // USE_EEPROM
+  
+  #ifdef USE_HIDELEAST
+    blinkTimeOut = DEFAULT_BLINK_TIMEOUT;
+    blinkPeriod = DEFAULT_BLINK_PERIOD;
+    blinkRatio = DEFAULT_BLINK_RATIO;
+    cursorDigitPosition = DEFAULT_CURSOR_POSITION; 
+  #endif // USE_HIDELEAST
   
   refreshDisplay++; 
 }

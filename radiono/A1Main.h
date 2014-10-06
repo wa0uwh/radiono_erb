@@ -10,10 +10,11 @@
     #define USE_BEACONS     1       // Define this symbol to include Beacons, CW and QRSS support
     #define USE_EEPROM      1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
     #define USE_MENUS       1       // Define this symbol to include Menu support
+    #define USE_HAMBANDS    1       // Define this symbol to include Ham Band and Ham Band Limits
     //#define USE_POT_KNOB  1         // Define this symbol to include POT support
     #define USE_ENCODER01   1       // Define this symbol to include Simple Encoder01 support
     #define USE_PARK_CURSOR 1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
-    #define USE_HAMBANDS    1       // Define this symbol to include Ham Band and Ham Band Limits
+    #define USE_HIDELEAST   1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
 
     // Set the following Conditional Compile Flags Above
     #ifdef USE_PCA9546
@@ -71,6 +72,13 @@
        #define DEFAULT_BLINK_TIMEOUT (0)
        #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_PARK_CURSOR
+    
+    #ifdef USE_HIDELEAST
+       #define DEFAULT_BLINK_TIMEOUT (0)
+       #define DEFAULT_BLINK_RATIO (100)
+       #define DEFAULT_BLINK_PERIOD (10 * SEC)
+       #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
+    #endif // USE_HIDELEAST
     
     // The Number of Ham Bands
     #define BANDS (9)
