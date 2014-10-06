@@ -230,14 +230,16 @@ void checkButtonMenu() {
                  case DOUBLE_PRESS: eePromIO(EEP_LOAD); break;
                  case LONG_PRESS:   eePromIO(EEP_SAVE); break;
              #endif // USE_EEPROM
-             default: break;
-         } break;
+             default: break; // Do nothing
+         }
+         break;
     case RT_BTN:
         switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS: menuCycle = !menuCycle; break;
             case DOUBLE_PRESS:    menuCycle = true; menuActive = 0; refreshDisplay+=2; break; // Return to VFO Display Mode
-            default: break;
-        } break;
+            default: break; // Do nothing
+        } 
+        break;
      case ENC_KNOB: readEncoder(btn); break;
      default: decodeAux(btn); break;
   }
