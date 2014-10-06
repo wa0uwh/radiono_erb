@@ -137,7 +137,7 @@ void loadUserPerferences() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
       
     // Check EEPROM for User Saved Preference, Load if available
-    // Hold any Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
+    // Hold FN Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
     printLineCEL(FIRST_LINE, P("User Pref:"));
     if (btnDown() != FN_BTN) eePromIO(EEP_LOAD);
     else printLineCEL(STATUS_LINE, P("Factory Reset"));
