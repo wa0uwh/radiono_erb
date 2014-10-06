@@ -47,8 +47,10 @@
  *   Added Optional USER Configuration Support, via #ifdef
  *   Added Initial Rotary Encoder01 Support
  *   Made  Park Cursor and Cursor Timeout Optional, User Can set Default Cursor Position
- *   Added Optional Complile Ham Bands, and Band Limits Support
+ *   Added Optional Compile Ham Bands, and Band Limits Support
  *   Added Optional Hide Least Digits while Tuning
+ *   Added Optional Compile Tune2500 Mode
+ *   Added Optional Compile EditIF Mode
  *
  */
 
@@ -58,7 +60,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GN"          // Incremental Rev Code
+#define INC_REV "ERB_GP"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -134,7 +136,6 @@ unsigned long iFreqLSB = IF_FREQ_LSB;
 
 unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
-boolean editIfMode = false;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
 char blinkChar;
@@ -149,7 +150,7 @@ unsigned long menuIdleTimeOut = 60 * SEC;
 
 int tuningDir = 0;
 int knobPosition = 0;
-int tune2500Mode = 0;
+//int tune2500Mode = 0;
 int freqUnStable = 1;
 int knobPositionDelta = 0;
 int cursorDigitPosition = DEFAULT_CURSOR_POSITION;
@@ -219,7 +220,9 @@ void updateDisplay(){
       // Create Label for Displayed VFO
       vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
       if (AltTxVFO)  *vfoLabel += 32; // Convert to Lower Case
-      if (editIfMode) vfoLabel = isLSB ? P2("L") : P2("U"); // Replace with IF Freq VFO
+      #ifdef USE_EDITIF
+        if (editIfMode) vfoLabel = isLSB ? P2("L") : P2("U"); // Replace with IF Freq VFO
+      #endif // USE_EDITIF
       
       // Top Line of LCD
       sprintf(d, P("%+03.3d"), ritVal);  
@@ -230,7 +233,10 @@ void updateDisplay(){
       sprintf(c, P("%1s:%.2s.%.6s%4.4s%s"), vfoLabel,
           b,  b+2,
           inTx ? P4(" ") : ritOn ? d : P4(" "),
-          tune2500Mode ? P8("*"): P8(" ")
+          #ifdef USE_TUNE2500_MODE
+              tune2500Mode ? P8("*"):
+          #endif // USE_TUNE2500_MODE 
+          P8(" ")
           );
       printLineCEL(FIRST_LINE, c);
       
@@ -242,7 +248,11 @@ void updateDisplay(){
           isLSB ? P2("Lsb") : P2("Usb") :
           isLSB ? P2("LSB") : P2("USB"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
-          freqUnStable || editIfMode ? P4(" ") : 
+          freqUnStable
+          #ifdef USE_EDITIF
+              || editIfMode 
+          #endif // USE_EDITIF
+          ? P4(" ") : 
           #ifdef USE_HAMBANDS
               inBand ? vfoStatus[vfo->status] : P4("SWL")
           #else
@@ -282,7 +292,9 @@ void updateCursor() {
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
   if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
-  if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
+  #ifdef USE_TUNE2500_MODE
+      if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
+  #endif // USE_TUNE2500_MODE
 
   if(!blinkTimer) blinkTimer = millis() + blinkTimeOut;
   
@@ -317,7 +329,9 @@ void updateCursor() {
 // ###############################################################################
 void decodeSideband(){
 
-  if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+  #ifdef USE_EDITIF
+    if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+  #endif // USE_EDITIF
 
   switch(sideBandMode) {
    // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
@@ -336,7 +350,9 @@ void setSideband(){
 // ###############################################################################
 void setBandswitch(unsigned long freq){
 
-  if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+  #ifdef USE_EDITIF
+    if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+  #endif // USE_EDITIF
 
   // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
   if (freq > 14.99 * MEG) digitalWrite(BAND_HI_PIN, 1);
@@ -404,16 +420,19 @@ void checkTuning() {
      dialCursorMode = true;
      return; // Nothing to do here, Abort, Cursor is in Park position
   }
-
-  // Select Tuning Mode; Digit or 2500 Step Mode
-  if (tune2500Mode) {
-      // Inc or Dec Freq by 2.5K, useful when tuning between SSB stations
-      cursorDigitPosition = 3;
-      deltaFreq += tuningDir * 2500;
-      
-      newFreq = (frequency / 2500) * 2500 + deltaFreq;
-  }
-  else {
+  
+  #ifdef USE_TUNE2500_MODE
+      // Select Tuning Mode; Digit or 2500 Step Mode
+      if (tune2500Mode) {
+          // Inc or Dec Freq by 2.5K, useful when tuning between SSB stations
+          cursorDigitPosition = 3;
+          deltaFreq += tuningDir * 2500;
+          
+          newFreq = (frequency / 2500) * 2500 + deltaFreq;
+      }
+      else
+  #endif // USE_TUNE2500_MODE
+  {
       // Compute deltaFreq based on current Cursor Position Digit
       deltaFreq = tuningDir;
       for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
@@ -427,7 +446,10 @@ void checkTuning() {
       // Avoiding Nagative underRoll of UnSigned Long, and over-run MAX_FREQ  
       if (newFreq <= MAX_FREQ) {
         frequency = newFreq;
-        if (!editIfMode) vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
+        #ifdef USE_EDITIF
+           if (!editIfMode)
+        #endif // USE_EDITIF 
+           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
         refreshDisplay++;
       }
       freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
@@ -436,7 +458,7 @@ void checkTuning() {
 
   
 // ###############################################################################
-void toggleAltVfo(int mode) {
+void toggleAltVfo() {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
     
@@ -453,7 +475,9 @@ void checkTX() {
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 
     if (freqUnStable) return;  // Do Nothing if Freq is UnStable
-    if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+    #ifdef USE_EDITIF
+      if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+    #endif // USE_EDITIF
     
     // DEBUG(P("%s %d:  Start Loop"), __func__, __LINE__);
     
@@ -463,7 +487,7 @@ void checkTX() {
         //Change the radio back to receive
         changeToReceive();
         inTx = inPtt = cwTimeout = tuningLocked = 0;
-        if (AltTxVFO) toggleAltVfo(inTx);  // Clear Alt VFO if needed
+        if (AltTxVFO) toggleAltVfo();  // Clear Alt VFO if needed
         refreshDisplay++;
         return;
     }
@@ -476,7 +500,7 @@ void checkTX() {
         if (!inTx){
             //put the  TX_RX line to transmit
             changeToTransmit();
-            if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFI if Needed
+            if (AltTxVFO) toggleAltVfo(); // Set Alt VFI if Needed
             refreshDisplay++;
             //give the T/R relays a few ms to settle
             delay(50);
@@ -521,7 +545,7 @@ void checkTX() {
                 if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
             #endif // USE_HAMBANDS 
             DEBUG(P("\nFunc: %s %d: Start PTT"), __func__, __LINE__); 
-            if (AltTxVFO) toggleAltVfo(inTx); // Set Alt VFO if Needed
+            if (AltTxVFO) toggleAltVfo(); // Set Alt VFO if Needed
             inTx = inPtt = tuningLocked = 1;
             delay(50);
             cwTimeout = CW_TIMEOUT + millis(); // Restat timer
@@ -616,8 +640,12 @@ void checkButton() {
             #ifdef USE_MENUS
                 case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
             #endif // USE_MENUS
-                case LONG_PRESS:       decodeEditIf(); break;
+            #ifdef USE_EDITIF
+                case LONG_PRESS:       editIf(); break;
+            #endif // USE_EDITIF
+            #ifdef USE_TUNE2500_MODE
                 case ALT_PRESS_LT:     decodeTune2500Mode(); break;
+            #endif // USE_TUNE2500_MODE
             #ifdef USE_BEACONS
                 case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
                 case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
@@ -641,50 +669,11 @@ void checkButton() {
 // ###############################################################################
 void toggleAltTxVFO() {
     
-    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode 
+    #ifdef USE_EDITIF
+      if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+    #endif // USE_EDITIF
+    
     AltTxVFO = !AltTxVFO;
-}
-
-// ###############################################################################
-void decodeEditIf() {  // Set the IF Frequency
-    static int vfoActivePrev = VFO_A;
-    static boolean sbActivePrev;
-    
-    #ifdef USE_PARK_CURSOR
-        cursorDigitPosition = 0;
-    #endif // USE_PARK_CURSOR
-
-    if (editIfMode) {  // Save IF Freq, Reload Previous VFO
-        frequency += ritVal;
-        isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
-        isLSB = sbActivePrev;
-        frequency = (vfoActivePrev == VFO_A) ? vfoA : vfoB;
-    }
-    else {  // Save Current VFO, Load IF Freq 
-        vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
-        vfoActivePrev = vfoActive;
-        sbActivePrev = isLSB;
-        frequency = isLSB ? iFreqLSB : iFreqUSB;
-    }
-    editIfMode = !editIfMode;  // Toggle Edit IF Mode    
-    #ifdef USE_PARK_CURSOR
-        cursorDigitPosition = 0;
-    #endif // USE_PARK_CURSOR 
-    tune2500Mode = 0;
-    ritOn = ritVal = 0;
-}
-
-
-// ###############################################################################
-void decodeTune2500Mode() {
-    
-    if (editIfMode) return; // Do Nothing if in Edit-IF-Mode   
-    if (ritOn) return; // Do Nothing if in RIT Mode
-    
-    cursorDigitPosition = 3; // Set default Tuning Digit
-    tune2500Mode = !tune2500Mode;
-    dialCursorMode = false;
-    if (tune2500Mode) frequency = (frequency / 2500) * 2500;
 }
 
 
@@ -694,15 +683,18 @@ void decodeSideBandMode(int btn) {
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 
     DEBUG(P("\nCurrent, isLSB %d"), isLSB);
-    if (editIfMode) { // Switch Sidebands
-        frequency += ritVal;
-        ritVal = 0;
-        isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
-        isLSB = !isLSB;
-        frequency = isLSB ? iFreqLSB : iFreqUSB;
-        setSideband();
-    }
-    else {
+    #ifdef USE_EDITIF
+        if (editIfMode) { // Switch Sidebands
+            frequency += ritVal;
+            ritVal = 0;
+            isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
+            isLSB = !isLSB;
+            frequency = isLSB ? iFreqLSB : iFreqUSB;
+            setSideband();
+        }
+        else
+    #endif // USE_EDITIF 
+    {
         sideBandMode++;
         sideBandMode %= 3; // Limit to Three Modes
         decodeSideband();
@@ -718,7 +710,9 @@ void decodeSideBandMode(int btn) {
 void decodeMoveCursor(int dir) {
 
       knobPositionPrevious = knobPosition;
-      if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
+      #ifdef USE_TUNE2500_MODE
+          if (tune2500Mode) { tune2500Mode = 0; return; } // Abort tune2500Mode if Cursor Button is pressed
+      #endif // USE_TUNE2500_MODE
       
       cursorDigitPosition += dir;
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
@@ -737,14 +731,17 @@ void decodeFN(int btn) {
        break;
       
     case DOUBLE_PRESS:
-       if (editIfMode) { // Abort Edit IF Mode, Reload Active VFO
-          editIfMode = false;    
-          #ifdef USE_PARK_CURSOR
-            cursorDigitPosition = 0;
-          #endif // USE_PARK_CURSOR
-          frequency = (vfoActive == VFO_A) ? vfoA : vfoB; break;
-       } 
-       else { // Save Current VFO, Load Other VFO
+       #ifdef USE_EDITIF
+           if (editIfMode) { // Abort Edit IF Mode, Reload Active VFO
+              editIfMode = false;    
+              #ifdef USE_PARK_CURSOR
+                cursorDigitPosition = 0;
+              #endif // USE_PARK_CURSOR
+              frequency = (vfoActive == VFO_A) ? vfoA : vfoB; break;
+           } 
+           else
+       #endif // USE_EDITIF
+       { // Save Current VFO, Load Other VFO
           if (vfoActive == VFO_A) {
             vfoA = frequency;
             vfoActive = VFO_B;
@@ -762,7 +759,9 @@ void decodeFN(int btn) {
        break;
       
     case LONG_PRESS:
-       if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+       #ifdef USE_EDITIF
+         if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+       #endif // USE_EDITIF
        switch (vfoActive) {
            case VFO_A :
               vfoB = frequency + ritVal;
@@ -930,13 +929,15 @@ void loop(){
  
   checkButton();
 
-
-  if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
-      freq = frequency;
-      if (ritOn) freq += ritVal;
-      freq += (vfoActive == VFO_A) ? vfoA : vfoB;
-      vfo->setFrequency(freq);
-  } else setFreq(frequency);
+  #ifdef USE_EDITIF
+      if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
+          freq = frequency;
+          if (ritOn) freq += ritVal;
+          freq += (vfoActive == VFO_A) ? vfoA : vfoB;
+          vfo->setFrequency(freq);
+      } else
+  #endif // USE_EDITIF 
+  setFreq(frequency);
   
   decodeSideband();
   
