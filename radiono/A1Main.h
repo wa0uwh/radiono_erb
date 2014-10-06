@@ -70,18 +70,19 @@
     #define MEG (KILO * KILO)
     
     // Set up Units for Timers
-    #define SEC (1000UL)  // in MSEC's 
-    #define MIN (SEC * 60)
-    #define HR  (MIN * 60)
-    #define DAY (HR  * 24)
-    #define WK  (DAY *  7)
+    #define MSEC (1UL) // Milli Meconds
+    #define SEC  (MSEC * 1000) 
+    #define MIN  (SEC  *   60)
+    #define HR   (MIN  *   60)
+    #define DAY  (HR   *   24)
+    #define WK   (DAY  *    7)
 
     #ifdef USE_PARK_CURSOR
        #define DEFAULT_BLINK_TIMEOUT (20 * SEC) // Set as desired
-       #define DEFAULT_CURSOR_POSITION (0)     // Power Up Cursor Position, Park is Zero
+       #define DEFAULT_CURSOR_POSITION (0)      // Power Up Cursor Position, Park is Zero
     #else
-       #define DEFAULT_BLINK_TIMEOUT (0)
-       #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
+       #define DEFAULT_BLINK_TIMEOUT (4 * HR)   // Set to Zero for Never
+       #define DEFAULT_CURSOR_POSITION (3)      // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_PARK_CURSOR
     
     #ifdef USE_HIDELEAST

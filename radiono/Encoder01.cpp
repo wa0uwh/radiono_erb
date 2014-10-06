@@ -24,8 +24,7 @@ int getEncoderDir() {
     
     if (knob) {
         dir = knob > 50 ? -1 : +1;
-        //debug("%s btn %d", __func__, knob);    
-        //debug("%s dir %d", __func__, dir);
+        //debug("%s/%d: btn= %d, Dir= %d", __func__, __LINE__, knob, dir);
         knob = 0;
     }  
     return dir;
@@ -36,8 +35,7 @@ int readEncoder(int btn) {
     
     if(btnDown() == btn) {
         knob = analogRead(ANALOG_TUNING);
-        //debug("%s btn %d", __func__, btn);    
-        //debug("%s val %d", __func__, knob);
+        //debug("%s/%d: Knob= %d", __func__, __LINE__, knob);
         deDounceBtnRelease();
     }
 }

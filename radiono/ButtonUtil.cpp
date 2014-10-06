@@ -41,6 +41,7 @@ int btnDown(){
  */ 
 
   // 1024L*b*4700L/(47000L+(b*4700L))   >>>  1024*b/(10+b);
+  
   for(int b = MAX_BUTTONS - 1; b >= 0; b--) {
       if(val + 15 > 1024*b/(10+b)) return b+1;
   }
@@ -68,7 +69,7 @@ void deDounceBtnRelease() {
 // -------------------------------------------------------------------------------
 void decodeAux(int btn) { 
     
-    debug("%s btn %d", __func__, btn);
+    debug("%s/%d: btn %d", __func__, __LINE__, btn);
     //sprintf(c, P("Btn: %.2d"), btn);
     //printLineCEL(STATUS_LINE, c);
     //delay(100);
