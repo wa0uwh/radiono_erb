@@ -889,7 +889,12 @@ void setup() {
      DEBUG(P("Pre Load EEPROM"));
      loadUserPerferences();
   #endif // USE_EEPROM
-  
+ 
+  #ifndef USE_PARK_CURSOR
+    blinkTimeOut = DEFAULT_BLINK_TIMEOUT;
+    cursorDigitPosition = DEFAULT_CURSOR_POSITION;
+  #endif // USE_PARK_CURSOR 
+    
   #ifdef USE_HIDELEAST
     blinkTimeOut = DEFAULT_BLINK_TIMEOUT;
     blinkPeriod = DEFAULT_BLINK_PERIOD;
