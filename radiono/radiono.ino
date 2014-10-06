@@ -47,7 +47,8 @@
  *   Added Optional USER Configuration Support, via #ifdef
  *   Added Initial Rotary Encoder01 Support
  *   Made  Park Cursor and Cursor Timeout Optional, User Can set Default Cursor Position
- *   Added Optinal Complile Ham Bands, and Band Limits Support
+ *   Added Optional Complile Ham Bands, and Band Limits Support
+ *   Added Optional Hide Least Digits while Tuning
  *
  */
 
