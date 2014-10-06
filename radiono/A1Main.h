@@ -74,7 +74,7 @@
     #endif // USE_PARK_CURSOR
     
     #ifdef USE_HIDELEAST
-       #define DEFAULT_BLINK_TIMEOUT (0)
+       #define DEFAULT_BLINK_TIMEOUT (30 * MIN)
        #define DEFAULT_BLINK_RATIO (100)
        #define DEFAULT_BLINK_PERIOD (10 * SEC)
        #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
