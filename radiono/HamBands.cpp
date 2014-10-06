@@ -69,11 +69,17 @@ int inBandLimits(unsigned long freq){
 
 // ###############################################################################
 void decodeBandUpDown(int dir) {
+#define DEBUG(x...)
+//#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
     int j;
     
-   if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+    #ifdef USE_EDITIF
+      if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
+    #endif // USE_EDITIF
+
+    DEBUG(P("%s/%d:"), __func__, __LINE__);
     
-    if(dir > 0) {  // For Band Change, Up
+    if (dir > 0) {  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
          j = i*2 + vfoActive;
          if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {

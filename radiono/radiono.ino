@@ -60,7 +60,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GP"          // Incremental Rev Code
+#define INC_REV "ERB_GP_01"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -214,7 +214,7 @@ void updateDisplay(){
   char *vfoLabel;
 
   if (refreshDisplay) {
-      if(refreshDisplay > 0) refreshDisplay--;
+      if (refreshDisplay > 0) refreshDisplay--;
       blinkTimer = 0;
       
       // Create Label for Displayed VFO
@@ -296,7 +296,7 @@ void updateCursor() {
       if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
   #endif // USE_TUNE2500_MODE
 
-  if(!blinkTimer) blinkTimer = millis() + blinkTimeOut;
+  if (!blinkTimer) blinkTimer = millis() + blinkTimeOut;
   
   DEBUG(P("\nStart Blink"));
   if (blinkInterval < millis()) { // Wink OFF
@@ -315,7 +315,7 @@ void updateCursor() {
       toggle = !toggle;
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
       lcd.print(blinkChar);
-      if(blinkTimeOut && blinkTimer < millis()) {
+      if (blinkTimeOut && blinkTimer < millis()) {
           DEBUG(P("End Blink TIMED OUT"));
           cursorDigitPosition = 0;
           dialCursorMode = true;
@@ -718,7 +718,7 @@ void decodeMoveCursor(int dir) {
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
       freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable
       blinkTimer = 0;
-      if(!cursorDigitPosition) dialCursorMode = true;
+      if (!cursorDigitPosition) dialCursorMode = true;
       refreshDisplay++;
 }
 

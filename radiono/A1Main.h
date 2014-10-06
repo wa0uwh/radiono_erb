@@ -18,6 +18,21 @@
     #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
     //#define USE_HIDELEAST   1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
 
+
+    // Set up Units to make coding large numbers easier
+    #define HZ   (1UL)
+    #define KILO (HZ * 1000)
+    #define MEG  (KILO * KILO)
+    
+    // Set up Units for Timers
+    #define MSEC (1UL) // Milli Meconds
+    #define SEC  (MSEC * 1000) 
+    #define MIN  (SEC  *   60)
+    #define HR   (MIN  *   60)
+    #define DAY  (HR   *   24)
+    #define WK   (DAY  *    7)
+
+
     // Set the following Conditional Compile Flags Above
     #ifdef USE_PCA9546
       #include "PCA9546.h"
@@ -65,17 +80,6 @@
     #endif // USE_TUNE2500_MODE
 
 
-    // Set up Units to make coding large numbers easier
-    #define KILO (1000UL)
-    #define MEG (KILO * KILO)
-    
-    // Set up Units for Timers
-    #define MSEC (1UL) // Milli Meconds
-    #define SEC  (MSEC * 1000) 
-    #define MIN  (SEC  *   60)
-    #define HR   (MIN  *   60)
-    #define DAY  (HR   *   24)
-    #define WK   (DAY  *    7)
 
     #ifdef USE_PARK_CURSOR
        #define DEFAULT_BLINK_TIMEOUT (20 * SEC) // Set as desired

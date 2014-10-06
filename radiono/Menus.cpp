@@ -44,7 +44,7 @@ void doMenus(int menu) {
       refreshDisplay++;
     }
 
-    if(menuActive) updateDisplayMenu(menu);
+    if (menuActive) updateDisplayMenu(menu);
 }
 
 
@@ -99,7 +99,7 @@ void checkKnob(int menu) {
               blinkTimeOut = max(blinkTimeOut, 1 * MIN);
           }
           else  blinkTimeOut += dir * 5 * SEC;
-          if( blinkTimeOut > 3 * 60 * MIN) blinkTimeOut = 0;
+          if (blinkTimeOut > 3 * 60 * MIN) blinkTimeOut = 0;
           blinkTimeOut = blinkTimeOut / SEC * SEC;
           blinkTimeOut = constrain (blinkTimeOut, 0, 60 * MIN); //MSECs
           break;
@@ -119,7 +119,7 @@ void checkKnob(int menu) {
               menuIdleTimeOut = max(menuIdleTimeOut, 1 * MIN);
           }
           else  menuIdleTimeOut += dir * 5 * SEC;
-          if( menuIdleTimeOut > 3 * 10 * MIN) menuIdleTimeOut = 0;
+          if (menuIdleTimeOut > 3 * 10 * MIN) menuIdleTimeOut = 0;
           menuIdleTimeOut = menuIdleTimeOut / SEC * SEC; 
           menuIdleTimeOut = constrain (menuIdleTimeOut, 0, 10 * MIN); //MSECs
           break;
@@ -154,7 +154,7 @@ void updateDisplayMenu(int menu) {
              sprintf(c, P("%0.2dMACRO CW SPD"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              sprintf(c, P("WPM: %0.2d"), cw_wpm);
-             if(!menuCycle) sprintf(c, P2("%s<"), c);
+             if (!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
           case M_QRSS_DIT_TIME:
@@ -162,41 +162,41 @@ void updateDisplayMenu(int menu) {
              printLineCEL(MENU_PROMPT_LINE, c);
              if (qrssDitTime > SEC) sprintf(c, P(" SECs: %0.2d"), qrssDitTime / SEC);
              else sprintf(c, P("MSECs: %d"), qrssDitTime);
-             if(!menuCycle) sprintf(c, P2("%s<"), c);
+             if (!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
 
           case M_BLINK_TIMEOUT:
              sprintf(c, P("%0.2dBlink TimeOut"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
-             if(blinkTimeOut > MIN) sprintf(c, P("MINs: %0.2d"), blinkTimeOut / MIN);
+             if (blinkTimeOut > MIN) sprintf(c, P("MINs: %0.2d"), blinkTimeOut / MIN);
              else sprintf(c, P("SECs: %d"), blinkTimeOut / SEC);
-             if(!menuCycle) sprintf(c, P2("%s<"), c);
-             if(!blinkTimeOut) sprintf(c, P2("%s - OFF"), c);
+             if (!menuCycle) sprintf(c, P2("%s<"), c);
+             if (!blinkTimeOut) sprintf(c, P2("%s - OFF"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
           case M_BLINK_PERIOD:
              sprintf(c, P("%0.2dBlink Period"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              sprintf(c, P("MSECs: %d"), blinkPeriod);
-             if(!menuCycle) sprintf(c, P2("%s<"), c);
+             if (!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
           case M_BLINK_RATIO:
              sprintf(c, P("%0.2dBlink"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              sprintf(c, P("Ratio: %d%%"), blinkRatio);
-             if(!menuCycle) sprintf(c, P2("%s<"), c);
+             if (!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
              
           case M_TIMEOUT:
              sprintf(c, P("%0.2dMenu TimeOut"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
-             if(menuIdleTimeOut > MIN) sprintf(c, P("MINs: %0.2d"), menuIdleTimeOut / MIN);
+             if (menuIdleTimeOut > MIN) sprintf(c, P("MINs: %0.2d"), menuIdleTimeOut / MIN);
              else sprintf(c, P("SECs: %d%"), menuIdleTimeOut / SEC);
-             if(!menuCycle) sprintf(c, P2("%s<"), c);
-             if(!menuIdleTimeOut) sprintf(c, P2("%s - OFF"), c);
+             if (!menuCycle) sprintf(c, P2("%s<"), c);
+             if (!menuIdleTimeOut) sprintf(c, P2("%s - OFF"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
 

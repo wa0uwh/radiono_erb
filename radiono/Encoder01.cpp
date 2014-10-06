@@ -17,7 +17,6 @@ void initEncoder() {
 }
 
 
-
 // ###############################################################################
 int getEncoderDir() {
     int dir = 0;
@@ -33,7 +32,7 @@ int getEncoderDir() {
 // ###############################################################################
 int readEncoder(int btn) {
     
-    if(btnDown() == btn) {
+    if (btnDown() == btn) {
         knob = analogRead(ANALOG_TUNING);
         //debug("%s/%d: Knob= %d", __func__, __LINE__, knob);
         deDounceBtnRelease();
