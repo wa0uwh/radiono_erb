@@ -15,8 +15,8 @@
     #define USE_EDITIF        1       // Define this symbol to include EditIF function
     //#define USE_POT_KNOB    1         // Define this symbol to include POT support
     #define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
-    #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
-    //#define USE_HIDELEAST   1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
+    //#define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    #define USE_HIDELEAST   1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
 
 
     // Set up Units to make coding large numbers easier

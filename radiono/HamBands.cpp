@@ -121,7 +121,9 @@ void decodeBandUpDown(int dir) {
      
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    inBandLimits(frequency);
-   cursorDigitPosition = 0; 
+   #ifdef USE_PARK_CURSOR
+      cursorDigitPosition = 0;
+   #endif // USE_PARK_CURSOR
    ritOn = ritVal = 0;
    decodeSideband();
 }
