@@ -60,7 +60,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_GP_02"          // Incremental Rev Code
+#define INC_REV "ERB_GP_05"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -93,22 +93,22 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define SI570_I2C_ADDRESS   0x55
 
 // Default Tune Frequency
-#define DEFAULT_TUNE_FREQ (14.285 * MEG) //  20m - QRP SSB Calling Freq
+#define DEFAULT_TUNE_FREQ (14.285 * MHz) //  20m - QRP SSB Calling Freq
 // USB and LSB IF frequencies
-#define IF_FREQ_USB   (19.997 * MEG)
-#define IF_FREQ_LSB   (19.992 * MEG)
+#define IF_FREQ_USB   (19.997 * MHz)
+#define IF_FREQ_LSB   (19.992 * MHz)
 
 #define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 
 // Define MAX Tuning Range
-#define MAX_FREQ (32.0 * MEG)
+#define MAX_FREQ (32.0 * MHz)
 
 // Tuning POT Dead Zone
 #define DEAD_ZONE (40)
 
 
 // Pin Number for the digital output controls
-#define LSB (2)
+#define PIN_LSB (2)
 #define TX_RX (3)
 #define CW_KEY (4)
 
@@ -128,6 +128,8 @@ Si570 *vfo;
 unsigned long frequency = DEFAULT_TUNE_FREQ;
 unsigned long iFreqUSB = IF_FREQ_USB;
 unsigned long iFreqLSB = IF_FREQ_LSB;
+boolean isLSB = USB;
+byte sideBandMode = AutoSB_MODE;
 
 unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
@@ -141,7 +143,7 @@ unsigned long blinkTimer = 0;
 unsigned long blinkTimeOut = DEFAULT_BLINK_TIMEOUT; // Default Blink TimeOut, Milli Seconds
 int blinkPeriod = 500;  // MSECs
 byte blinkRatio = 75;   // Persent
-unsigned long menuIdleTimeOut = 60 * SEC;
+unsigned long menuIdleTimeOut = 60 * SECs;
 
 int tuningDir = 0;
 int knobPosition = 0;
@@ -150,13 +152,11 @@ int knobPositionDelta = 0;
 int cursorDigitPosition = DEFAULT_CURSOR_POSITION;
 int knobPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
-byte sideBandMode = 0;
 
 boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
 boolean dialCursorMode = 0;
 boolean inTx = 0, inPtt = 0;
 boolean keyDown = 0;
-boolean isLSB = 0;
 boolean vfoActive = VFO_A;
 
 /* modes */
@@ -238,9 +238,9 @@ void updateDisplay(){
       blinkChar = c[cursorCol];
       
       sprintf(c, P("%3s %-2s %3.3s"),
-          sideBandMode ? 
-          isLSB ? P2("Lsb") : P2("Usb") :
-          isLSB ? P2("LSB") : P2("USB"),
+          sideBandMode == AutoSB_MODE ? 
+          isLSB ? P2("LSB") : P2("USB") :
+          isLSB ? P2("Lsb") : P2("Usb"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
           freqUnStable
           #ifdef USE_EDITIF
@@ -329,16 +329,16 @@ void decodeSideband(){
 
   switch(sideBandMode) {
    // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
-    case  AUTO_SIDEBAND_MODE: isLSB = (frequency < 9.99 * MEG) ? 1 : 0 ; break; // Automatic Side Band Mode
-    case UPPER_SIDEBAND_MODE: isLSB = 0; break; // Force USB Mode
-    case LOWER_SIDEBAND_MODE: isLSB = 1; break; // Force LSB Mode    
+    case AutoSB_MODE: isLSB = (frequency < 9.99 * MHz) ? 1 : 0 ; break; // Automatic Side Band Mode 
+    case USB_MODE: isLSB = USB; break; // Force USB Mode
+    case LSB_MODE: isLSB = LSB; break; // Force LSB Mode   
   }
   setSideband();
 }
 
 // -------------------------------------------------------------------------------
 void setSideband(){  
-  pinMode(LSB, OUTPUT); digitalWrite(LSB, isLSB);
+  pinMode(PIN_LSB, OUTPUT); digitalWrite(PIN_LSB, isLSB);
 }
 
 // ###############################################################################
@@ -349,7 +349,7 @@ void setBandswitch(unsigned long freq){
   #endif // USE_EDITIF
 
   // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
-  if (freq > 14.99 * MEG) digitalWrite(BAND_HI_PIN, 1);
+  if (freq > 14.99 * MHz) digitalWrite(BAND_HI_PIN, 1);
   else digitalWrite(BAND_HI_PIN, 0);
 }
 
@@ -837,7 +837,7 @@ void setup() {
   // but it needs to know for what frequency it was calibrated for.
   // Looks like most HAM Si570 are calibrated for 56.320 Mhz.
   // If yours was calibrated for another frequency, you need to change that here
-  vfo = new Si570(SI570_I2C_ADDRESS, 56.32 * MEG);
+  vfo = new Si570(SI570_I2C_ADDRESS, 56.32 * MHz);
 
   if (vfo->status == SI570_ERROR) {
     // The Si570 is unreachable. Show an error for 3 seconds and continue.

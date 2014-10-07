@@ -11,34 +11,38 @@
     #define USE_EEPROM        1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
     #define USE_MENUS         1       // Define this symbol to include Menu support
     #define USE_HAMBANDS      1       // Define this symbol to include Ham Band and Ham Band Limits
-    //#define USE_TUNE2500_MODE 1       // Define this symbol to include Tune2500Hz Mode
+    #define USE_TUNE2500_MODE 1       // Define this symbol to include Tune2500Hz Mode
     #define USE_EDITIF        1       // Define this symbol to include EditIF function
     //#define USE_POT_KNOB    1         // Define this symbol to include POT support
     #define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
-    //#define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
-    #define USE_HIDELEAST   1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
+    #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    #define USE_HIDELEAST     1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
 
 
-    // Set up Units to make coding large numbers easier
-    #define HZ   (1UL)
-    #define KILO (HZ * 1000)
-    #define MEG  (KILO * KILO)
+    // Set up Units to make coding large Frequency Numbers easier
+    #define Hz   (1UL)
+    #define KHz  (1000 * Hz)
+    #define MHz  (1000 * KHz)
     
     // Set up Units for Timers
-    #define MSEC (1UL) // Milli Meconds
-    #define SEC  (MSEC * 1000) 
-    #define MIN  (SEC  *   60)
-    #define HR   (MIN  *   60)
-    #define DAY  (HR   *   24)
-    #define WK   (DAY  *    7)
-    
+    #define MSECs  (1UL) // Milli Seconds
+    #define SECs  (1000 * MSECs) 
+    #define MINs  (60   * SECs)
+    #define HRs   (60   * MINs)
+    #define DAYs  (24   * HRs)
+    #define WKs   (7    * DAYs)
+
     enum SidebandModes { // Sideband Modes
-        AUTO_SIDEBAND_MODE = 0,
-        UPPER_SIDEBAND_MODE,
-        LOWER_SIDEBAND_MODE,
+        AutoSB_MODE = 0,  // Auto Sideband Mode
+        USB_MODE,
+        LSB_MODE
     };
 
-
+    enum Sideband { // Sidebands
+        USB = 0,
+        LSB
+    };
+   
     // Set the following Conditional Compile Flags Above
     #ifdef USE_PCA9546
       #include "PCA9546.h"
@@ -88,17 +92,17 @@
 
 
     #ifdef USE_PARK_CURSOR
-       #define DEFAULT_BLINK_TIMEOUT (20 * SEC) // Set as desired
+       #define DEFAULT_BLINK_TIMEOUT (20 * SECs) // Set as desired
        #define DEFAULT_CURSOR_POSITION (0)      // Power Up Cursor Position, Park is Zero
     #else
-       #define DEFAULT_BLINK_TIMEOUT (4 * HR)   // Set to Zero for Never
+       #define DEFAULT_BLINK_TIMEOUT (4 * HRs)   // Set to Zero for Never
        #define DEFAULT_CURSOR_POSITION (3)      // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_PARK_CURSOR
     
     #ifdef USE_HIDELEAST
-       #define DEFAULT_BLINK_TIMEOUT (30 * MIN)
+       #define DEFAULT_BLINK_TIMEOUT (30 * MINs)
        #define DEFAULT_BLINK_RATIO (100)
-       #define DEFAULT_BLINK_PERIOD (10 * SEC)
+       #define DEFAULT_BLINK_PERIOD (10 * SECs)
        #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_HIDELEAST
     
