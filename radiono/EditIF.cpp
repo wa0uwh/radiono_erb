@@ -10,8 +10,12 @@ boolean editIfMode = false;
 
 // ###############################################################################
 void editIf() {  // Set the IF Frequency
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
     static int vfoActivePrev = VFO_A;
     static boolean sbActivePrev;
+
+    DEBUG(P("%s/%d:"), __func__, __LINE__);
     
     #ifdef USE_PARK_CURSOR
         cursorDigitPosition = 0;

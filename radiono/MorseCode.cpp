@@ -77,7 +77,7 @@ void sendMesg(int mode, int freqShift, char *msg) {
     printLineXY(12, FIRST_LINE, c);
     delay(50);
      
-    if(mode == MOD_QRSS) startSidetone();        
+    if (mode == MOD_QRSS) startSidetone();        
     printLineCEL(STATUS_LINE, msg); // Scroll Message
     bitTimer(ditLen);
     

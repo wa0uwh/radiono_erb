@@ -27,7 +27,7 @@ int btnDown(){
   // Val should be approximately = 1024*btnN*4700/(47000+(btnN*4700))
   // N = 0 to Number of button - 1
 
-  DEBUG(P("%s %d: btn Val= %d"), __func__, __LINE__, val);
+  DEBUG(P("%s/%d: btn Val= %d"), __func__, __LINE__, val);
   
  /* // Old Code
   if (val > 400) return 8; // Btn8 Used by the Rotary Encoder
@@ -41,8 +41,9 @@ int btnDown(){
  */ 
 
   // 1024L*b*4700L/(47000L+(b*4700L))   >>>  1024*b/(10+b);
+  
   for(int b = MAX_BUTTONS - 1; b >= 0; b--) {
-      if(val + 15 > 1024*b/(10+b)) return b+1;
+      if (val + 15 > 1024*b/(10+b)) return b+1;
   }
   return 1;
 }
@@ -50,10 +51,15 @@ int btnDown(){
 
 // -------------------------------------------------------------------------------
 void deDounceBtnRelease() {
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int i = 2;
     
     while (i--) { // DeBounce Button Release, Check twice
-      while (btnDown()) delay(20);
+      while (btnDown()) {
+          DEBUG(P("%s/%d:"), __func__, __LINE__);
+          delay(20);
+      }
     }  
     #ifdef USE_POT_KNOB
       // The following allows the user to re-center the
@@ -68,7 +74,7 @@ void deDounceBtnRelease() {
 // -------------------------------------------------------------------------------
 void decodeAux(int btn) { 
     
-    debug("%s btn %d", __func__, btn);
+    debug("%s/%d: btn %d", __func__, __LINE__, btn);
     //sprintf(c, P("Btn: %.2d"), btn);
     //printLineCEL(STATUS_LINE, c);
     //delay(100);
@@ -78,6 +84,10 @@ void decodeAux(int btn) {
 
 // ###############################################################################
 int checkForAltPress(int btn, int altbtn) {
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+
+    DEBUG(P("%s/%d:"), __func__, __LINE__);
    
     // Find the First Button that Matches AltBtn, and that is not Btn, else retrun 0
     for (int b = 1; b < btn; b++) {
@@ -89,8 +99,12 @@ int checkForAltPress(int btn, int altbtn) {
 
 // -------------------------------------------------------------------------------
 int getButtonPushMode(int btn) {
+#define DEBUG(x ...)
+//#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
     int t1, t2, tbtn;
     int altPress;
+
+    DEBUG(P("%s/%d:"), __func__, __LINE__);
   
     t1 = t2 = 0;
 
@@ -99,7 +113,7 @@ int getButtonPushMode(int btn) {
     while (t1 < 20 && btn == tbtn){
         tbtn = btnDown();
         altPress = checkForAltPress(btn, tbtn);
-        if(altPress) return altPress;
+        if (altPress) return altPress;
         delay(50);
         t1++;
     }
@@ -107,7 +121,7 @@ int getButtonPushMode(int btn) {
     while (t2 < 10 && !tbtn){       
         tbtn = btnDown();
         altPress = checkForAltPress(btn, tbtn);
-        if(altPress) return altPress;
+        if (altPress) return altPress;
         delay(50);
         t2++;
     }
