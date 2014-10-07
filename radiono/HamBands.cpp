@@ -45,9 +45,43 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
    //50.20   * MHz, 50.20   * MHz,  //   6m - QRP SSB Calling Freq
    };
    
-byte sideBandModeCache[BANDS*2] = {AutoSB_MODE};
+byte sideBandModeCache[BANDS*2] = {
+      LSB,   LSB, // 160m
+      LSB,   LSB, //  80m
+      USB,   USB, //  60m Channel 1
+      USB,   USB, //  60m Channel 2
+      USB,   USB, //  60m Channel 3
+      USB,   USB, //  60m Channel 4
+      USB,   USB, //  60m Channel 5
+      LSB,   LSB, //  40m
+      USB,   USB, //  30m
+      USB,   USB, //  20m
+      USB,   USB, //  17m
+      USB,   USB, //  15m
+      USB,   USB, //  12m
+      USB,   USB, //  10m
+   // USB,   USB, //   6m - Will need New Low Pass Filter Support
+};
 
+byte hamBands[BANDS]  = {
+     160,
+      80,
+      61, // Channel 1
+      62, // Channel 2
+      63, // Channel 3
+      64, // Channel 4
+      65, // Channel 5
+      40,
+      30,
+      20,
+      17,
+      15,
+      12,
+      10,
+   //  6, // Will need New Low Pass Filter Support
+};
 
+boolean operate60m = false;  // Operate on 60m Band
 byte inBand = 0;
 
 
@@ -83,28 +117,34 @@ void decodeBandUpDown(int dir) {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
     int j;
+    int upper, lower;
     
     #ifdef USE_EDITIF
       if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
     #endif // USE_EDITIF
 
     DEBUG(P("%s/%d:"), __func__, __LINE__);
-    
+
     if (dir > 0) {  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
+       //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
+         //upper = i*2;
+         //lower = upper+1;
          j = i*2 + vfoActive;
-         if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
-           if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
+         if (frequency <= pgm_read_dword(&bandLimits[i*2])) {
+           if (frequency >= pgm_read_dword(&bandLimits[i*2+1])) {
              // Save Current Ham frequency and sideBandMode
              freqCache[j] = frequency;
              sideBandModeCache[j] = sideBandMode;
              i++;
            }
+           //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
            // Load From Next Cache Up Band
+           //if (i >= HB60m1 && !operate60m) i+= 3;
            j = i*2 + vfoActive;
            frequency = freqCache[min(j,BANDS*2-1)];
-           if (i >= 2 && i <= 6) {  // HamBand 60m
-               isLSB = 1;  
+           if (i > HB60m1 && i <= HB60mChannels) {  // HamBand 60m
+               isLSB = USB;
                sideBandMode = USB_MODE;
            }
            else sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
@@ -116,6 +156,7 @@ void decodeBandUpDown(int dir) {
      
      else { // For Band Change, Down
        for (int i = BANDS-1; i > 0; i--) {
+         //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
          j = i*2 + vfoActive;
          if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
            if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
@@ -124,11 +165,13 @@ void decodeBandUpDown(int dir) {
              sideBandModeCache[j] = sideBandMode;
              i--;
            }
+           //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
            // Load From Next Cache Down Band
+           //if (i < HB60mChannels && !operate60m) i-= 5;
            j = i*2 + vfoActive;
            frequency = freqCache[max(j,vfoActive)];
-           if (i >= 2 && i <= 6) {  // HamBand 60m
-               isLSB = 1;  
+           if (i > HB60m1 && i <= HB60mChannels) {  // HamBand 60m
+               isLSB = USB;
                sideBandMode = USB_MODE;
            }
            else sideBandMode = sideBandModeCache[max(j,vfoActive)];
@@ -137,7 +180,9 @@ void decodeBandUpDown(int dir) {
          }
        }
      } // End else
-     
+   
+   // if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--; 
+   
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    inBandLimits(frequency);
    #ifdef USE_PARK_CURSOR

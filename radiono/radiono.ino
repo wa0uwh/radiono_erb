@@ -237,21 +237,24 @@ void updateDisplay(){
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
       blinkChar = c[cursorCol];
       
-      sprintf(c, P("%3s %-2s %3.3s"),
+      if (operate60m && inBand > HB60m1 && inBand <= HB60mChannels)
+           sprintf(b, P("%3dm%d"), hamBands[inBand-1]/10*10, hamBands[inBand-1] % 10);
+      else sprintf(b, P("%3dm"), hamBands[inBand-1]);
+      
+      if (!inBand) sprintf(b, P("%3dm"), 300 * MHz / frequency);
+      
+      sprintf(c, P("%3s %-2s %3.3s %s"),
           sideBandMode == AutoSB_MODE ? 
           isLSB ? P2("LSB") : P2("USB") :
           isLSB ? P2("Lsb") : P2("Usb"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
-          freqUnStable
-          #ifdef USE_EDITIF
-              || editIfMode 
-          #endif // USE_EDITIF
-          ? P4(" ") : 
+          freqUnStable || editIfMode ? P4(" ") : 
           #ifdef USE_HAMBANDS
-              inBand ? vfoStatus[vfo->status] : P4("SWL")
+              inBand ? vfoStatus[vfo->status] : P4("SWL"),
           #else
-              vfoStatus[vfo->status]
+              vfoStatus[vfo->status],
           #endif // USE_HAMBANDS
+          b
           );
       printLineCEL(STATUS_LINE, c);
       
@@ -893,6 +896,10 @@ void setup() {
     blinkRatio = DEFAULT_BLINK_RATIO;
     cursorDigitPosition = DEFAULT_CURSOR_POSITION; 
   #endif // USE_HIDELEAST
+  
+  #ifdef USE_OPERATE60M
+    operate60m = true;
+  #endif // USE_OPERATE60M
   
   refreshDisplay++; 
 }

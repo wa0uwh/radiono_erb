@@ -17,6 +17,7 @@
     #define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
     #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
     #define USE_HIDELEAST     1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
+    //#define USE_OPERATE60M    1       // Define this symbol to Operate and Support 60m Band Selection
 
 
     // Set up Units to make coding large Frequency Numbers easier
