@@ -7,17 +7,17 @@
     //#define USE_PCA9546     1         // Define this symbol to include PCA9546 support
     //#define USE_I2C_LCD     1         // Define this symbol to include i2c LCD support
     #define USE_RF386         1       // Define this symbol to include RF386 support
-    #define USE_BEACONS       1       // Define this symbol to include Beacons, CW and QRSS support
+    //#define USE_BEACONS       1       // Define this symbol to include Beacons, CW and QRSS support
     #define USE_EEPROM        1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
-    #define USE_MENUS         1       // Define this symbol to include Menu support
+    //#define USE_MENUS         1       // Define this symbol to include Menu support
     #define USE_HAMBANDS      1       // Define this symbol to include Ham Band and Ham Band Limits
-    #define USE_TUNE2500_MODE 1       // Define this symbol to include Tune2500Hz Mode
+    //#define USE_TUNE2500_MODE 1       // Define this symbol to include Tune2500Hz Mode
     #define USE_EDITIF        1       // Define this symbol to include EditIF function
     //#define USE_POT_KNOB    1         // Define this symbol to include POT support
     #define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
-    #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    //#define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
     #define USE_HIDELEAST     1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
-    //#define USE_OPERATE60M    1       // Define this symbol to Operate and Support 60m Band Selection
+    #define USE_OPERATE_60M   1       // Define this symbol to Operate and Support 60m Band Selection
 
 
     // Set up Units to make coding large Frequency Numbers easier

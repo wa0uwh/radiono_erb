@@ -66,11 +66,11 @@ byte sideBandModeCache[BANDS*2] = {
 byte hamBands[BANDS]  = {
      160,
       80,
-      61, // Channel 1
-      62, // Channel 2
-      63, // Channel 3
-      64, // Channel 4
-      65, // Channel 5
+      61, // 60m Channel 1, Note: Channel Number is encoded as least digit
+      62, // 60m Channel 2
+      63, // 60m Channel 3
+      64, // 60m Channel 4
+      65, // 60m Channel 5
       40,
       30,
       20,
@@ -117,37 +117,29 @@ void decodeBandUpDown(int dir) {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
     int j;
-    int upper, lower;
     
     #ifdef USE_EDITIF
       if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
     #endif // USE_EDITIF
 
     DEBUG(P("%s/%d:"), __func__, __LINE__);
-
+    
     if (dir > 0) {  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
-       //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
-         //upper = i*2;
-         //lower = upper+1;
+         if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
          j = i*2 + vfoActive;
-         if (frequency <= pgm_read_dword(&bandLimits[i*2])) {
-           if (frequency >= pgm_read_dword(&bandLimits[i*2+1])) {
+         if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
+           if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
              // Save Current Ham frequency and sideBandMode
              freqCache[j] = frequency;
              sideBandModeCache[j] = sideBandMode;
              i++;
            }
-           //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
+           if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
            // Load From Next Cache Up Band
-           //if (i >= HB60m1 && !operate60m) i+= 3;
            j = i*2 + vfoActive;
            frequency = freqCache[min(j,BANDS*2-1)];
-           if (i > HB60m1 && i <= HB60mChannels) {  // HamBand 60m
-               isLSB = USB;
-               sideBandMode = USB_MODE;
-           }
-           else sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
+           sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
            break;
          }
@@ -156,7 +148,7 @@ void decodeBandUpDown(int dir) {
      
      else { // For Band Change, Down
        for (int i = BANDS-1; i > 0; i--) {
-         //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
+         if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
          j = i*2 + vfoActive;
          if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
            if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
@@ -165,24 +157,17 @@ void decodeBandUpDown(int dir) {
              sideBandModeCache[j] = sideBandMode;
              i--;
            }
-           //if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
+           if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
            // Load From Next Cache Down Band
-           //if (i < HB60mChannels && !operate60m) i-= 5;
            j = i*2 + vfoActive;
            frequency = freqCache[max(j,vfoActive)];
-           if (i > HB60m1 && i <= HB60mChannels) {  // HamBand 60m
-               isLSB = USB;
-               sideBandMode = USB_MODE;
-           }
-           else sideBandMode = sideBandModeCache[max(j,vfoActive)];
+           sideBandMode = sideBandModeCache[max(j,vfoActive)];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
            break;
          }
        }
      } // End else
-   
-   // if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--; 
-   
+  
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    inBandLimits(frequency);
    #ifdef USE_PARK_CURSOR

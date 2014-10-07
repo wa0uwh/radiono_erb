@@ -7,7 +7,9 @@
     
     // Menu Indexes
     enum Menus {
-        M_CW_WPM = 1,
+        M_OPT60M = 1,
+        //M_Blank0,
+        M_CW_WPM,
         M_QRSS_DIT_TIME,
         //M_Blank1,
         M_BLINK_PERIOD,

@@ -237,9 +237,10 @@ void updateDisplay(){
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
       blinkChar = c[cursorCol];
       
-      if (operate60m && inBand > HB60m1 && inBand <= HB60mChannels)
-           sprintf(b, P("%3dm%d"), hamBands[inBand-1]/10*10, hamBands[inBand-1] % 10);
-      else sprintf(b, P("%3dm"), hamBands[inBand-1]);
+      byte iBand = inBand -1;
+      if (operate60m && iBand >= HB60m1 && iBand <= HB60m5)
+           sprintf(b, P("%3dM%d"), hamBands[iBand]/10*10, hamBands[iBand] % 10);
+      else sprintf(b, P("%3dM"), hamBands[iBand]);
       
       if (!inBand) sprintf(b, P("%3dm"), 300 * MHz / frequency);
       
@@ -406,6 +407,16 @@ void checkTuning() {
   }
  
   blinkTimer = 0;  
+  
+  // Change 60m Channels with the Tuning POT or Encoder. uses UP/DOWN to excape
+  byte iBand = inBand -1;
+  //debug(P("%s/%d: %d %d %d"), __func__, __LINE__, inBand-1, HB60m1, HB60m5);
+  if (operate60m && iBand >= HB60m1 && iBand <= HB60m5) {
+      cursorDigitPosition = 0;
+      if (iBand < HB60m5 && tuningDir > 0) decodeBandUpDown(tuningDir);
+      else if (iBand > HB60m1 && tuningDir < 0) decodeBandUpDown(tuningDir);
+      return;
+  }
   
   if (dialCursorMode) {
       decodeMoveCursor(-tuningDir); // Move the Cursor with the Dial
@@ -897,9 +908,9 @@ void setup() {
     cursorDigitPosition = DEFAULT_CURSOR_POSITION; 
   #endif // USE_HIDELEAST
   
-  #ifdef USE_OPERATE60M
+  #ifdef USE_OPERATE_60M
     operate60m = true;
-  #endif // USE_OPERATE60M
+  #endif // USE_OPERATE_60M
   
   refreshDisplay++; 
 }

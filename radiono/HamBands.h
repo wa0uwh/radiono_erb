@@ -13,7 +13,6 @@
         HB60m3,
         HB60m4,
         HB60m5,
-        HB60mChannels
     };
     
     

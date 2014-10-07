@@ -80,6 +80,9 @@ void checkKnob(int menu) {
     DEBUG(P("%s/%d: Menu = %d"), __func__, __LINE__, menu);
     
     switch(menu) {
+        case M_OPT60M:
+          operate60m = !operate60m;
+          break;
         case M_CW_WPM:
           cw_wpm += dir;        
           cw_wpm = constrain (cw_wpm, 1, 99);
@@ -105,8 +108,12 @@ void checkKnob(int menu) {
           break;
           
         case M_BLINK_PERIOD:
-          blinkPeriod += dir * 10;
-          blinkPeriod = constrain (blinkPeriod, 100, 2 * SECs); //MSECs
+          if (blinkPeriod > SECs) {
+              blinkPeriod = (blinkPeriod + dir * SECs) / SECs * SECs;  // Truncate to Seconds
+              blinkPeriod = max(blinkPeriod, 10 * SECs);
+          }
+          else  blinkPeriod += dir * 10;
+          blinkPeriod = constrain (blinkPeriod, 100, 10 * SECs); //MSECs
           break;
         case M_BLINK_RATIO:
           blinkRatio += dir * 5;
@@ -150,6 +157,14 @@ void updateDisplayMenu(int menu) {
              printLineCEL(MENU_ITEM_LINE, P(" "));
              break;
 
+          case M_OPT60M:
+             sprintf(c, P("%0.2dMACRO OPT 60M"), menu);
+             printLineCEL(MENU_PROMPT_LINE, c);
+             sprintf(c, P("INCLUDE: %s"), operate60m ? P2("YES") : P2("NO"));
+             if (!menuCycle) sprintf(c, P2("%s<"), c);
+             printLineCEL(MENU_ITEM_LINE, c);
+          break;
+          
           case M_CW_WPM:
              sprintf(c, P("%0.2dMACRO CW SPD"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
@@ -178,7 +193,8 @@ void updateDisplayMenu(int menu) {
           case M_BLINK_PERIOD:
              sprintf(c, P("%0.2dBlink Period"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
-             sprintf(c, P("MSECs: %d"), blinkPeriod);
+             if (blinkPeriod > SECs) sprintf(c, P("SECs: %0.2d"), blinkPeriod / SECs);
+             else sprintf(c, P("MSECs: %d"), blinkPeriod);
              if (!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
