@@ -5,7 +5,7 @@
 
 
     // The Number of Ham Bands
-    #define BANDS (9)
+    #define BANDS (14)
     
     // Externally Available Variables    
     // PROGMEM is used to avoid using the small available variable space

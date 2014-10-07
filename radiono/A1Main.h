@@ -31,6 +31,12 @@
     #define HR   (MIN  *   60)
     #define DAY  (HR   *   24)
     #define WK   (DAY  *    7)
+    
+    enum SidebandModes { // Sideband Modes
+        AUTO_SIDEBAND_MODE = 0,
+        UPPER_SIDEBAND_MODE,
+        LOWER_SIDEBAND_MODE,
+    };
 
 
     // Set the following Conditional Compile Flags Above
@@ -97,7 +103,7 @@
     #endif // USE_HIDELEAST
     
     // The Number of Ham Bands
-    #define BANDS (9)
+    //#define BANDS (9)
     
     enum VFOs { // Available VFOs
         VFO_A = 0,

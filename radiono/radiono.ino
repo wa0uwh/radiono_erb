@@ -106,11 +106,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 // Tuning POT Dead Zone
 #define DEAD_ZONE (40)
 
-enum SidebandModes { // Sideband Modes
-    AUTO_SIDEBAND_MODE = 0,
-    UPPER_SIDEBAND_MODE,
-    LOWER_SIDEBAND_MODE,
-};
 
 // Pin Number for the digital output controls
 #define LSB (2)
@@ -396,7 +391,6 @@ void checkTuning() {
   #endif // USE_ENCODER01
 
   if (!tuningDir) return;
-
   
   // Decode and implement RIT Tuning
   if (ritOn) {
