@@ -51,6 +51,7 @@
  *   Added Optional Hide Least Digits while Tuning
  *   Added Optional Compile Tune2500 Mode
  *   Added Optional Compile EditIF Mode
+ *   Added Optional Compile 60m Selection and Support
  *
  */
 
@@ -237,21 +238,25 @@ void updateDisplay(){
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
       blinkChar = c[cursorCol];
       
-      sprintf(c, P("%3s %-2s %3.3s"),
+      byte iBand = inBand -1;
+      if (operate60m && iBand >= HB60m1 && iBand <= HB60m5)
+           sprintf(b, P("%3dM%d"), hamBands[iBand]/10*10, hamBands[iBand] % 10);
+      else sprintf(b, P("%3dM"), hamBands[iBand]);
+      
+      if (!inBand) sprintf(b, P("%3dm"), 300 * MHz / frequency);
+      
+      sprintf(c, P("%3s %-2s %3.3s %s"),
           sideBandMode == AutoSB_MODE ? 
           isLSB ? P2("LSB") : P2("USB") :
           isLSB ? P2("Lsb") : P2("Usb"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
-          freqUnStable
-          #ifdef USE_EDITIF
-              || editIfMode 
-          #endif // USE_EDITIF
-          ? P4(" ") : 
+          freqUnStable || editIfMode ? P4(" ") : 
           #ifdef USE_HAMBANDS
-              inBand ? vfoStatus[vfo->status] : P4("SWL")
+              inBand ? vfoStatus[vfo->status] : P4("SWL"),
           #else
-              vfoStatus[vfo->status]
+              vfoStatus[vfo->status],
           #endif // USE_HAMBANDS
+          b
           );
       printLineCEL(STATUS_LINE, c);
       
@@ -391,7 +396,6 @@ void checkTuning() {
   #endif // USE_ENCODER01
 
   if (!tuningDir) return;
-
   
   // Decode and implement RIT Tuning
   if (ritOn) {
@@ -404,6 +408,16 @@ void checkTuning() {
   }
  
   blinkTimer = 0;  
+  
+  // Change 60m Channels with the Tuning POT or Encoder. uses UP/DOWN to excape
+  byte iBand = inBand -1;
+  //debug(P("%s/%d: %d %d %d"), __func__, __LINE__, inBand-1, HB60m1, HB60m5);
+  if (operate60m && iBand >= HB60m1 && iBand <= HB60m5) {
+      cursorDigitPosition = 0;
+      if (iBand < HB60m5 && tuningDir > 0) decodeBandUpDown(tuningDir);
+      else if (iBand > HB60m1 && tuningDir < 0) decodeBandUpDown(tuningDir);
+      return;
+  }
   
   if (dialCursorMode) {
       decodeMoveCursor(-tuningDir); // Move the Cursor with the Dial
@@ -894,6 +908,10 @@ void setup() {
     blinkRatio = DEFAULT_BLINK_RATIO;
     cursorDigitPosition = DEFAULT_CURSOR_POSITION; 
   #endif // USE_HIDELEAST
+  
+  #ifdef USE_OPERATE_60M
+    operate60m = true;
+  #endif // USE_OPERATE_60M
   
   refreshDisplay++; 
 }

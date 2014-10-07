@@ -5,7 +5,16 @@
 
 
     // The Number of Ham Bands
-    #define BANDS (9)
+    #define BANDS (9+5)
+    
+    enum HB60mChannel {
+        HB60m1 = 2,
+        HB60m2,
+        HB60m3,
+        HB60m4,
+        HB60m5,
+    };
+    
     
     // Externally Available Variables    
     // PROGMEM is used to avoid using the small available variable space
@@ -15,6 +24,8 @@
     extern unsigned long freqCache[BANDS*2];
     extern byte sideBandModeCache[BANDS*2];
     extern byte inBand;
+    extern byte hamBands[BANDS];
+    extern boolean operate60m;
     
     // Externally Available Functions
     extern int inBandLimits(unsigned long freq);

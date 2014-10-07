@@ -11,6 +11,11 @@
 const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Limits
       1.80  * MHz,   2.00  * MHz, // 160m
       3.50  * MHz,   4.00  * MHz, //  80m
+      5.3305* MHz,   5.3305* MHz, //  60m Channel 1
+      5.3465* MHz,   5.3465* MHz, //  60m Channel 2
+      5.3570* MHz,   5.3570* MHz, //  60m Channel 3
+      5.3715* MHz,   5.3715* MHz, //  60m Channel 4
+      5.4035* MHz,   5.4035* MHz, //  60m Channel 5
       7.00  * MHz,   7.30  * MHz, //  40m
      10.10  * MHz,  10.15  * MHz, //  30m
      14.00  * MHz,  14.35  * MHz, //  20m
@@ -25,6 +30,11 @@ const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Lim
 unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
       1.825  * MHz,  1.825  * MHz,  // 160m - QRP SSB Calling Freq
       3.985  * MHz,  3.985  * MHz,  //  80m - QRP SSB Calling Freq
+      5.3305 * MHz,  5.3305 * MHz,  //  60m Channel 1
+      5.3465 * MHz,  5.3465 * MHz,  //  60m Channel 2
+      5.3570 * MHz,  5.3570 * MHz,  //  60m Channel 3
+      5.3715 * MHz,  5.3715 * MHz,  //  60m Channel 4
+      5.4035 * MHz,  5.4035 * MHz,  //  60m Channel 5
       7.285  * MHz,  7.285  * MHz,  //  40m - QRP SSB Calling Freq
      10.1387 * MHz, 10.1387 * MHz,  //  30m - QRP QRSS, WSPR and PropNET
      14.285  * MHz, 14.285  * MHz,  //  20m - QRP SSB Calling Freq
@@ -35,9 +45,43 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
    //50.20   * MHz, 50.20   * MHz,  //   6m - QRP SSB Calling Freq
    };
    
-byte sideBandModeCache[BANDS*2] = {AutoSB_MODE};
+byte sideBandModeCache[BANDS*2] = {
+      LSB,   LSB, // 160m
+      LSB,   LSB, //  80m
+      USB,   USB, //  60m Channel 1
+      USB,   USB, //  60m Channel 2
+      USB,   USB, //  60m Channel 3
+      USB,   USB, //  60m Channel 4
+      USB,   USB, //  60m Channel 5
+      LSB,   LSB, //  40m
+      USB,   USB, //  30m
+      USB,   USB, //  20m
+      USB,   USB, //  17m
+      USB,   USB, //  15m
+      USB,   USB, //  12m
+      USB,   USB, //  10m
+   // USB,   USB, //   6m - Will need New Low Pass Filter Support
+};
 
+byte hamBands[BANDS]  = {
+     160,
+      80,
+      61, // 60m Channel 1, Note: Channel Number is encoded as least digit
+      62, // 60m Channel 2
+      63, // 60m Channel 3
+      64, // 60m Channel 4
+      65, // 60m Channel 5
+      40,
+      30,
+      20,
+      17,
+      15,
+      12,
+      10,
+   //  6, // Will need New Low Pass Filter Support
+};
 
+boolean operate60m = false;  // Operate on 60m Band
 byte inBand = 0;
 
 
@@ -82,6 +126,7 @@ void decodeBandUpDown(int dir) {
     
     if (dir > 0) {  // For Band Change, Up
        for (int i = 0; i < BANDS; i++) {
+         if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
          j = i*2 + vfoActive;
          if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
            if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
@@ -90,6 +135,7 @@ void decodeBandUpDown(int dir) {
              sideBandModeCache[j] = sideBandMode;
              i++;
            }
+           if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i++;
            // Load From Next Cache Up Band
            j = i*2 + vfoActive;
            frequency = freqCache[min(j,BANDS*2-1)];
@@ -102,6 +148,7 @@ void decodeBandUpDown(int dir) {
      
      else { // For Band Change, Down
        for (int i = BANDS-1; i > 0; i--) {
+         if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
          j = i*2 + vfoActive;
          if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
            if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
@@ -110,6 +157,7 @@ void decodeBandUpDown(int dir) {
              sideBandModeCache[j] = sideBandMode;
              i--;
            }
+           if (!operate60m) while(i >= HB60m1 && i <= HB60m5) i--;
            // Load From Next Cache Down Band
            j = i*2 + vfoActive;
            frequency = freqCache[max(j,vfoActive)];
@@ -119,7 +167,7 @@ void decodeBandUpDown(int dir) {
          }
        }
      } // End else
-     
+  
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
    inBandLimits(frequency);
    #ifdef USE_PARK_CURSOR
