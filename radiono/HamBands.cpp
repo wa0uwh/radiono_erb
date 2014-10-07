@@ -125,12 +125,12 @@ void decodeBandUpDown(int dir) {
            }
            // Load From Next Cache Down Band
            j = i*2 + vfoActive;
-           frequency = freqCache[min(j,BANDS*2-1)];
+           frequency = freqCache[max(j,vfoActive)];
            if (i >= 2 && i <= 6) {  // HamBand 60m
                isLSB = 1;  
                sideBandMode = UPPER_SIDEBAND_MODE;
            }
-           else sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
+           else sideBandMode = sideBandModeCache[max(j,vfoActive)];
            vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
            break;
          }
