@@ -51,6 +51,7 @@
  *   Added Optional Hide Least Digits while Tuning
  *   Added Optional Compile Tune2500 Mode
  *   Added Optional Compile EditIF Mode
+ *   Added Optional Compile 60m Selection and Support
  *
  */
 
