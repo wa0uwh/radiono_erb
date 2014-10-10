@@ -61,7 +61,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_HA"          // Incremental Rev Code
+#define INC_REV "ERB_HB"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -611,6 +611,7 @@ void checkButton() {
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
   int btn;
+  static int btnPrev;
   char buf[PBUFSIZE]; // A Local buf, used to pass mesg's to send messages
   
   if (inTx) return;    // Do Nothing if in TX-Mode
@@ -619,7 +620,7 @@ void checkButton() {
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
 
   switch (btn) {
-    case 0: return; // Abort
+    case 0: btnPrev = btn; return; // Abort
     case FN_BTN: decodeFN(btn); break;  
     case LT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(+1); break;    
     case RT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(-1); break;
@@ -662,11 +663,12 @@ void checkButton() {
             }
         break;
     #ifdef USE_ENCODER01
-        case ENC_KNOB: readEncoder(btn); break;
+        case ENC_KNOB: if (btnPrev != btn) readEncoder(btn); break;
     #endif // USE_ENCODER01
     default: decodeAux(btn); break;
   }
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
+  btnPrev = btn;
   blinkTimer = 0;
   refreshDisplay++;
   updateDisplay();
@@ -925,11 +927,7 @@ void loop(){
   #ifdef USE_POT_KNOB
       readPot();
   #endif // USE_POT_KNOB
-   
-  #ifdef USE_ENCODER01
-      readEncoder(ENC_KNOB);
-  #endif // USE_ENCODER01
-   
+    
   #ifdef USE_MENUS
        // Check if in Menu Mode
       if (menuActive) { doMenus(menuActive); return; };
