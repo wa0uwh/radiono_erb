@@ -14,7 +14,7 @@ int btnDown(){
   int val = -1, val2 = -2;
   
   val = analogRead(FN_PIN);
-  while (val != val2) { // DeBounce Button Press
+  while (abs(val - val2) > 3) { // DeBounce Button Press
       // delay(10);
       val2 = val;
       val = analogRead(FN_PIN);
