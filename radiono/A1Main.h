@@ -6,7 +6,7 @@
     // Optional USER Configurations
     //#define USE_PCA9546     1         // Define this symbol to include PCA9546 support
     //#define USE_I2C_LCD     1         // Define this symbol to include i2c LCD support
-    #define USE_RF386         1       // Define this symbol to include RF386 support
+    //#define USE_RF386         1       // Define this symbol to include RF386 support
     //#define USE_BEACONS       1       // Define this symbol to include Beacons, CW and QRSS support
     #define USE_EEPROM        1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
     //#define USE_MENUS         1       // Define this symbol to include Menu support
@@ -14,8 +14,9 @@
     //#define USE_TUNE2500_MODE 1       // Define this symbol to include Tune2500Hz Mode
     #define USE_EDITIF        1       // Define this symbol to include EditIF function
     //#define USE_POT_KNOB    1         // Define this symbol to include POT support
-    #define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
-    //#define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    //#define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
+    #define USE_ENCODER02     1       // Define this symbol to include FULL ISR Encoder02 support
+    #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
     #define USE_HIDELEAST     1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
     #define USE_OPERATE_60M   1       // Define this symbol to Operate and Support 60m Band Selection
 
@@ -77,7 +78,11 @@
     #ifdef USE_ENCODER01
       #include "Encoder01.h"
     #endif // USE_ENCODER01
-    
+     
+    #ifdef USE_ENCODER02
+      #include "Encoder02.h"
+    #endif // USE_ENCODER02
+       
     #ifdef USE_EDITIF
       #include "EditIF.h"
     #endif // USE_EDITIF
@@ -115,17 +120,24 @@
         VFO_B,
     };
 
-    // Output Filter Control Lines
-    #define BAND_HI_PIN (5)
-    #define BAND_MD_PIN (6)
-    #define BAND_LO_PIN (7)
-    #define PA_BAND_CLK (7)
-    
     // Pin Numbers for analog inputs
     #define FN_PIN (A3)
     #define ANALOG_TUNING (A2)
     #define ANALOG_KEYER (A1)
-
+    
+    // Original Output Filter Control Lines
+    #define BAND_HI_PIN (5)
+    #define BAND_MD_PIN (6)
+    #define BAND_LO_PIN (7)
+    
+    // For Rf386 PA Filter Selector
+    #define PA_BAND_CLK (BAND_LO_PIN)
+    
+    #ifdef USE_ENCODER02
+        // For Encoder02 Support
+        #define ENC_A_PIN (BAND_MD_PIN)
+        #define ENC_B_PIN (BAND_LO_PIN)
+    #endif // USR_ENCODER02
 
     enum LCD_DisplayLines {
         FIRST_LINE = 0,

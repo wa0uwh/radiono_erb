@@ -354,8 +354,8 @@ void setBandswitch(unsigned long freq){
   #endif // USE_EDITIF
 
   // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
-  if (freq > 14.99 * MHz) digitalWrite(BAND_HI_PIN, 1);
-  else digitalWrite(BAND_HI_PIN, 0);
+  //if (freq > 14.99 * MHz) digitalWrite(BAND_HI_PIN, 1);
+  //else digitalWrite(BAND_HI_PIN, 0);
 }
 
 
@@ -394,6 +394,10 @@ void checkTuning() {
   #ifdef USE_ENCODER01
       tuningDir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
   #endif // USE_ENCODER01
+  
+  #ifdef USE_ENCODER02
+      tuningDir += getEncoder02Dir(); // Get Tuning Direction from Encoder02 Knob
+  #endif // USE_ENCODER02
 
   if (!tuningDir) return;
   
@@ -890,9 +894,14 @@ void setup() {
   digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
   
   #ifdef USE_ENCODER01
-     DEBUG(P("Init Encoder"));
+     DEBUG(P("Init Encoder01"));
      initEncoder(); // Initialize Simple Encoder
   #endif // USE_ENCODER01
+  
+  #ifdef USE_ENCODER02
+     DEBUG(P("Init Encoder02"));
+     initEncoder02(); // Initialize Simple Encoder
+  #endif // USE_ENCODER02
   
   #ifdef USE_EEPROM
      DEBUG(P("Pre Load EEPROM"));
