@@ -88,11 +88,11 @@ void checkKnob(int menu) {
     DEBUG(P("%s/%d: Menu = %d"), __func__, __LINE__, menu);
     
     switch(menu) {
-        #ifdef USE_OPT60M
+        #ifdef USE_OPERATE_60M
             case M_OPT60M:
               operate60m = !operate60m;
               break;
-        #endif
+        #endif // USE_OPERATE_60M
         case M_CW_WPM:
           cw_wpm += dir;        
           cw_wpm = constrain (cw_wpm, 1, 99);
@@ -167,7 +167,7 @@ void updateDisplayMenu(int menu) {
              printLineCEL(MENU_ITEM_LINE, P(" "));
              break;
              
-          #ifdef OPT60M
+          #ifdef USE_OPERATE_60M
               case M_OPT60M:
                  sprintf(c, P("%0.2dMACRO OPT 60M"), menu);
                  printLineCEL(MENU_PROMPT_LINE, c);
@@ -175,7 +175,7 @@ void updateDisplayMenu(int menu) {
                  if (!menuCycle) sprintf(c, P2("%s<"), c);
                  printLineCEL(MENU_ITEM_LINE, c);
               break;
-          #endif
+          #endif // USE_OPERATE_60M
           
           case M_CW_WPM:
              sprintf(c, P("%0.2dMACRO CW SPD"), menu);
