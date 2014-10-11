@@ -65,6 +65,14 @@ void checkKnob(int menu) {
     #ifdef USE_ENCODER01
         dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
     #endif // USE_ENCODER01
+      
+    #ifdef USE_ENCODER02
+        dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
+    #endif // USE_ENCODER02
+      
+    #ifdef USE_ENCODER03
+        dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
+    #endif // USE_ENCODER03
     
     if (!dir) return;
  
@@ -80,9 +88,11 @@ void checkKnob(int menu) {
     DEBUG(P("%s/%d: Menu = %d"), __func__, __LINE__, menu);
     
     switch(menu) {
-        case M_OPT60M:
-          operate60m = !operate60m;
-          break;
+        #ifdef USE_OPT60M
+            case M_OPT60M:
+              operate60m = !operate60m;
+              break;
+        #endif
         case M_CW_WPM:
           cw_wpm += dir;        
           cw_wpm = constrain (cw_wpm, 1, 99);
@@ -156,14 +166,16 @@ void updateDisplayMenu(int menu) {
              printLineCEL(MENU_PROMPT_LINE, c);
              printLineCEL(MENU_ITEM_LINE, P(" "));
              break;
-
-          case M_OPT60M:
-             sprintf(c, P("%0.2dMACRO OPT 60M"), menu);
-             printLineCEL(MENU_PROMPT_LINE, c);
-             sprintf(c, P("INCLUDE: %s"), operate60m ? P2("YES") : P2("NO"));
-             if (!menuCycle) sprintf(c, P2("%s<"), c);
-             printLineCEL(MENU_ITEM_LINE, c);
-          break;
+             
+          #ifdef OPT60M
+              case M_OPT60M:
+                 sprintf(c, P("%0.2dMACRO OPT 60M"), menu);
+                 printLineCEL(MENU_PROMPT_LINE, c);
+                 sprintf(c, P("INCLUDE: %s"), operate60m ? P2("YES") : P2("NO"));
+                 if (!menuCycle) sprintf(c, P2("%s<"), c);
+                 printLineCEL(MENU_ITEM_LINE, c);
+              break;
+          #endif
           
           case M_CW_WPM:
              sprintf(c, P("%0.2dMACRO CW SPD"), menu);
@@ -231,13 +243,14 @@ void checkButtonMenu() {
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 //#define DEBUG(x ...) debug(x)    // UnComment for Debug
   int btn;
+  static int btnPrev;
   
   btn = btnDown();
   if (btn) DEBUG(P("%s/%d: btn %d"), __func__, __LINE__, btn);
 
   menuPrev = menuActive;
   switch (btn) {
-    case 0: return; // Abort
+    case 0: btnPrev = btn; return; // Abort
     case UP_BTN: menuCycle = true; menuActive = constrain (menuActive+1, 1, MENUS-1); break;
     case DN_BTN: menuCycle = true; menuActive = constrain (menuActive-1, 1, MENUS-1); break;
     case LT_BTN:
@@ -256,9 +269,12 @@ void checkButtonMenu() {
             default: break; // Do nothing
         } 
         break;
-     case ENC_KNOB: readEncoder(btn); break;
+        #ifdef USE_ENCODER01
+            case ENC_KNOB: if (btnPrev != btn) readEncoder(btn); break;
+        #endif // USE_ENCODER01
      default: decodeAux(btn); break;
   }
+  btnPrev = btn;
   DEBUG(P("%s/%d: MenuActive %d"), __func__, __LINE__, menuActive);
   menuIdleTimer = 0;
   refreshDisplay++;
