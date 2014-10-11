@@ -52,6 +52,7 @@
  *   Added Optional Compile Tune2500 Mode
  *   Added Optional Compile EditIF Mode
  *   Added Optional Compile 60m Selection and Support
+ *   Added ISR for USE_ENCODER02 and USE_ENCODER03
  *
  */
 
@@ -61,7 +62,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_HB"          // Incremental Rev Code
+#define INC_REV "ERB_IA"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -238,12 +239,15 @@ void updateDisplay(){
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
       blinkChar = c[cursorCol];
       
-      byte iBand = inBand -1;
-      if (operate60m && iBand >= HB60m1 && iBand <= HB60m5)
-           sprintf(b, P("%3dM%d"), hamBands[iBand]/10*10, hamBands[iBand] % 10);
-      else sprintf(b, P("%3dM"), hamBands[iBand]);
+      #ifdef USE_HAMBANDS
+          byte iBand = inBand -1;
+          if (operate60m && iBand >= HB60m1 && iBand <= HB60m5)
+               sprintf(b, P("%3dM%d"), hamBands[iBand]/10*10, hamBands[iBand] % 10);
+          else sprintf(b, P("%3dM"), hamBands[iBand]);
       
-      if (!inBand) sprintf(b, P("%3dm"), 300 * MHz / frequency);
+          if (!inBand) editIfMode ? sprintf(b, P(" ")) :
+      #endif // USE_HAMBANDS
+          sprintf(b, P("%3dm"), 300 * MHz / frequency );
       
       sprintf(c, P("%3s %-2s %3.3s %s"),
           sideBandMode == AutoSB_MODE ? 
@@ -391,10 +395,10 @@ void checkTuning() {
       tuningDir += getPotDir(); // Get Tuning Direction from POT Knob
   #endif // USE_POT_KNOB
   
-  #ifdef USE_ENCODER01
+  #ifdef USE_ENCODER
       tuningDir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
-  #endif // USE_ENCODER01
-
+  #endif // USE_ENCODER
+  
   if (!tuningDir) return;
   
   // Decode and implement RIT Tuning
@@ -409,15 +413,17 @@ void checkTuning() {
  
   blinkTimer = 0;  
   
-  // Change 60m Channels with the Tuning POT or Encoder. uses UP/DOWN to excape
-  byte iBand = inBand -1;
-  //debug(P("%s/%d: %d %d %d"), __func__, __LINE__, inBand-1, HB60m1, HB60m5);
-  if (operate60m && iBand >= HB60m1 && iBand <= HB60m5) {
-      cursorDigitPosition = 0;
-      if (iBand < HB60m5 && tuningDir > 0) decodeBandUpDown(tuningDir);
-      else if (iBand > HB60m1 && tuningDir < 0) decodeBandUpDown(tuningDir);
-      return;
-  }
+  #ifdef USE_HAMBANDS
+      // Change 60m Channels with the Tuning POT or Encoder. uses UP/DOWN to excape
+      byte iBand = inBand -1;
+      //debug(P("%s/%d: %d %d %d"), __func__, __LINE__, inBand-1, HB60m1, HB60m5);
+      if (operate60m && iBand >= HB60m1 && iBand <= HB60m5) {
+          cursorDigitPosition = 0;
+          if (iBand < HB60m5 && tuningDir > 0) decodeBandUpDown(tuningDir);
+          else if (iBand > HB60m1 && tuningDir < 0) decodeBandUpDown(tuningDir);
+          return;
+      }
+  #endif // USE_HAMBANDS
   
   if (dialCursorMode) {
       decodeMoveCursor(-tuningDir); // Move the Cursor with the Dial
@@ -575,7 +581,7 @@ void changeToReceive() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
     stopSidetone();
     pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
-    pinMode(TX_RX, INPUT);  digitalWrite(TX_RX, 1); // With pull-up!
+    pinMode(TX_RX, INPUT_PULLUP); // Enable the built-in pull-ups
 }
 
 void changeToTransmit() {
@@ -647,10 +653,16 @@ void checkButton() {
         switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
             #ifdef USE_MENUS
-                case DOUBLE_PRESS:     menuActive = menuPrev ? menuPrev : DEFAULT_MENU; cursorDigitPosition = 0; refreshDisplay+=2; break;
+                case DOUBLE_PRESS:
+                     menuActive = menuPrev ? menuPrev : DEFAULT_MENU;
+                     #ifdef USE_PARK_CURSOR
+                         cursorDigitPosition = 0;
+                     #endif // USE_PARK_CURSOR
+                     refreshDisplay+=2;
+                     break;
             #endif // USE_MENUS
             #ifdef USE_EDITIF
-                case LONG_PRESS:       editIf(); break;
+                case LONG_PRESS:       editIf(); refreshDisplay++; break;
             #endif // USE_EDITIF
             #ifdef USE_TUNE2500_MODE
                 case ALT_PRESS_LT:     decodeTune2500Mode(); break;
@@ -877,8 +889,7 @@ void setup() {
   changeToReceive();
   
   // Setup to read Tuning POT
-  pinMode(ANALOG_TUNING, INPUT);
-  digitalWrite(ANALOG_TUNING, 1); //old way to enable the built-in pull-ups
+  pinMode(ANALOG_TUNING, INPUT_PULLUP); // Enable the built-in pull-ups
    
   #ifdef USE_POT_KNOB
     // Setup the First Tuning POT Position
@@ -886,14 +897,13 @@ void setup() {
   #endif // USE_POT_KNOB
   
   // Setup to read Buttons
-  pinMode(FN_PIN, INPUT);
-  digitalWrite(FN_PIN, 0); // Use an external pull-up of 47K ohm to AREF
+  pinMode(FN_PIN, INPUT); // Use an external pull-up of 47K ohm to AREF
   
-  #ifdef USE_ENCODER01
-     DEBUG(P("Init Encoder"));
-     initEncoder(); // Initialize Simple Encoder
-  #endif // USE_ENCODER01
-  
+  #ifdef USE_ENCODER
+  DEBUG(P("Init Encoder"));
+      initEncoder(); // Initialize Encoder
+  #endif
+
   #ifdef USE_EEPROM
      DEBUG(P("Pre Load EEPROM"));
      loadUserPerferences();
