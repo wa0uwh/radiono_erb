@@ -3,22 +3,23 @@
 #ifndef A1MAIN_H
 #define A1MAIN_H
 
-    // Optional USER Configurations
-    //#define USE_PCA9546     1         // Define this symbol to include PCA9546 support
-    //#define USE_I2C_LCD     1         // Define this symbol to include i2c LCD support
-    //#define USE_RF386         1       // Define this symbol to include RF386 support
-    //#define USE_BEACONS       1       // Define this symbol to include Beacons, CW and QRSS support
-    #define USE_EEPROM        1       // Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
-    //#define USE_MENUS         1       // Define this symbol to include Menu support
-    #define USE_HAMBANDS      1       // Define this symbol to include Ham Band and Ham Band Limits
-    //#define USE_TUNE2500_MODE 1       // Define this symbol to include Tune2500Hz Mode
-    #define USE_EDITIF        1       // Define this symbol to include EditIF function
-    //#define USE_POT_KNOB    1         // Define this symbol to include POT support
-    //#define USE_ENCODER01     1       // Define this symbol to include Simple Encoder01 support
-    #define USE_ENCODER02     1       // Define this symbol to include FULL ISR Encoder02 support
-    #define USE_PARK_CURSOR   1       // Define this symbol to Park Cursor when Mode Changes and/or Timeout
-    #define USE_HIDELEAST     1       // Define this symbol to Hide Least Digits to right of Cursor while Tuning
-    #define USE_OPERATE_60M   1       // Define this symbol to Operate and Support 60m Band Selection
+    // Optional USER Configurations     //  SIZE
+    //#define USE_PCA9546       1       //  214b - Define this symbol to include PCA9546 support
+    //#define USE_I2C_LCD       1       //  ???b - Define this symbol to include i2c LCD support
+      #define USE_RF386         1       //  272b - Define this symbol to include RF386 support
+    //#define USE_BEACONS       1       // 1488b - Define this symbol to include Beacons, CW and QRSS support
+      #define USE_EEPROM        1       // 1454b - Define this symbol to include Load and Store to NonVolatile Memory (EEPROM) support
+    //#define USE_MENUS         1       // 4626b - Define this symbol to include Menu support
+      #define USE_HAMBANDS      1       // 1552b - Define this symbol to include Ham Band and Ham Band Limits
+      #define USE_TUNE2500_MODE 1       //   30b - Define this symbol to include Tune2500Hz Mode
+      #define USE_EDITIF        1       //  842b - Define this symbol to include EditIF function
+    //#define USE_POT_KNOB      1       //  492b - Define this symbol to include POT support
+    //#define USE_ENCODER01     1       //  800b - Define this symbol to include Simple Encoder01 support
+    //#define USE_ENCODER02     1       // 1494b - Define this symbol to include FULL Two Digital Pin ISR Encoder02 support
+      #define USE_ENCODER03     1       // 1496b - Define this symbol to include ISR Encoder03 support On Tuning Pin
+    //#define USE_PARK_CURSOR   1       //   24b - Define this symbol to Park Cursor when Mode Changes and/or Timeout
+    //#define USE_HIDELEAST     1       //   84b - Define this symbol to Hide Least Digits to right of Cursor while Tuning
+      #define USE_OPERATE_60M   1       //    6b - Will Include USE_HAMBANDS, Define this symbol to Operate and Support 60m Band Selection
 
 
     // Set up Units to make coding large Frequency Numbers easier
@@ -46,9 +47,13 @@
     };
    
     // Set the following Conditional Compile Flags Above
+    #ifdef USE_OPERATE_60M
+      #define USE_HAMBANDS 1
+    #endif
+    
     #ifdef USE_PCA9546
       #include "PCA9546.h"
-    #endif
+    #endif // USE_PCA9546
     
     #ifdef USE_HAMBANDS
       #include "HamBands.h"
@@ -76,12 +81,19 @@
     #endif // USE_MENUS
     
     #ifdef USE_ENCODER01
+      #define USE_ENCODER 1
       #include "Encoder01.h"
     #endif // USE_ENCODER01
      
     #ifdef USE_ENCODER02
+      #define USE_ENCODER 1
       #include "Encoder02.h"
     #endif // USE_ENCODER02
+     
+    #ifdef USE_ENCODER03
+      #define USE_ENCODER 1
+      #include "Encoder03.h"
+    #endif // USE_ENCODER03
        
     #ifdef USE_EDITIF
       #include "EditIF.h"
@@ -99,21 +111,19 @@
 
     #ifdef USE_PARK_CURSOR
        #define DEFAULT_BLINK_TIMEOUT (20 * SECs) // Set as desired
-       #define DEFAULT_CURSOR_POSITION (0)      // Power Up Cursor Position, Park is Zero
+       #define DEFAULT_CURSOR_POSITION (0)       // Power Up Cursor Position, Park is Zero
     #else
        #define DEFAULT_BLINK_TIMEOUT (4 * HRs)   // Set to Zero for Never
-       #define DEFAULT_CURSOR_POSITION (3)      // Power Up Cursor Position, Set as desired, Park is Zero
+       #define DEFAULT_CURSOR_POSITION (3)       // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_PARK_CURSOR
     
     #ifdef USE_HIDELEAST
        #define DEFAULT_BLINK_TIMEOUT (30 * MINs)
        #define DEFAULT_BLINK_RATIO (100)
        #define DEFAULT_BLINK_PERIOD (10 * SECs)
-       #define DEFAULT_CURSOR_POSITION (3)     // Power Up Cursor Position, Set as desired, Park is Zero
+       #define DEFAULT_CURSOR_POSITION (3)       // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_HIDELEAST
     
-    // The Number of Ham Bands
-    //#define BANDS (9)
     
     enum VFOs { // Available VFOs
         VFO_A = 0,
@@ -138,6 +148,12 @@
         #define ENC_A_PIN (BAND_MD_PIN)
         #define ENC_B_PIN (BAND_LO_PIN)
     #endif // USR_ENCODER02
+    
+    #ifdef USE_ENCODER03
+        // For Encoder03 Support
+        #define ENC_A_PIN (ANALOG_TUNING)
+        #define ENC_B_PIN (FN_PIN)
+    #endif // USR_ENCODER03
 
     enum LCD_DisplayLines {
         FIRST_LINE = 0,
