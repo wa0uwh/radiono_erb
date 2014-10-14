@@ -130,7 +130,7 @@ void eePromIO(int mode) {
 
 
 // ###############################################################################
-void loadUserPerferences() {
+void loadUserPreferences() {
 #define DEBUG(x ...)  // Default to NO debug    
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
     

@@ -6,9 +6,15 @@
 
 #ifdef USE_ENCODER02
 
+// One of the following three lines must be commented out depending on Pins used for ISR.
 #define NO_PORTB_PINCHANGES
 #define NO_PORTC_PINCHANGES
-//#define NO_PORTD_PINCHANGES
+////#define NO_PORTD_PINCHANGES
+
+#define NO_PIN_STATE
+#define NO_PIN_NUMBER
+#define DISABLE_PCINT_MULTI_SERVICE
+
 #include "PinChangeInt.h"
 
 #include "Encoder02.h"
@@ -23,9 +29,9 @@ volatile int knob;
 void encoderISR() {
     int pin = ENC_B_PIN;
     
-    knob += digitalRead(pin) ? -1 : +1;
+    knob += digitalRead(ENC_B_PIN) ? -1 : +1;
     
-    debug("%s/%d: Pin= %d, Knob= %d", __func__, __LINE__, knob);
+    //debug("%s/%d: Pin= %d, Knob= %d", __func__, __LINE__, knob);
 }
 
 
@@ -33,7 +39,7 @@ void encoderISR() {
 void initEncoder() {
     int pin = ENC_A_PIN;
      
-    debug("%s/%d: Pin= %d", __func__, __LINE__, pin);
+    //debug("%s/%d: Pin= %d", __func__, __LINE__, pin);
     
     pinMode(ENC_A_PIN, INPUT_PULLUP);
     pinMode(ENC_B_PIN, INPUT_PULLUP);
@@ -49,9 +55,9 @@ int getEncoderDir() {
     int dir = 0;
     
     if (knob) {
-        //debug("%s/%d: Knob= %d, Dir= %d", __func__, __LINE__, knob, dir);
         dir = knob > 0 ? +1 : knob < 1 ? -1 : 0;
         knob += -dir;
+        //debug("%s/%d: Knob= %d, Dir= %d", __func__, __LINE__, knob, dir);
     }  
     return dir;
 }
