@@ -4,6 +4,10 @@
 #ifndef ENCODER02_H
 #define ENCODER02_H
 
+#ifndef ISR_DEBOUNCE_TIME_OUT
+    #define ISR_DEBOUNCE_TIME_OUT (50 * MSECs) // Default
+#endif
+
     // Externally Available Variables
     
     // Externally Available Functions

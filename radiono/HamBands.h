@@ -5,7 +5,7 @@
 
 
     // The Number of Ham Bands
-    #define BANDS (9+5)
+    #define BANDS (9+5) // 9 Standard HF Band + 5 60m Freq's which are treated as bands here.
     
     enum HB60mChannel {
         HB60m1 = 2,

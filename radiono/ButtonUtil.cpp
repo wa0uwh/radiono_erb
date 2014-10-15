@@ -74,7 +74,8 @@ void deDounceBtnRelease() {
 // -------------------------------------------------------------------------------
 void decodeAux(int btn) { 
     
-    debug("%s/%d: btn %d", __func__, __LINE__, btn);
+    //debug("%s/%d: btn %d", __func__, __LINE__, btn);
+    
     //sprintf(c, P("Btn: %.2d"), btn);
     //printLineCEL(STATUS_LINE, c);
     //delay(100);
