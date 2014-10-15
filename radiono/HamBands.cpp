@@ -46,21 +46,21 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
    };
    
 byte sideBandModeCache[BANDS*2] = {
-      LSB,   LSB, // 160m
-      LSB,   LSB, //  80m
-      USB,   USB, //  60m Channel 1
-      USB,   USB, //  60m Channel 2
-      USB,   USB, //  60m Channel 3
-      USB,   USB, //  60m Channel 4
-      USB,   USB, //  60m Channel 5
-      LSB,   LSB, //  40m
-      USB,   USB, //  30m
-      USB,   USB, //  20m
-      USB,   USB, //  17m
-      USB,   USB, //  15m
-      USB,   USB, //  12m
-      USB,   USB, //  10m
-   // USB,   USB, //   6m - Will need New Low Pass Filter Support
+      AutoSB,  AutoSB, // 160m
+      AutoSB,  AutoSB, //  80m
+      AutoSB,  AutoSB, //  60m Channel 1
+      AutoSB,  AutoSB, //  60m Channel 2
+      AutoSB,  AutoSB, //  60m Channel 3
+      AutoSB,  AutoSB, //  60m Channel 4
+      AutoSB,  AutoSB, //  60m Channel 5
+      AutoSB,  AutoSB, //  40m
+      AutoSB,  AutoSB, //  30m
+      AutoSB,  AutoSB, //  20m
+      AutoSB,  AutoSB, //  17m
+      AutoSB,  AutoSB, //  15m
+      AutoSB,  AutoSB, //  12m
+      AutoSB,  AutoSB, //  10m
+   // AutoSB,  AutoSB, //   6m - Will need New Low Pass Filter Support
 };
 
 byte hamBands[BANDS]  = {

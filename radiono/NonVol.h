@@ -10,7 +10,7 @@
     };
     
     void eePromIO(int mode);
-    void loadUserPerferences();
+    void loadUserPreferences();
 
 #endif
 

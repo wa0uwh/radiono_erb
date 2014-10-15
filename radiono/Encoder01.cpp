@@ -10,7 +10,7 @@
 #include "ButtonUtil.h"
 #include "debug.h"
 
-static int knob;
+static char knob;
 
 
 // ###############################################################################
@@ -22,21 +22,27 @@ void initEncoder() {
 
 // ###############################################################################
 int getEncoderDir() {
-    int dir = 0;
-    
-    if (knob) {
-        dir = knob > 0 ? +1 : knob < 1 ? -1 : 0;;
-        debug("%s/%d: btn= %d, Dir= %d", __func__, __LINE__, knob, dir);
-        knob = 0;
-    }  
-    return dir;
+    char tmp = knob;
+      
+    if (tmp>0) { knob--; return +1;}
+    if (tmp<0) { knob++; return -1;}
+    return 0;
 }
 
 // ###############################################################################
-int readEncoder(int btn) {
+void readEncoder(int btn) {
+    static unsigned long startTime = 0;
+    unsigned long tigermillis;
     
-        knob = analogRead(ANALOG_TUNING) > 50 ? -1 : +1;
-        debug("%s/%d: Knob= %d", __func__, __LINE__, knob);
+    tigermillis = millis();
+    
+    if (tigermillis-startTime <= ISR_DEBOUNCE_TIME_OUT) return;
+    startTime=tigermillis;
+ 
+    knob += analogRead(ANALOG_TUNING) > 50 ? -1 : +1;
+    
+    //debug("%s/%d: Knob= %d", __func__, __LINE__, knob);
+    return;
 }
 
 #endif // USE_ENCODER01
