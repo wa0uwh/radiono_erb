@@ -140,7 +140,12 @@ void loadUserPreferences() {
     // Hold FN Button at Power-ON or Processor Reset does a "Factory Reset" to Default Values
     printLineCEL(FIRST_LINE, P("User Pref:"));
     if (btnDown() != FN_BTN) eePromIO(EEP_LOAD);
-    else printLineCEL(STATUS_LINE, P("Factory Reset"));
+    else {
+        printLineCEL(STATUS_LINE, P("Factory Reset"));
+        #ifdef USE_AUTOSAVE_FACTORY_RESET
+            eePromIO(EEP_SAVE);
+        #endif // USE_AUTOSAVE_FACTORY_RESET
+     }
     delay(500);
     deDounceBtnRelease(); // Wait for Button Release 
 }

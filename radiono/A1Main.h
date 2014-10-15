@@ -8,6 +8,7 @@
     //#define USE_PCA9546                1  //  214b - Option to include PCA9546 support
     //#define USE_I2C_LCD                1  //  ???b - Option to include i2c LCD support
       #define USE_RF386                  1  //  272b - Option to include RF386 support
+      #define USE_BANDPASS               1  //  104b - Option to include Band Pass Filter Output Pins
     //#define USE_BEACONS                1  // 1488b - Option to include Beacons, CW and QRSS support
       #define USE_EEPROM                 1  // 1454b - Option to include Load and Store to NonVolatile Memory (EEPROM) support
     //#define USE_AUTOSAVE_FACTORY_RESET 1  //    8b - Option to Automatically Save Factory Reset Values to NonVolatile Memory on Reset
@@ -19,7 +20,7 @@
     //#define USE_ENCODER01              1  // 2220b - Option to include Simple Encoder01 support
     //#define USE_ENCODER02              1  // 2610b - Option to include FULL Two Digital Pin ISR Encoder02 support
       #define USE_ENCODER03              1  // 2604b - Option to include ISR Encoder03 support On Tuning Pin
-      #define USE_PARK_CURSOR            1  //   24b - Option to Park Cursor when Mode Changes and/or Timeout
+    //#define USE_PARK_CURSOR            1  //   24b - Option to Park Cursor when Mode Changes and/or Timeout
       #define USE_HIDELEAST              1  //   84b - Option to Hide Least Digits to right of Cursor while Tuning
       #define USE_OPERATE_60M            1  //    6b - Will Include USE_HAMBANDS, Option to Operate and Support 60m Band Selection
 
@@ -42,7 +43,20 @@
         LSB,
         AutoSB
     };
-   
+ 
+    // Pin Numbers for analog inputs
+    #define FN_PIN (A3)
+    #define ANALOG_TUNING (A2)
+    #define ANALOG_KEYER (A1)
+    
+    // Original Output Filter Control Lines
+    #define BAND_HI_PIN (5)
+    #define BAND_MD_PIN (6)
+    #define BAND_LO_PIN (7)
+    
+    // For Rf386 PA Filter Selector
+    #define PA_BAND_CLK (BAND_LO_PIN)
+      
     // Set the following Conditional Compile Flags Above
     #ifdef USE_OPERATE_60M
       #define USE_HAMBANDS 1
@@ -79,17 +93,28 @@
     
     #ifdef USE_ENCODER01
       #define USE_ENCODER 1
+      #define ENC_A_PIN (ANALOG_TUNING)
+      #define ENC_B_PIN (FN_PIN)
+      #define ISR_DEBOUNCE_TIME_OUT (50 * MSECs)
       #include "Encoder01.h"
     #endif // USE_ENCODER01
      
     #ifdef USE_ENCODER02
-      #define USE_ENCODER 1
+      #define USE_ENCODER 2
+      #define ENC_A_PIN (8)
+      #define ENC_B_PIN (9)
+      //#define ENC_A_PIN (6)
+      //#define ENC_B_PIN (7)
       #include "Encoder02.h"
+      #define ISR_DEBOUNCE_TIME_OUT (50 * MSECs)
     #endif // USE_ENCODER02
      
     #ifdef USE_ENCODER03
-      #define USE_ENCODER 1
+      #define USE_ENCODER 3
+      #define ENC_A_PIN (16)
+      #define ENC_B_PIN (FN_PIN)
       #include "Encoder03.h"
+      #define ISR_DEBOUNCE_TIME_OUT (50 * MSECs)
     #endif // USE_ENCODER03
        
     #ifdef USE_EDITIF
@@ -127,31 +152,6 @@
         VFO_B,
     };
 
-    // Pin Numbers for analog inputs
-    #define FN_PIN (A3)
-    #define ANALOG_TUNING (A2)
-    #define ANALOG_KEYER (A1)
-    
-    // Original Output Filter Control Lines
-    #define BAND_HI_PIN (5)
-    #define BAND_MD_PIN (6)
-    #define BAND_LO_PIN (7)
-    
-    // For Rf386 PA Filter Selector
-    #define PA_BAND_CLK (BAND_LO_PIN)
-    
-    #ifdef USE_ENCODER02
-        // For Encoder02 Support
-        #define ENC_A_PIN (BAND_MD_PIN)
-        #define ENC_B_PIN (BAND_LO_PIN)
-    #endif // USR_ENCODER02
-    
-    #ifdef USE_ENCODER03
-        // For Encoder03 Support
-        #define ENC_A_PIN (ANALOG_TUNING)
-        #define ENC_B_PIN (FN_PIN)
-    #endif // USR_ENCODER03
-
     enum LCD_DisplayLines {
         FIRST_LINE = 0,
         STATUS_LINE,
@@ -171,12 +171,12 @@
     
     extern unsigned long vfoA, vfoB;
     extern unsigned long cwTimeout;
-    extern boolean editIfMode;
+    //extern boolean editIfMode;
     
     extern char b[], c[];  // General Buffers, used mostly for Formating message for LCD
     
-    extern byte menuActive;
-    extern byte menuPrev;
+    //extern byte menuActive;
+    //extern byte menuPrev;
     extern byte refreshDisplay;
     extern unsigned long blinkTimeOut;
     extern int blinkPeriod;
@@ -184,14 +184,14 @@
     extern unsigned long menuIdleTimeOut;
 
     /* tuning pot stuff */  
-    extern int tuningDir;
+    //extern int tuningDir;
     extern int knobPosition;
     extern int freqUnStable;
     extern int knobPositionDelta;
     extern int cursorDigitPosition;
     extern int knobPositionPrevious;
-    extern int cursorCol, cursorRow, cursorMode;
-    extern char* const sideBandText[] PROGMEM;
+    //extern int cursorCol, cursorRow, cursorMode;
+    //extern char* const sideBandText[] PROGMEM;
     extern byte sideBandMode;
     
     extern boolean tuningLocked; //the tuning can be locked: wait until Freq Stable before unlocking it
@@ -205,7 +205,7 @@
     extern int ritVal;
     extern boolean ritOn;
     extern boolean AltTxVFO;
-    extern boolean isAltVFO;
+    //extern boolean isAltVFO;
 
 
     // Externally Available Functions

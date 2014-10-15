@@ -53,8 +53,10 @@
  *   Added Optional Compile EditIF Mode
  *   Added Optional Compile 60m Selection and Support
  *   Added ISR for USE_ENCODER02 and USE_ENCODER03
+ *   Added Debounce to ISR for Encoders
  *
  */
+
 
 void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
@@ -62,7 +64,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IB_HF01"          // Incremental Rev Code
+#define INC_REV "ERB_IB_HF06"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -357,12 +359,15 @@ void setSideband(){
 void setBandswitch(unsigned long freq){
 
   #ifdef USE_EDITIF
-    if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
+      if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
   #endif // USE_EDITIF
-
-  // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
-  if (freq > 14.99 * MHz) digitalWrite(BAND_HI_PIN, 1);
-  else digitalWrite(BAND_HI_PIN, 0);
+  
+  #ifdef USE_BANDPASS
+      pinMode(BAND_HI_PIN, OUTPUT);
+      // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
+      if (freq > 14.99 * MHz) digitalWrite(BAND_HI_PIN, 1);
+      else digitalWrite(BAND_HI_PIN, 0);
+  #endif // USE_BANDPASS
 }
 
 
@@ -421,7 +426,6 @@ void checkTuning() {
       byte iBand = inBand -1;
       //debug(P("%s/%d: %d %d %d"), __func__, __LINE__, inBand-1, HB60m1, HB60m5);
       if (operate60m && iBand >= HB60m1 && iBand <= HB60m5) {
-          cursorDigitPosition = 0;
           if (iBand < HB60m5 && tuningDir > 0) decodeBandUpDown(tuningDir);
           else if (iBand > HB60m1 && tuningDir < 0) decodeBandUpDown(tuningDir);
           return;
@@ -910,9 +914,6 @@ void setup() {
   #ifdef USE_EEPROM
      DEBUG(P("Pre Load EEPROM"));
      loadUserPreferences();
-     #ifdef USE_AUTOSAVE_FACTORY_RESET
-         eePromIO(EEP_SAVE);
-     #endif // USE_AUTOSAVE_FACTORY_RESET
   #endif // USE_EEPROM
  
   #ifndef USE_PARK_CURSOR
