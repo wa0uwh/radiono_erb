@@ -50,7 +50,7 @@ void encoderISR() {
     tigermillis = millis();
     SREG = oldSREG;
     
-    if (tigermillis-startTime <= ISR_DEBOUNCE_TIME_OUT) return;
+    if (tigermillis-startTime <= ISR_DEBOUNCE_TIMEOUT) return;
     startTime=tigermillis;
     
     knob += digitalRead(ENC_B_PIN) ? -1 : +1;

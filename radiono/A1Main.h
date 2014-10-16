@@ -14,14 +14,15 @@
     //#define USE_AUTOSAVE_FACTORY_RESET 1  //    8b - Option to Automatically Save Factory Reset Values to NonVolatile Memory on Reset
       #define USE_MENUS                  1  // 4626b - Option to include Menu support
       #define USE_HAMBANDS               1  // 1552b - Option to include Ham Band and Ham Band Limits
+      #define USE_KNOB_CAN_CHANGE_BANDS  1  //    8b - Option to Allow Knob to Change Bands, i.e, Cycle Cursor/Digit/Band
       #define USE_TUNE2500_MODE          1  //   30b - Option to include Tune2500Hz Mode
       #define USE_EDITIF                 1  //  842b - Option to include EditIF function
     //#define USE_POT_KNOB               1  // 2304b - Option to include POT support
     //#define USE_ENCODER01              1  // 2220b - Option to include Simple Encoder01 support
     //#define USE_ENCODER02              1  // 2610b - Option to include FULL Two Digital Pin ISR Encoder02 support
       #define USE_ENCODER03              1  // 2604b - Option to include ISR Encoder03 support On Tuning Pin
-    //#define USE_PARK_CURSOR            1  //   24b - Option to Park Cursor when Mode Changes and/or Timeout
-      #define USE_HIDELEAST              1  //   84b - Option to Hide Least Digits to right of Cursor while Tuning
+      #define USE_PARK_CURSOR            1  //   24b - Option to Park Cursor when Mode Changes and/or Timeout
+    //#define USE_HIDELEAST              1  //   84b - Option to Hide Least Digits to right of Cursor while Tuning
       #define USE_OPERATE_60M            1  //    6b - Will Include USE_HAMBANDS, Option to Operate and Support 60m Band Selection
 
 
@@ -42,6 +43,15 @@
         USB = 0,
         LSB,
         AutoSB
+    };
+    
+    enum KnobModes {
+        KNOB_CURSOR_MODE = 0,
+        KNOB_DIGIT_MODE,
+        #ifdef USE_KNOB_CAN_CHANGE_BANDS
+            KNOB_BAND_MODE,
+        #endif // USE_KNOB_CAN_CHANGE_BANDS
+        KNOB_MODES
     };
  
     // Pin Numbers for analog inputs
@@ -95,7 +105,7 @@
       #define USE_ENCODER 1
       #define ENC_A_PIN (ANALOG_TUNING)
       #define ENC_B_PIN (FN_PIN)
-      #define ISR_DEBOUNCE_TIME_OUT (50 * MSECs)
+      #define ISR_DEBOUNCE_TIMEOUT (50 * MSECs)
       #include "Encoder01.h"
     #endif // USE_ENCODER01
      
@@ -106,7 +116,7 @@
       //#define ENC_A_PIN (6)
       //#define ENC_B_PIN (7)
       #include "Encoder02.h"
-      #define ISR_DEBOUNCE_TIME_OUT (50 * MSECs)
+      #define ISR_DEBOUNCE_TIMEOUT (50 * MSECs)
     #endif // USE_ENCODER02
      
     #ifdef USE_ENCODER03
@@ -114,7 +124,7 @@
       #define ENC_A_PIN (16)
       #define ENC_B_PIN (FN_PIN)
       #include "Encoder03.h"
-      #define ISR_DEBOUNCE_TIME_OUT (50 * MSECs)
+      #define ISR_DEBOUNCE_TIMEOUT (50 * MSECs)
     #endif // USE_ENCODER03
        
     #ifdef USE_EDITIF
@@ -195,7 +205,7 @@
     extern byte sideBandMode;
     
     extern boolean tuningLocked; //the tuning can be locked: wait until Freq Stable before unlocking it
-    extern boolean dialCursorMode;
+    extern byte knobMode;
     extern boolean inTx, inPtt;
     extern boolean keyDown0;
     extern boolean isLSB;
