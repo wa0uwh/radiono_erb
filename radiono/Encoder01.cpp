@@ -36,7 +36,7 @@ void readEncoder(int btn) {
     
     tigermillis = millis();
     
-    if (tigermillis-startTime <= ISR_DEBOUNCE_TIME_OUT) return;
+    if (tigermillis-startTime <= ISR_DEBOUNCE_TIMEOUT) return;
     startTime=tigermillis;
  
     knob += analogRead(ANALOG_TUNING) > 50 ? -1 : +1;
