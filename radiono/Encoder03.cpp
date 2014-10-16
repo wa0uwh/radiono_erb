@@ -41,6 +41,7 @@ volatile char knob;
 // ###############################################################################
 void encoderISR() {
     int pin = ENC_B_PIN;
+    // See: https://code.google.com/p/oopinchangeint/source/browse/Logic.wiki?repo=wiki
     static unsigned long startTime = 0;
     unsigned long tigermillis;
       
@@ -50,7 +51,7 @@ void encoderISR() {
     tigermillis = millis();
     SREG = oldSREG;
     
-    if (tigermillis-startTime <= ISR_DEBOUNCE_TIME_OUT) return;
+    if (tigermillis-startTime <= ISR_DEBOUNCE_TIMEOUT) return;
     startTime=tigermillis;
     
   // 47K Pull-up, and 4.7K switch resistors,
