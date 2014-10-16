@@ -15,7 +15,7 @@ void decodeTune2500Mode() {
     
     cursorDigitPosition = 3; // Set default Tuning Digit
     tune2500Mode = !tune2500Mode;
-    dialCursorMode = false;
+    dialCursorMode = KNOB_CURSOR_MODE;
     if (tune2500Mode) frequency = (frequency / 2500) * 2500;
 }
 

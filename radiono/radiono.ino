@@ -64,7 +64,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IC"          // Incremental Rev Code
+#define INC_REV "ERB_IC_KM01"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -158,7 +158,8 @@ int knobPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
 
 boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
-boolean dialCursorMode = 0;
+byte knobMode = KNOB_CURSOR_MODE;
+byte dialCursorMode = 0;
 boolean inTx = 0, inPtt = 0;
 boolean keyDown = 0;
 boolean vfoActive = VFO_A;
@@ -309,7 +310,7 @@ void updateCursor() {
       blinkInterval = millis() + blinkPeriod;
       if (cursorDigitPosition) {
           lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
-          if (dialCursorMode) lcd.print(blockChar); 
+          if (dialCursorMode == KNOB_DIGIT_MODE) lcd.print(blockChar); 
           else lcd.print('_');
           //else lcd.print(blockChar);
       }
@@ -323,7 +324,7 @@ void updateCursor() {
       if (blinkTimeOut && blinkTimer < millis()) {
           DEBUG(P("End Blink TIMED OUT"));
           cursorDigitPosition = 0;
-          dialCursorMode = true;
+          dialCursorMode = KNOB_DIGIT_MODE;
           refreshDisplay++;
           updateDisplay();
       }
@@ -413,7 +414,7 @@ void checkTuning() {
   if (ritOn) {
       ritVal += tuningDir * 10;
       ritVal = constrain(ritVal, -990, +990);
-      dialCursorMode = true;
+      dialCursorMode = KNOB_DIGIT_MODE;
       refreshDisplay++;
       updateDisplay();
       return;
@@ -432,13 +433,13 @@ void checkTuning() {
       }
   #endif // USE_HAMBANDS
   
-  if (dialCursorMode) {
+  if (dialCursorMode == KNOB_DIGIT_MODE) {
       decodeMoveCursor(-tuningDir); // Move the Cursor with the Dial
       return;
   }
   
   if (cursorDigitPosition < 1) {
-     dialCursorMode = true;
+     dialCursorMode = KNOB_DIGIT_MODE;
      return; // Nothing to do here, Abort, Cursor is in Park position
   }
   
@@ -635,8 +636,8 @@ void checkButton() {
   switch (btn) {
     case 0: btnPrev = btn; return; // Abort
     case FN_BTN: decodeFN(btn); break;  
-    case LT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(+1); break;    
-    case RT_CUR_BTN: dialCursorMode = false; decodeMoveCursor(-1); break;
+    case LT_CUR_BTN: dialCursorMode = KNOB_CURSOR_MODE; decodeMoveCursor(+1); break;    
+    case RT_CUR_BTN: dialCursorMode = KNOB_CURSOR_MODE; decodeMoveCursor(-1); break;
     case LT_BTN:
         switch (getButtonPushMode(btn)) { 
             case MOMENTARY_PRESS:  decodeSideBandMode(btn); break;
@@ -658,7 +659,8 @@ void checkButton() {
     #endif // USE_HAMBANDS
     case RT_BTN: 
         switch (getButtonPushMode(btn)) {
-            case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
+            //case MOMENTARY_PRESS:  dialCursorMode = !dialCursorMode; break;
+            case MOMENTARY_PRESS:  knobMode++; knobMode %= KNOB_MODES; dialCursorMode = knobMode; break;
             #ifdef USE_MENUS
                 case DOUBLE_PRESS:
                      menuActive = menuPrev ? menuPrev : DEFAULT_MENU;
@@ -747,7 +749,7 @@ void decodeMoveCursor(int dir) {
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
       freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable
       blinkTimer = 0;
-      if (!cursorDigitPosition) dialCursorMode = true;
+      if (!cursorDigitPosition) dialCursorMode = KNOB_DIGIT_MODE;
       refreshDisplay++;
 }
 

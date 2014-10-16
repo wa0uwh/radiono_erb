@@ -43,6 +43,13 @@
         LSB,
         AutoSB
     };
+    
+    enum KnobModes {
+        KNOB_CURSOR_MODE = 0,
+        KNOB_DIGIT_MODE,
+        //KNOB_BAND_MODE,
+        KNOB_MODES
+    };
  
     // Pin Numbers for analog inputs
     #define FN_PIN (A3)
@@ -195,6 +202,8 @@
     extern byte sideBandMode;
     
     extern boolean tuningLocked; //the tuning can be locked: wait until Freq Stable before unlocking it
+    extern byte knobMode;
+    extern byte dialCursorMode;
     extern boolean dialCursorMode;
     extern boolean inTx, inPtt;
     extern boolean keyDown0;
