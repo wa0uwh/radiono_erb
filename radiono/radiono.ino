@@ -54,6 +54,8 @@
  *   Added Optional Compile 60m Selection and Support
  *   Added ISR for USE_ENCODER02 and USE_ENCODER03
  *   Added Debounce to ISR for Encoders
+ *   Added Optional Knob Edit Modes: Cycle Cursor/Digit/Band
+ *   Added A1Config.h file for all Optional User Configs
  *
  */
 
@@ -64,7 +66,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IC_KM04"          // Incremental Rev Code
+#define INC_REV "ERB_IF"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -232,7 +234,9 @@ void updateDisplay(){
           inTx ? P4(" ") : ritOn ? d : P4(" "),
           knobMode == KNOB_CURSOR_MODE ? P8("C") :
           knobMode == KNOB_DIGIT_MODE  ? P8("D") :
-          knobMode == KNOB_BAND_MODE   ? P8("B") :
+          #ifdef USE_KNOB_CAN_CHANGE_BANDS
+              knobMode == KNOB_BAND_MODE   ? P8("B") :
+          #endif // USE_KNOB_CAN_CHANGE_BANDS
           #ifdef USE_TUNE2500_MODE
               tune2500Mode ? P8("*") :
           #endif // USE_TUNE2500_MODE 
