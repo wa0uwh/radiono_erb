@@ -14,7 +14,7 @@
     //#define USE_AUTOSAVE_FACTORY_RESET 1  //    8b - Option to Automatically Save Factory Reset Values to NonVolatile Memory on Reset
       #define USE_MENUS                  1  // 4626b - Option to include Menu support
       #define USE_HAMBANDS               1  // 1552b - Option to include Ham Band and Ham Band Limits
-      #define USE_KNOB_CAN_CHANGE_BANDS  1  //    8b - Option to Allow Knob to Change Bands, i.e, Cycle Cursor/Digit/Band
+      #define USE_KNOB_CAN_CHANGE_BANDS  1  //   34b - Option to Allow Knob to Change Bands, i.e, Cycle Cursor/Digit/Band
       #define USE_TUNE2500_MODE          1  //   30b - Option to include Tune2500Hz Mode
       #define USE_EDITIF                 1  //  842b - Option to include EditIF function
     //#define USE_POT_KNOB               1  // 2304b - Option to include POT support
