@@ -67,10 +67,8 @@ void initEncoder() {
     
     pinMode(ENC_A_PIN, INPUT_PULLUP);
     pinMode(ENC_B_PIN, INPUT_PULLUP);
-    
-    #ifdef USE_ENCODER02
-        PCintPort::attachInterrupt(pin, &encoderISR, FALLING);
-    #endif // USE_ENCODER02
+ 
+    PCintPort::attachInterrupt(pin, &encoderISR, FALLING);
 }
 
 

@@ -33,7 +33,7 @@ void eePromIO(int mode) {
         unsigned long iFreqLSB;
         unsigned long vfoA;
         unsigned long vfoB;
-        byte isLSB;
+        boolean isLSB;
         byte vfoActive;
         unsigned long freqCache[BANDS*2];
         byte sideBandMode;

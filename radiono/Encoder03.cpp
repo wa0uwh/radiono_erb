@@ -88,9 +88,6 @@ int getEncoderDir() {
     
     if (tmp>0) {uint8_t oldSREG = SREG; cli(); knob--; SREG = oldSREG; return +1;}
     if (tmp<0) {uint8_t oldSREG = SREG; cli(); knob++; SREG = oldSREG; return -1;}
-
-    //if (tmp>0) { knob--; return -1;}
-    //if (tmp<0) { knob++; return -1;}
     return 0;
 }
 
