@@ -24,7 +24,11 @@ The following functions are inplemented
       (Note: I need to check the Regulations to see if Split operations is legal on HF?)
     o Two CW and Two QRSS User Beacon/Macro Messages/Modes, A quick Press CW Key will Abort Message
       (Note: Macros and Beacons are not currently allowed in Split Mode, maybe someday)
+    o Added Optional 60m Support
+    o Added three methods to support Encoders, with proper software Debounce
+    o Added a third Optional Knob mode to change Bands.
+    o Moved all User Options to the "A1Config.h" File
 
-    See: https://github.com/wa0uwh/radiono_erb/tree/AltTuneMethod
+    See: https://github.com/wa0uwh/radiono_erb
 
 --
