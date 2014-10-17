@@ -56,6 +56,7 @@
  *   Added Debounce to ISR for Encoders
  *   Added Optional Knob Edit Modes: Cycle Cursor/Digit/Band
  *   Added A1Config.h file for all Optional User Configs
+ *   Added Optional Knob Mode Display
  *
  */
 
@@ -66,7 +67,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IF"          // Incremental Rev Code
+#define INC_REV "ERB_IG"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -232,11 +233,13 @@ void updateDisplay(){
       sprintf(c, P("%1s:%.2s.%.6s%-4.4s%s"), vfoLabel,
           b,  b+2,
           inTx ? P4(" ") : ritOn ? d : P4(" "),
-          knobMode == KNOB_CURSOR_MODE ? P8("C") :
-          knobMode == KNOB_DIGIT_MODE  ? P8("D") :
-          #ifdef USE_KNOB_CAN_CHANGE_BANDS
-              knobMode == KNOB_BAND_MODE   ? P8("B") :
-          #endif // USE_KNOB_CAN_CHANGE_BANDS
+          #ifdef USE_DISPLAY_KNOB_MODE
+              knobMode == KNOB_CURSOR_MODE ? P8("C") :
+              knobMode == KNOB_DIGIT_MODE  ? P8("D") :
+              #ifdef USE_KNOB_CAN_CHANGE_BANDS
+                  knobMode == KNOB_BAND_MODE   ? P8("B") :
+              #endif // USE_KNOB_CAN_CHANGE_BANDS
+          #endif // USE_DISPLAY_KNOB_MODE
           #ifdef USE_TUNE2500_MODE
               tune2500Mode ? P8("*") :
           #endif // USE_TUNE2500_MODE 
@@ -347,13 +350,14 @@ void decodeSideband(){
   #endif // USE_EDITIF
 
   int iBand = inBand -1;
-  if(operate60m && iBand >= HB60m1 && iBand <= HB60m5) sideBandMode = USB;
-  
-  switch(sideBandMode) {
-   // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
-    case AutoSB: isLSB = (frequency < 9.99 * MHz) ? 1 : 0 ; break; // Automatic Side Band Mode 
-    case USB: isLSB = USB; break; // Force USB Mode
-    case LSB: isLSB = LSB; break; // Force LSB Mode   
+  if(operate60m && iBand >= HB60m1 && iBand <= HB60m5) isLSB = USB;
+  else {
+      switch(sideBandMode) {
+       // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
+        case AutoSB: isLSB = (frequency < 9.99 * MHz) ? LSB : USB ; break; // Automatic Side Band Mode 
+        case USB: isLSB = USB; break; // Force USB Mode
+        case LSB: isLSB = LSB; break; // Force LSB Mode   
+      }
   }
   setSideband();
 }
