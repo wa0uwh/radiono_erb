@@ -56,6 +56,7 @@
  *   Added Debounce to ISR for Encoders
  *   Added Optional Knob Edit Modes: Cycle Cursor/Digit/Band
  *   Added A1Config.h file for all Optional User Configs
+ *   Added Optional Knob Mode Display
  *
  */
 
@@ -66,7 +67,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IF"          // Incremental Rev Code
+#define INC_REV "ERB_IG"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
