@@ -57,6 +57,8 @@
  *   Added Optional Knob Edit Modes: Cycle Cursor/Digit/Band
  *   Added A1Config.h file for all Optional User Configs
  *   Added Optional Knob Mode Display
+ *   Added Option to Split 10m into subBands, 28.0 - 28.3 - 29.0 - 29.7
+ *   Added Option to Split 80m into 80m and 75m, 3.5 - 3.6 - 4.0
  *
  */
 

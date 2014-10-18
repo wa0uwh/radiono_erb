@@ -13,13 +13,9 @@ const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Lim
       
       #ifndef USE_80M_SECTIONS
          3.50  * MHz,   4.00  * MHz, //  80m
-      #else // USE_80M_SECTIONS 
-         #define LOWER_FREQ_OF_SECTION (3.5 * MHz)
-         #ifdef UPPER_FREQ_80M_SECTION_01
-             LOWER_FREQ_OF_SECTION, UPPER_FREQ_80M_SECTION_01-1,
-             #define LOWER_FREQ_OF_SECTION (UPPER_FREQ_80M_SECTION_01)
-         #endif // UPPER_FREQ_80M_SECTION_01
-         LOWER_FREQ_OF_SECTION, 4.00 * MHz,      // 80m Last Section
+      #else // USE_80M_SECTIONS
+         LOWER_FREQ_80M_SECTION_01, UPPER_FREQ_80M_SECTION_01-1, // 80m
+         UPPER_FREQ_80M_SECTION_01, UPPER_FREQ_80M_SECTION_02,   // 75m
       #endif // USE_80M_SECTIONS
       
       5.3305* MHz,   5.3305* MHz, //  60m Channel 1
@@ -38,16 +34,9 @@ const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Lim
      #ifndef USE_10M_SECTIONS
          28.00  * MHz,  29.70  * MHz, //  10m
      #else // USE_10M_SECTIONS
-         #define LOWER_FREQ_OF_SECTION (28.00 * MHz)
-         #ifdef UPPER_FREQ_10M_SECTION_01
-             LOWER_FREQ_OF_SECTION, UPPER_FREQ_10M_SECTION_01-1,
-             #define LOWER_FREQ_OF_SECTION (UPPER_FREQ_10M_SECTION_01)
-         #endif
-         #ifdef UPPER_FREQ_10M_SECTION_02
-             LOWER_FREQ_OF_SECTION, UPPER_FREQ_10M_SECTION_02-1,
-             #define LOWER_FREQ_OF_SECTION (UPPER_FREQ_10M_SECTION_02)
-         #endif
-         LOWER_FREQ_OF_SECTION, 29.70 * MHz,      // 10m Last Section
+         LOWER_FREQ_10M_SECTION_01, UPPER_FREQ_10M_SECTION_01-1,
+         UPPER_FREQ_10M_SECTION_01, UPPER_FREQ_10M_SECTION_02-1,
+         UPPER_FREQ_10M_SECTION_02, UPPER_FREQ_10M_SECTION_03,
      #endif // USE_10M_SECTIONS
      
    //50.00  * MHz,  54.00  * MHz, //   6m - Will need New Low Pass Filter Support
@@ -60,7 +49,7 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
       #ifdef USE_80M_SECTIONS
           3.530  * MHz,  3.530  * MHz,  //  80m - QRP CW Calling Freq ???
       #endif // USE_80M_SECTIONS
-      3.985  * MHz,  3.985  * MHz,  //  80m - QRP SSB Calling Freq
+      3.985  * MHz,  3.985  * MHz,  //  75m - QRP SSB Calling Freq
       
       5.3305 * MHz,  5.3305 * MHz,  //  60m Channel 1
       5.3465 * MHz,  5.3465 * MHz,  //  60m Channel 2
@@ -78,16 +67,9 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
      #ifndef USE_10M_SECTIONS
          28.385  * MHz, 28.385  * MHz,  //  10m - QRP SSB Calling Freq
      #else // USE_10M_SECTIONS
-         #define QSO_FREQ (28.030  * MHz)
-         #ifdef UPPER_FREQ_10M_SECTION_01
-             QSO_FREQ, QSO_FREQ,
-             #define QSO_FREQ (28.385  * MHz)
-         #endif
-         #ifdef UPPER_FREQ_10M_SECTION_02
-             QSO_FREQ, QSO_FREQ,
-             #define QSO_FREQ (UPPER_FREQ_10M_SECTION_02 + 30 * KHz)
-         #endif
-         QSO_FREQ, QSO_FREQ,
+         (28.030  * MHz), (28.030  * MHz),
+         (28.385  * MHz), (28.385  * MHz),  //  10m - QRP SSB Calling Freq
+         (29.030  * MHz), (29.030  * MHz),
      #endif // USE_10M_SECTIONS
      
    //50.20   * MHz, 50.20   * MHz,  //   6m - QRP SSB Calling Freq
@@ -115,12 +97,8 @@ byte sideBandModeCache[BANDS*2] = {
       AutoSB,  AutoSB, //  12m
       AutoSB,  AutoSB, //  10m, and Section 1
       #ifdef USE_10M_SECTIONS
-          #ifdef UPPER_FREQ_10M_SECTION_01
-              AutoSB,  AutoSB, //  10m Section 2
-          #endif    
-          #ifdef UPPER_FREQ_10M_SECTION_02
-              AutoSB,  AutoSB, //  10m Section 3
-          #endif
+          AutoSB,  AutoSB, //  10m Section 2
+          AutoSB,  AutoSB, //  10m Section 3
       #endif // USE_10M_SECTIONS
    // AutoSB,  AutoSB, //   6m - Will need New Low Pass Filter Support
 };
@@ -149,13 +127,9 @@ int hamBands[BANDS]  = {
       #ifndef USE_10M_SECTIONS
          10,
       #else
-          1001, // 10m Section 1
-          #ifdef UPPER_FREQ_10M_SECTION_01
-              1002, // 10m Section 2
-          #endif
-          #ifdef UPPER_FREQ_10M_SECTION_02
-              1003, // 10m Section 3
-          #endif
+         1001, // 10m Section 1
+         1002, // 10m Section 2
+         1003, // 10m Section 3
       #endif // USE_10M_SECTIONS
       
    //  6, // Will need New Low Pass Filter Support

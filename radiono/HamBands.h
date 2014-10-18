@@ -9,15 +9,19 @@
     #define BANDS_60M (5)   // 5 60m Freq's which are treated as bands here
     
     #ifdef USE_10M_SECTIONS
+        #define LOWER_FREQ_10M_SECTION_01 (28.0 * MHz) // Bottom of Band
         #define UPPER_FREQ_10M_SECTION_01 (28.3 * MHz)
         #define UPPER_FREQ_10M_SECTION_02 (29.0 * MHz)
+        #define UPPER_FREQ_10M_SECTION_03 (29.7 * MHz) // Top of Band
         #define ADDITIONAL_SECTIONS_IN_10M (2) // Additional 10m Sections
     #else
         #define ADDITIONAL_SECTIONS_IN_10M (0)
     #endif
     
     #ifdef USE_80M_SECTIONS
+        #define LOWER_FREQ_80M_SECTION_01 (3.5 * MHz) // Bottom of Band
         #define UPPER_FREQ_80M_SECTION_01 (3.6 * MHz)
+        #define UPPER_FREQ_80M_SECTION_02 (4.0 * MHz) // Top of Band
         #define ADDITIONAL_SECTIONS_IN_80M (1) // Additional 80m Sections
     #else
         #define ADDITIONAL_SECTIONS_IN_80M (0)
