@@ -3,7 +3,7 @@
 #ifndef A1CONFIG_H
 #define A1CONFIG_H
 
-    // Optional USER Configurations             SIZE
+    // Optional USER Configurations         FLASH-SIZE
     //==========================================================================================
     //#define USE_PCA9546                1  //  214b - Option to include PCA9546 support
     //#define USE_I2C_LCD                1  //  ???b - Option to include i2c LCD support
@@ -25,7 +25,10 @@
       #define USE_PARK_CURSOR            1  //   24b - Option to Park Cursor when Mode Changes and/or Timeout
     //#define USE_HIDELEAST              1  //   84b - Option to Hide Least Digits to right of Cursor while Tuning
       #define USE_OPERATE_60M            1  //    6b - Will Include USE_HAMBANDS, Option to Operate and Support 60m Band Selection
+      #define USE_10M_SECTIONS           1  //   40b - Split 10m into three subbands: 28.0 - 28.3 - 29.0 - 29.7MHz
+      #define USE_80M_SECTIONS           1  //   20b - Split 80m into 75m and 80m Bands
 
+      
 #endif
 
 // End
