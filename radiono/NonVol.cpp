@@ -11,7 +11,7 @@
 #include "NonVol.h"
 #include "debug.h"
 
-#define ID_FLAG (1409141141L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1410172042L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
 // Local Varibles

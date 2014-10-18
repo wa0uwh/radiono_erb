@@ -67,7 +67,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IG"          // Incremental Rev Code
+#define INC_REV "ERB_IG_10M3"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -252,8 +252,9 @@ void updateDisplay(){
       
       #ifdef USE_HAMBANDS
           byte iBand = inBand -1;
-          if (operate60m && iBand >= HB60m1 && iBand <= HB60m5)
-               sprintf(b, P("%3dM%d"), hamBands[iBand]/10*10, hamBands[iBand] % 10);
+          if (hamBands[iBand] > 1000) {   // Decoded as BXS, B=Band, S=BandSection, X=PlaceHolder
+                   sprintf(b, P("%3dM%d"), hamBands[iBand]/100, hamBands[iBand] % 10);
+           }
           else sprintf(b, P("%3dM"), hamBands[iBand]);
       
           if (!inBand) editIfMode ? sprintf(b, P(" ")) :
@@ -350,7 +351,7 @@ void decodeSideband(){
   #endif // USE_EDITIF
 
   int iBand = inBand -1;
-  if(operate60m && iBand >= HB60m1 && iBand <= HB60m5) isLSB = USB;
+  if(operate60m && hamBands[iBand] > 6000  && hamBands[iBand] < 6010) isLSB = USB;
   else {
       switch(sideBandMode) {
        // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
@@ -444,9 +445,10 @@ void checkTuning() {
       // Change 60m Channels with the Tuning POT or Encoder. uses UP/DOWN to excape
       byte iBand = inBand -1;
       //debug(P("%s/%d: %d %d %d"), __func__, __LINE__, inBand-1, HB60m1, HB60m5);
-      if (operate60m && iBand >= HB60m1 && iBand <= HB60m5) {
-          if (iBand < HB60m5 && tuningDir > 0) decodeBandUpDown(tuningDir);
-          else if (iBand > HB60m1 && tuningDir < 0) decodeBandUpDown(tuningDir);
+      if(operate60m && hamBands[iBand] > 6000  && hamBands[iBand] < 6010) {
+          if (hamBands[iBand] > 6001 && tuningDir < 0) decodeBandUpDown(tuningDir);
+          else
+          if (hamBands[iBand] < 6005 && tuningDir > 0) decodeBandUpDown(tuningDir);
           return;
       }
   #endif // USE_HAMBANDS
