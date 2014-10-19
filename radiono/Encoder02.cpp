@@ -67,10 +67,12 @@ void encoderISR() {
     tigermillis = millis();
     SREG = oldSREG;
     
-    if (tigermillis-startTime <= ISR_DEBOUNCE_TIMEOUT) return;
-    startTime=tigermillis;
+    if (tigermillis - startTime <= ISR_DEBOUNCE_TIMEOUT) return;
+    startTime = tigermillis;
     
+    cli();
     knob += digitalRead(ENC_B_PIN) ? -1 : +1;
+    SREG = oldSREG;
     
     //debug("%s/%d: Pin= %d, Knob= %d", __func__, __LINE__, pin, knob);
 }
