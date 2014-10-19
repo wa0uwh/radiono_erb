@@ -59,6 +59,7 @@
  *   Added Optional Knob Mode Display
  *   Added Option to Split 10m into subBands, 28.0 - 28.3 - 29.0 - 29.7
  *   Added Option to Split 80m into 80m and 75m, 3.5 - 3.6 - 4.0
+ *   Added Pin Aliases for all pins of the ATMEGA328P that are useable by the Preprocessor
  *
  */
 
@@ -69,7 +70,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 #define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_II"          // Incremental Rev Code
+#define INC_REV "ERB_IJ"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -117,9 +118,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 
 // Pin Number for the digital output controls
-#define PIN_LSB (2)
-#define TX_RX (3)
-#define CW_KEY (4)
+#define PIN_LSB (PD2)
+#define TX_RX   (PD3)
+#define CW_KEY  (PD4)
 
 
 #ifdef USE_PCA9546
@@ -129,7 +130,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 Si570 *vfo;
 
 #ifndef USE_I2C_LCD
-  LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+  LiquidCrystal lcd(PB5, PB4, PB3, PB2, PB1, PB0);
 #else
   LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
 #endif
