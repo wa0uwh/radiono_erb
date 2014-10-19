@@ -60,6 +60,7 @@
  *   Added Option to Split 10m into subBands, 28.0 - 28.3 - 29.0 - 29.7
  *   Added Option to Split 80m into 80m and 75m, 3.5 - 3.6 - 4.0
  *   Added Pin Aliases for all pins of the ATMEGA328P that are useable by the Preprocessor
+ *   Simplified Cursor Display and Operation, Old Blink Cursor is now an Option
  *
  */
 
@@ -69,8 +70,8 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IJ"          // Incremental Rev Code
+//#define INC_REV "ko7m-AC"         // Incremental Rev Code
+#define INC_REV "ERB_IK"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -253,16 +254,20 @@ void updateDisplay(){
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
       blinkChar = c[cursorCol];
       
-      #ifdef USE_HAMBANDS
-          byte iBand = inBand -1;
-          if (hamBands[iBand] > 1000) {   // Decoded as BXS, B=Band, S=BandSection, X=PlaceHolder
-                   sprintf(b, P("%3dM%d"), hamBands[iBand]/100, hamBands[iBand] % 10);
-           }
-          else sprintf(b, P("%3dM"), hamBands[iBand]);
-      
-          if (!inBand) editIfMode ? sprintf(b, P(" ")) :
-      #endif // USE_HAMBANDS
-          sprintf(b, P("%3dm"), 300 * MHz / frequency );
+      #ifdef USE_SHOW_WAVE_LENGTH
+          #ifdef USE_HAMBANDS
+              byte iBand = inBand -1;
+              if (hamBands[iBand] > 1000) {   // Decoded as BXS, B=Band, S=BandSection, X=PlaceHolder
+                       sprintf(b, P("%3dM%d"), hamBands[iBand]/100, hamBands[iBand] % 10);
+               }
+              else sprintf(b, P("%3dM"), hamBands[iBand]);
+          
+              if (!inBand) editIfMode ? sprintf(b, P(" ")) :
+          #endif // USE_HAMBANDS
+              sprintf(b, P("%3dm"), 300 * MHz / frequency );
+      #else
+          sprintf(b, P(" "));
+      #endif // USE_SHOW_WAVE_LENGTH
       
       sprintf(c, P("%3s %-2s %3.3s %s"),
           sideBandMode == AutoSB ? 
@@ -309,7 +314,8 @@ void updateCursor() {
     
   if (inTx) return;   // Don't Blink if inTx
   if (ritOn) return;  // Don't Blink if RIT is ON
-  if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
+  //if (freqUnStable) return;  // Don't Blink if Frequency is UnStable
+  
   #ifdef USE_KNOB_CAN_CHANGE_BANDS
       if (knobMode == KNOB_BAND_MODE) return; // Don't Blink if Band Mode
   #endif // USE_KNOB_CAN_CHANGE_BANDS
@@ -319,30 +325,43 @@ void updateCursor() {
 
   if (!blinkTimer) blinkTimer = millis() + blinkTimeOut;
   
-  DEBUG(P("\nStart Blink"));
-  if (blinkInterval < millis()) { // Wink OFF
-      DEBUG(P("Wink OFF"));
-      blinkInterval = millis() + blinkPeriod;
-      if (blinkTimer > millis()) {
-          lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
-          if (knobMode == KNOB_DIGIT_MODE) lcd.print(blockChar); 
-          else lcd.print('_');
+  #ifndef USE_BLINK_DIGIT_MODE 
+      lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
+      lcd.cursor();
+      #ifdef USE_PARK_CURSOR
+          if (blinkTimeOut && blinkTimer < millis()) {
+              DEBUG(P("Cursor TIMED OUT"));
+              cursorDigitPosition = 0;
+              knobMode = KNOB_CURSOR_MODE;
+              refreshDisplay++;
+          }
+      #endif // USE_PARK_CURSOR
+  #else         
+      DEBUG(P("\nStart Blink"));
+      if (blinkInterval < millis()) { // Wink OFF
+          DEBUG(P("Wink OFF"));
+          blinkInterval = millis() + blinkPeriod;
+          if (blinkTimer > millis()) {
+              lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
+              if (knobMode == KNOB_DIGIT_MODE) lcd.print(blockChar); 
+              else lcd.print('_');
+          }
+          toggle = true;
+      } 
+      else if ((blinkInterval - (blinkPeriod/100*blinkRatio)) < millis() && toggle) { // Wink ON
+          DEBUG(P("Wink ON"));
+          toggle = !toggle;
+          lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
+          lcd.print(blinkChar);
+          if (blinkTimeOut && blinkTimer < millis()) {
+              DEBUG(P("End Blink TIMED OUT"));
+              cursorDigitPosition = 0;
+              knobMode = KNOB_CURSOR_MODE;
+              refreshDisplay++;
+              updateDisplay();
+          }
       }
-      toggle = true;
-  } 
-  else if ((blinkInterval - (blinkPeriod/100*blinkRatio)) < millis() && toggle) { // Wink ON
-      DEBUG(P("Wink ON"));
-      toggle = !toggle;
-      lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
-      lcd.print(blinkChar);
-      if (blinkTimeOut && blinkTimer < millis()) {
-          DEBUG(P("End Blink TIMED OUT"));
-          cursorDigitPosition = 0;
-          knobMode = KNOB_CURSOR_MODE;
-          refreshDisplay++;
-          updateDisplay();
-      }
-  }
+  #endif // USE_BLINK_DIGIT_MODE
   return;
 }
 
@@ -947,6 +966,7 @@ void setup() {
   #ifndef USE_PARK_CURSOR
     blinkTimeOut = DEFAULT_BLINK_TIMEOUT;
     cursorDigitPosition = DEFAULT_CURSOR_POSITION;
+    knobMode = KNOB_DIGIT_MODE;
   #endif // USE_PARK_CURSOR 
     
   #ifdef USE_HIDELEAST
