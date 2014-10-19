@@ -4,7 +4,7 @@
 #define ENCODER03_H
 
 #ifndef ISR_DEBOUNCE_TIMEOUT
-    #define ISR_DEBOUNCE_TIMEOUT (50 * MSECs) // Default
+    #define ISR_DEBOUNCE_TIMEOUT (5 * MSECs) // Default
 #endif
 
     // Externally Available Variables
