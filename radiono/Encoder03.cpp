@@ -69,18 +69,20 @@ void encoderISR() {
     tigermillis = millis();
     SREG = oldSREG;
     
-    if (tigermillis-startTime <= ISR_DEBOUNCE_TIMEOUT) return;
-    startTime=tigermillis;
+    if (tigermillis - startTime <= ISR_DEBOUNCE_TIMEOUT) return;
+    startTime = tigermillis;
     
-  // 47K Pull-up, and 4.7K switch resistors,
-  // Val should be approximately = 1024*BtnN*4700/(47000+(BtnN*4700))
-  // Where N = (button-1)
+    // 47K Pull-up, and 4.7K switch resistors,
+    // Val should be approximately = 1024*BtnN*4700/(47000+(BtnN*4700))
+    // Where N = (button-1)
     
-  // 1024L*b*4700L/(47000L+(b*4700L))   >>>  1024*b/(10+b);
-  // Btn = 8; Val = 1024*(Btn-1)/(10+(Btn-1)) = 421
-  // Btn = 9; Val = 1024*(Btn-1)/(10+(Btn-1)) = 455
+    // 1024L*b*4700L/(47000L+(b*4700L))   >>>  1024*b/(10+b);
+    // Btn = 8; Val = 1024*(Btn-1)/(10+(Btn-1)) = 421
+    // Btn = 9; Val = 1024*(Btn-1)/(10+(Btn-1)) = 455
       
+    cli();
     knob += analogRead(pin) < 440 ? -1 : +1;
+    SREG = oldSREG;
 
     //debug("%s/%d: Pin= %d, Knob= %d", __func__, __LINE__, pin, knob);
 }
