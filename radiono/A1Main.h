@@ -3,6 +3,19 @@
 #ifndef A1MAIN_H
 #define A1MAIN_H
 
+    // Aliases for ATMEGA328P
+    enum PinAliase { // Enum used to make this shorter list
+        PD0 = 0, PD1, PD2, PD3, PD4, PD5, PD6, PD7,
+        PB0, PB1, PB2, PB3, PB4, PB5,
+    };
+    #define A0 (14) // #define's are necessary as there are already A0-A5 Constants within Arduino
+    #define A1 (15)
+    #define A2 (16)
+    #define A3 (17)
+    #define A4 (18)
+    #define A5 (19)
+
+
     #include "A1Config.h"
     
     // Set up Units to make coding large Frequency Numbers easier
@@ -39,9 +52,9 @@
     #define ANALOG_KEYER (A1)
     
     // Original Output Filter Control Lines
-    #define BAND_HI_PIN (5)
-    #define BAND_MD_PIN (6)
-    #define BAND_LO_PIN (7)
+    #define BAND_HI_PIN (PD5) // Currently being used for LP Filter
+    #define BAND_MD_PIN (PD6)
+    #define BAND_LO_PIN (PD7) // Proposed Use for Rf386 Power Amp Filters
     
     // For Rf386 PA Filter Selector
     #define PA_BAND_CLK (BAND_LO_PIN)
@@ -84,26 +97,26 @@
       #define USE_ENCODER 1
       #define ENC_A_PIN (ANALOG_TUNING)
       #define ENC_B_PIN (FN_PIN)
-      #define ISR_DEBOUNCE_TIMEOUT (50 * MSECs)
+      #define ISR_DEBOUNCE_TIMEOUT (5 * MSECs)
       #include "Encoder01.h"
     #endif // USE_ENCODER01
      
     #ifdef USE_ENCODER02
       #define USE_ENCODER 2
-      #define ENC_A_PIN (8)
-      #define ENC_B_PIN (9)
-      //#define ENC_A_PIN (6)
-      //#define ENC_B_PIN (7)
+      #define ENC_A_PIN (PB0)
+      #define ENC_B_PIN (PB1)
+      //#define ENC_A_PIN (BAND_MD_PIN)
+      //#define ENC_B_PIN (BAND_LO_PIN)
       #include "Encoder02.h"
-      #define ISR_DEBOUNCE_TIMEOUT (50 * MSECs)
+      #define ISR_DEBOUNCE_TIMEOUT (5 * MSECs)
     #endif // USE_ENCODER02
      
     #ifdef USE_ENCODER03
       #define USE_ENCODER 3
-      #define ENC_A_PIN (16)
+      #define ENC_A_PIN (ANALOG_TUNING)
       #define ENC_B_PIN (FN_PIN)
       #include "Encoder03.h"
-      #define ISR_DEBOUNCE_TIMEOUT (50 * MSECs)
+      #define ISR_DEBOUNCE_TIMEOUT (5 * MSECs)
     #endif // USE_ENCODER03
        
     #ifdef USE_EDITIF

@@ -117,9 +117,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 
 // Pin Number for the digital output controls
-#define PIN_LSB (2)
-#define TX_RX (3)
-#define CW_KEY (4)
+#define PIN_LSB (PD2)
+#define TX_RX   (PD3)
+#define CW_KEY  (PD4)
 
 
 #ifdef USE_PCA9546
@@ -129,7 +129,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 Si570 *vfo;
 
 #ifndef USE_I2C_LCD
-  LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+  LiquidCrystal lcd(PB5, PB4, PB3, PB2, PB1, PB0);
 #else
   LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
 #endif
