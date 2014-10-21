@@ -7,9 +7,9 @@
     //==========================================================================================
     //#define USE_PCA9546                1  //  214b - Option to Include PCA9546 support
     //#define USE_I2C_LCD                1  //  ???b - Option to Include i2c LCD support
-      #define USE_RF386                  1  //  272b - Option to Include RF386 support
+    //#define USE_RF386                  1  //  272b - Option to Include RF386 support
       #define USE_BANDPASS               1  //  104b - Option to Include Band Pass Filter Output Pins
-    //#define USE_BEACONS                1  // 1488b - Option to Include Beacons, CW and QRSS support
+      #define USE_BEACONS                1  // 1488b - Option to Include Beacons, CW and QRSS support
       #define USE_EEPROM                 1  // 1454b - Option to Include Load and Store to NonVolatile Memory (EEPROM) support
     //#define USE_AUTOSAVE_FACTORY_RESET 1  //    8b - Option to Automatically Save Factory Reset Values to NonVolatile Memory on Reset
       #define USE_MENUS                  1  // 4626b - Option to Include Menu support
@@ -24,13 +24,13 @@
     //#define USE_ENCODER01              1  // 2220b - Option to Include Simple analog pin Encoder01 support
     //#define USE_ENCODER02              1  // 2610b - Option to Include FULL Two Digital Pin ISR Encoder02 support
       #define USE_ENCODER03              1  // 2604b - Option to Include ISR Encoder03 support On Tuning Pin
+    //#define USE_ENCODER04              1  // 1096b - Option to Include rotary encoder support from Jeff Whitlatch - ko7m
     //#define USE_PARK_CURSOR            1  //   24b - Option to Park Cursor when Mode Changes and/or Timeout
     //#define USE_HIDELEAST              1  //   84b - Option to Hide Least Digits to right of Cursor while Tuning
       #define USE_OPERATE_60M            1  //    6b - Will Include USE_HAMBANDS, Option to Operate and Support 60m Band Selection
       #define USE_10M_SECTIONS           1  //   40b - Split 10m into three subbands: 28.0 - 28.3 - 29.0 - 29.7MHz, Note: Change this Option, Forces Factory Reset
       #define USE_80M_SECTIONS           1  //   20b - Split 80m into 75m and 80m Bands. Note: Change this Option, Forces Factory Reset
 
-      
 #endif
 
 // End
