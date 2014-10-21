@@ -116,29 +116,31 @@ void checkKnob(int menu) {
           qrssDitTime = constrain (qrssDitTime, 250, 60 * SECs); //MSECs
           break;
           
-        case M_BLINK_TIMEOUT:
-          if (blinkTimeOut > MINs) {
-              blinkTimeOut = (blinkTimeOut + dir * MINs) / MINs * MINs;  // Truncate to Minutes
-              blinkTimeOut = max(blinkTimeOut, 1 * MINs);
+        case M_PARK_TIMEOUT:
+          if (parkTimeOut > MINs) {
+              parkTimeOut = (parkTimeOut + dir * MINs) / MINs * MINs;  // Truncate to Minutes
+              parkTimeOut = max(parkTimeOut, 1 * MINs);
           }
-          else  blinkTimeOut += dir * 5 * SECs;
-          if (blinkTimeOut > 3 * 60 * MINs) blinkTimeOut = 0;
-          blinkTimeOut = blinkTimeOut / SECs * SECs;
-          blinkTimeOut = constrain (blinkTimeOut, 0, 60 * MINs); //MSECs
+          else  parkTimeOut += dir * 5 * SECs;
+          if (parkTimeOut > 3 * 60 * MINs) parkTimeOut = 0;
+          parkTimeOut = parkTimeOut / SECs * SECs;
+          parkTimeOut = constrain (parkTimeOut, 0, 60 * MINs); //MSECs
           break;
           
-        case M_BLINK_PERIOD:
-          if (blinkPeriod > SECs) {
-              blinkPeriod = (blinkPeriod + dir * SECs) / SECs * SECs;  // Truncate to Seconds
-              blinkPeriod = max(blinkPeriod, 10 * SECs);
-          }
-          else  blinkPeriod += dir * 10;
-          blinkPeriod = constrain (blinkPeriod, 100, 10 * SECs); //MSECs
-          break;
-        case M_BLINK_RATIO:
-          blinkRatio += dir * 5;
-          blinkRatio = constrain (blinkRatio, 20, 95); // Percent 
-          break;
+        #ifdef USE_BLINK_DIGIT_MODE 
+            case M_BLINK_PERIOD:
+              if (blinkPeriod > SECs) {
+                  blinkPeriod = (blinkPeriod + dir * SECs) / SECs * SECs;  // Truncate to Seconds
+                  blinkPeriod = max(blinkPeriod, 10 * SECs);
+              }
+              else  blinkPeriod += dir * 10;
+              blinkPeriod = constrain (blinkPeriod, 100, 10 * SECs); //MSECs
+              break;
+            case M_BLINK_RATIO:
+              blinkRatio += dir * 5;
+              blinkRatio = constrain (blinkRatio, 20, 95); // Percent 
+              break;
+        #endif // USE_BLINK_DIGIT_MODE
           
         case M_TIMEOUT:
           if (menuIdleTimeOut > MINs) {
@@ -179,7 +181,7 @@ void updateDisplayMenu(int menu) {
              
           #ifdef USE_OPERATE_60M
               case M_OPT60M:
-                 sprintf(c, P("%0.2dMACRO OPT 60M"), menu);
+                 sprintf(c, P("%0.2dOPTION 60M"), menu);
                  printLineCEL(MENU_PROMPT_LINE, c);
                  sprintf(c, P("INCLUDE: %s"), operate60m ? P2("YES") : P2("NO"));
                  if (!menuCycle) sprintf(c, P2("%s<"), c);
@@ -203,31 +205,34 @@ void updateDisplayMenu(int menu) {
              printLineCEL(MENU_ITEM_LINE, c);
              break;
 
-          case M_BLINK_TIMEOUT:
-             sprintf(c, P("%0.2dBlink TimeOut"), menu);
+          case M_PARK_TIMEOUT:
+             sprintf(c, P("%0.2dPark TimeOut"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
-             if (blinkTimeOut > MINs) sprintf(c, P("MINs: %0.2d"), blinkTimeOut / MINs);
-             else sprintf(c, P("SECs: %d"), blinkTimeOut / SECs);
+             if (parkTimeOut > MINs) sprintf(c, P("MINs: %0.2d"), parkTimeOut / MINs);
+             else sprintf(c, P("SECs: %d"), parkTimeOut / SECs);
              if (!menuCycle) sprintf(c, P2("%s<"), c);
-             if (!blinkTimeOut) sprintf(c, P2("%s - OFF"), c);
-             printLineCEL(MENU_ITEM_LINE, c);
-             break;
-          case M_BLINK_PERIOD:
-             sprintf(c, P("%0.2dBlink Period"), menu);
-             printLineCEL(MENU_PROMPT_LINE, c);
-             if (blinkPeriod > SECs) sprintf(c, P("SECs: %0.2d"), blinkPeriod / SECs);
-             else sprintf(c, P("MSECs: %d"), blinkPeriod);
-             if (!menuCycle) sprintf(c, P2("%s<"), c);
-             printLineCEL(MENU_ITEM_LINE, c);
-             break;
-          case M_BLINK_RATIO:
-             sprintf(c, P("%0.2dBlink"), menu);
-             printLineCEL(MENU_PROMPT_LINE, c);
-             sprintf(c, P("Ratio: %d%%"), blinkRatio);
-             if (!menuCycle) sprintf(c, P2("%s<"), c);
+             if (!parkTimeOut) sprintf(c, P2("%s - OFF"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
              
+          #ifdef USE_BLINK_DIGIT_MODE
+              case M_BLINK_PERIOD:
+                 sprintf(c, P("%0.2dBlink Period"), menu);
+                 printLineCEL(MENU_PROMPT_LINE, c);
+                 if (blinkPeriod > SECs) sprintf(c, P("SECs: %0.2d"), blinkPeriod / SECs);
+                 else sprintf(c, P("MSECs: %d"), blinkPeriod);
+                 if (!menuCycle) sprintf(c, P2("%s<"), c);
+                 printLineCEL(MENU_ITEM_LINE, c);
+                 break;
+              case M_BLINK_RATIO:
+                 sprintf(c, P("%0.2dBlink"), menu);
+                 printLineCEL(MENU_PROMPT_LINE, c);
+                 sprintf(c, P("Ratio: %d%%"), blinkRatio);
+                 if (!menuCycle) sprintf(c, P2("%s<"), c);
+                 printLineCEL(MENU_ITEM_LINE, c);
+                 break;
+          #endif // USE_BLINK_DIGIT_MODE 
+          
           case M_TIMEOUT:
              sprintf(c, P("%0.2dMenu TimeOut"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);

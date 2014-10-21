@@ -63,6 +63,7 @@
  *   Added Pin Aliases for all pins of the ATMEGA328P that are useable by the Preprocessor
  *   Simplified Cursor Display and Operation, Old Blink Cursor is now an Option
  *   Added Option to Select Jeff's fantastic ENCODER04 routines
+ *   Added AutoScanner, Encoder Pushbutton (btn7) with ALT UP or DOWN, Knob set Rate and Direction
  *
  */
 
@@ -73,7 +74,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IM"          // Incremental Rev Code
+#define INC_REV "ERB_IN"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -153,7 +154,7 @@ char blinkChar;
 /* tuning pot stuff */
 byte refreshDisplay = 0;
 unsigned long blinkTimer = 0;
-unsigned long blinkTimeOut = DEFAULT_BLINK_TIMEOUT; // Default Blink TimeOut, Milli Seconds
+unsigned long parkTimeOut = DEFAULT_PARK_TIMEOUT; // Default Blink TimeOut, Milli Seconds
 int blinkPeriod = 500;  // MSECs
 byte blinkRatio = 75;   // Persent
 unsigned long menuIdleTimeOut = 60 * SECs;
@@ -165,6 +166,11 @@ int knobPositionDelta = 0;
 int cursorDigitPosition = DEFAULT_CURSOR_POSITION;
 int knobPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
+
+boolean autoScanMode = false;
+int autoScanRate = 0;
+unsigned long autoScanTimer = 0;
+unsigned long autoScanTimeout = 0;
 
 boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
 byte knobMode = KNOB_CURSOR_MODE;
@@ -230,7 +236,7 @@ void updateDisplay(){
         if (editIfMode) vfoLabel = isLSB ? P2("L") : P2("U"); // Replace with IF Freq VFO
       #endif // USE_EDITIF
       
-      // Top Line of LCD
+      // Build Top Line of LCD
       sprintf(d, P("%+03.3d"), ritVal);  
       sprintf(b, P("%08ld"), frequency);
       #ifdef USE_HIDELEAST
@@ -251,6 +257,7 @@ void updateDisplay(){
           #endif // USE_TUNE2500_MODE 
           P8(" ")
           );
+      // OK, now display Top Line
       printLineCEL(FIRST_LINE, c);
       
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
@@ -270,13 +277,19 @@ void updateDisplay(){
       #else
           sprintf(b, P(" "));
       #endif // USE_SHOW_WAVE_LENGTH
-      
+     
+      // Build Lower Line of LCD 
       sprintf(c, P("%3s %-2s %3.3s %s"),
           sideBandMode == AutoSB ? 
           isLSB ? P2("LSB") : P2("USB") :
           isLSB ? P2("Lsb") : P2("Usb"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
-          freqUnStable || editIfMode ? P4(" ") : 
+          #ifdef USE_AUTOSCAN
+              autoScanMode && autoScanRate  > 0 ? P4(">>>") :
+              autoScanMode && autoScanRate == 0 ? P4("<->") :
+              autoScanMode && autoScanRate  < 0 ? P4("<<<") :
+          #endif // USE_AUTOSCAN
+          freqUnStable || editIfMode ? P4(" ") :
           #ifdef USE_HAMBANDS
               inBand ? vfoStatus[vfo->status] : P4("SWL"),
           #else
@@ -284,6 +297,7 @@ void updateDisplay(){
           #endif // USE_HAMBANDS
           b
           );
+      // OK, now display Lower line
       printLineCEL(STATUS_LINE, c);
       
   }
@@ -325,13 +339,13 @@ void updateCursor() {
       if (tune2500Mode) blinkTimer = 0; // Blink does not Stop in tune2500Mode
   #endif // USE_TUNE2500_MODE
 
-  if (!blinkTimer) blinkTimer = millis() + blinkTimeOut;
+  if (!blinkTimer) blinkTimer = millis() + parkTimeOut;
   
   #ifndef USE_BLINK_DIGIT_MODE 
       lcd.setCursor(cursorCol, cursorRow); // Postion Cursor
       lcd.cursor();
       #ifdef USE_PARK_CURSOR
-          if (blinkTimeOut && blinkTimer < millis()) {
+          if (parkTimeOut && blinkTimer < millis()) {
               DEBUG(P("Cursor TIMED OUT"));
               cursorDigitPosition = 0;
               knobMode = KNOB_CURSOR_MODE;
@@ -355,7 +369,7 @@ void updateCursor() {
           toggle = !toggle;
           lcd.setCursor(cursorCol, cursorRow); // Postion Cursor 
           lcd.print(blinkChar);
-          if (blinkTimeOut && blinkTimer < millis()) {
+          if (parkTimeOut && blinkTimer < millis()) {
               DEBUG(P("End Blink TIMED OUT"));
               cursorDigitPosition = 0;
               knobMode = KNOB_CURSOR_MODE;
@@ -430,6 +444,7 @@ void checkTuning() {
   // Do Not Change Freq while in Transmit or button opperation
   // Allow Tuning knob to be recentered without changing Frequency
   if (tuningLocked) {
+      autoScanMode = false;
       knobPositionPrevious = knobPosition;
       return;
   }
@@ -443,6 +458,22 @@ void checkTuning() {
   #ifdef USE_ENCODER
       tuningDir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
   #endif // USE_ENCODER
+  
+  #ifdef USE_AUTOSCAN
+  // AutoScan Frequency Mode
+  if(autoScanMode) {
+      if(!cursorDigitPosition) { autoScanMode = false; return; }  
+      knobMode = KNOB_DIGIT_MODE;
+      if (tuningDir) {
+          autoScanRate = constrain (autoScanRate + tuningDir, -8, +8);
+          autoScanTimer = 0;
+      }
+      if (autoScanTimer > millis()) return;
+      autoScanTimer = millis() + 50 + 200 * (8 - abs(autoScanRate));
+      tuningDir = (autoScanRate>0) - (autoScanRate<0);
+      refreshDisplay++;
+  }
+  #endif USE_AUTOSCAN
   
   if (!tuningDir) return;
   
@@ -675,10 +706,14 @@ void checkButton() {
   if (inTx) return;    // Do Nothing if in TX-Mode
   
   btn = btnDown();
+  if (!btn) {btnPrev = btn; return;} // Abort
+  
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
-
+  
+  if(btn && autoScanMode) { autoScanMode = false; btn = 0;}  // Any button cancels Auto Scan Mode
+  
   switch (btn) {
-    case 0: btnPrev = btn; return; // Abort
+    case 0: break;
     case FN_BTN: decodeFN(btn); break;  
     case LT_CUR_BTN: knobMode = KNOB_DIGIT_MODE; decodeMoveCursor(+1); break;    
     case RT_CUR_BTN: knobMode = KNOB_DIGIT_MODE; decodeMoveCursor(-1); break;
@@ -701,7 +736,7 @@ void checkButton() {
         case UP_BTN: decodeBandUpDown(+1); break; // Band Up
         case DN_BTN: decodeBandUpDown(-1); break; // Band Down
     #endif // USE_HAMBANDS
-    case RT_BTN: 
+    case RT_BTN: // Also known as the Encoder Button
         switch (getButtonPushMode(btn)) {
             case MOMENTARY_PRESS:  
                 knobMode++; 
@@ -727,6 +762,10 @@ void checkButton() {
                 case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
                 case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
             #endif // USE_BEACONS
+            #ifdef USE_AUTOSCAN
+                case ALT_PRESS_UP: autoScanMode = true; autoScanRate = +1; break;
+                case ALT_PRESS_DN: autoScanMode = true; autoScanRate = -1; break;
+            #endif // USE_AUTOSCAN
             default: break; // Do Nothing
             }
         break;
@@ -966,13 +1005,13 @@ void setup() {
   #endif // USE_EEPROM
  
   #ifndef USE_PARK_CURSOR
-    blinkTimeOut = DEFAULT_BLINK_TIMEOUT;
+    parkTimeOut = DEFAULT_PARK_TIMEOUT;
     cursorDigitPosition = DEFAULT_CURSOR_POSITION;
     knobMode = KNOB_DIGIT_MODE;
   #endif // USE_PARK_CURSOR 
     
   #ifdef USE_HIDELEAST
-    blinkTimeOut = DEFAULT_BLINK_TIMEOUT;
+    parkTimeOut = DEFAULT_PARK_TIMEOUT;
     blinkPeriod = DEFAULT_BLINK_PERIOD;
     blinkRatio = DEFAULT_BLINK_RATIO;
     cursorDigitPosition = DEFAULT_CURSOR_POSITION; 

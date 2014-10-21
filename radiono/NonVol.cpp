@@ -58,7 +58,7 @@ void eePromIO(int mode) {
         byte sideBandModeCache[BANDS*2];
         byte cw_wpm;
         unsigned int qrssDitTime;
-        unsigned long blinkTimeOut;
+        unsigned long parkTimeOut;
         unsigned long blinkPeriod;
         byte blinkRatio;
         unsigned long menuIdleTimeOut;
@@ -99,7 +99,7 @@ void eePromIO(int mode) {
         memcpy(sideBandModeCache, E.sideBandModeCache, sizeof(E.sideBandModeCache));
         cw_wpm = E.cw_wpm;
         qrssDitTime = E.qrssDitTime;
-        blinkTimeOut = E.blinkTimeOut;
+        parkTimeOut = E.parkTimeOut;
         blinkPeriod = E.blinkPeriod;
         blinkRatio = E.blinkRatio;
         menuIdleTimeOut = E.menuIdleTimeOut;
@@ -124,7 +124,7 @@ void eePromIO(int mode) {
         memcpy(E.sideBandModeCache, sideBandModeCache, sizeof(E.sideBandModeCache));
         E.cw_wpm = cw_wpm;
         E.qrssDitTime = qrssDitTime;
-        E.blinkTimeOut = blinkTimeOut;
+        E.parkTimeOut = parkTimeOut;
         E.blinkPeriod = blinkPeriod;
         E.blinkRatio = blinkRatio;
         E.menuIdleTimeOut = menuIdleTimeOut;
