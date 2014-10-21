@@ -7,20 +7,20 @@
     
     // Menu Indexes
     enum Menus {
-        M_OPT60M = 1,
+        M_TIMEOUT = 1,
+        M_OPT60M,
         //M_Blank0,
         M_CW_WPM,
         M_QRSS_DIT_TIME,
         //M_Blank1,
+        M_PARK_TIMEOUT,   // Cursor Park Time Out
         M_BLINK_PERIOD,
         M_BLINK_RATIO,
-        M_BLINK_TIMEOUT,
         //M_Blank2,
-        M_TIMEOUT,
         MENUS
     };
 
-    #define DEFAULT_MENU (M_BLINK_PERIOD)
+    #define DEFAULT_MENU (M_TIMEOUT)
 
     // Externally Available Variables
     extern byte menuActive;
