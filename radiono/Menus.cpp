@@ -80,17 +80,9 @@ void checkKnob(int menu) {
         dir += getPotDir(); // Get Tuning Direction from POT Knob
     #endif // USE_POT_KNOB
       
-    #ifdef USE_ENCODER01
+    #ifdef USE_ENCODER
         dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
-    #endif // USE_ENCODER01
-      
-    #ifdef USE_ENCODER02
-        dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
-    #endif // USE_ENCODER02
-      
-    #ifdef USE_ENCODER03
-        dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
-    #endif // USE_ENCODER03
+    #endif // USE_ENCODER
     
     if (!dir) return;
  
