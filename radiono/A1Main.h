@@ -167,15 +167,15 @@
 
 
     #ifdef USE_PARK_CURSOR
-       #define DEFAULT_BLINK_TIMEOUT (20 * SECs) // Set as desired
+       #define DEFAULT_PARK_TIMEOUT (20 * SECs) // Set as desired
        #define DEFAULT_CURSOR_POSITION (0)       // Power Up Cursor Position, Park is Zero
     #else
-       #define DEFAULT_BLINK_TIMEOUT (4 * HRs)   // Set to Zero for Never
+       #define DEFAULT_PARK_TIMEOUT (4 * HRs)   // Set to Zero for Never
        #define DEFAULT_CURSOR_POSITION (3)       // Power Up Cursor Position, Set as desired, Park is Zero
     #endif // USE_PARK_CURSOR
     
     #ifdef USE_HIDELEAST
-       #define DEFAULT_BLINK_TIMEOUT (30 * MINs)
+       #define DEFAULT_PARK_TIMEOUT (30 * MINs)
        #define DEFAULT_BLINK_RATIO (100)
        #define DEFAULT_BLINK_PERIOD (10 * SECs)
        #define DEFAULT_CURSOR_POSITION (3)       // Power Up Cursor Position, Set as desired, Park is Zero
@@ -213,7 +213,7 @@
     //extern byte menuActive;
     //extern byte menuPrev;
     extern byte refreshDisplay;
-    extern unsigned long blinkTimeOut;
+    extern unsigned long parkTimeOut;
     extern int blinkPeriod;
     extern byte blinkRatio;
     extern unsigned long menuIdleTimeOut;
