@@ -62,7 +62,7 @@ void encoderISR() {
     // See: https://code.google.com/p/oopinchangeint/source/browse/Logic.wiki?repo=wiki
     static unsigned long startTime = 0;
     unsigned long tigermillis;
-      
+     
     uint8_t oldSREG = SREG;
 
     cli();
@@ -71,6 +71,7 @@ void encoderISR() {
     
     if (tigermillis - startTime <= ISR_DEBOUNCE_TIMEOUT) return;
     startTime = tigermillis;
+
     
     // 47K Pull-up, and 4.7K switch resistors,
     // Val should be approximately = 1024*BtnN*4700/(47000+(BtnN*4700))
