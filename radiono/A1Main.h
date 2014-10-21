@@ -3,17 +3,43 @@
 #ifndef A1MAIN_H
 #define A1MAIN_H
 
-    // Aliases for ATMEGA328P
-    enum PinAliase { // Enum used to make this shorter list
-        PD0 = 0, PD1, PD2, PD3, PD4, PD5, PD6, PD7,
-        PB0, PB1, PB2, PB3, PB4, PB5,
-    };
-    #define A0 (14) // #define's are necessary as there are already A0-A5 Constants within Arduino
-    #define A1 (15)
-    #define A2 (16)
-    #define A3 (17)
-    #define A4 (18)
-    #define A5 (19)
+    // Aliases for ATMEGA328P that work with/for both the PreCompiler and Runtime
+    // This is a bit silly, but these make coding and Options much more User Friendly.  
+    #define PD0 (0)
+    #define PD1 (1)
+    #define PD2 (2)
+    #define PD3 (3)
+    #define PD4 (4)
+    #define PD5 (5)
+    #define PD6 (6)
+    #define PD7 (7)
+    
+    #define PB0 (8)
+    #define PB1 (9)
+    #define PB2 (10)
+    #define PB3 (11)
+    #define PB4 (12)
+    #define PB5 (13)
+    
+    #define PC0 (14)
+    #define PC1 (15)
+    #define PC2 (16)
+    #define PC3 (17)
+    #define PC4 (18)
+    #define PC5 (19)
+    
+    // Aliases of Aliases ?!
+    #define A0 (PC0)
+    #define A1 (PC1)
+    #define A2 (PC2)
+    #define A3 (PC3)
+    #define A4 (PC4)
+    #define A5 (PC5)
+    
+    #define SI  (PD0)
+    #define SO  (PD1)
+    #define SDA (PC4)
+    #define SCL (PC5)
 
 
     #include "A1Config.h"
@@ -53,11 +79,13 @@
     
     // Original Output Filter Control Lines
     #define BAND_HI_PIN (PD5) // Currently being used for LP Filter
-    #define BAND_MD_PIN (PD6)
-    #define BAND_LO_PIN (PD7) // Proposed Use for Rf386 Power Amp Filters
     
-    // For Rf386 PA Filter Selector
-    #define PA_BAND_CLK (BAND_LO_PIN)
+    // Originally these to pin were allocated for control of a PA Filters
+    //#define BAND_MD_PIN (PD6)
+    //#define BAND_LO_PIN (PD7) 
+    
+    // New - Pin for single wire Rf386 PA Filter Selector
+    #define PA_BAND_CLK (PC0)
       
     // Set the following Conditional Compile Flags Above
     #ifdef USE_OPERATE_60M
@@ -103,10 +131,8 @@
      
     #ifdef USE_ENCODER02
       #define USE_ENCODER 2
-      #define ENC_A_PIN (PB0)
-      #define ENC_B_PIN (PB1)
-      //#define ENC_A_PIN (BAND_MD_PIN)
-      //#define ENC_B_PIN (BAND_LO_PIN)
+      #define ENC_A_PIN (PD6)
+      #define ENC_B_PIN (PD7)
       #include "Encoder02.h"
       #define ISR_DEBOUNCE_TIMEOUT (5 * MSECs)
     #endif // USE_ENCODER02
@@ -118,6 +144,13 @@
       #include "Encoder03.h"
       #define ISR_DEBOUNCE_TIMEOUT (5 * MSECs)
     #endif // USE_ENCODER03
+    
+    #ifdef USE_ENCODER04
+      #define USE_ENCODER 4
+      #define ENC_A_PIN (PD6)
+      #define ENC_B_PIN (PD7)
+      #include "Encoder04.h"
+    #endif // USE_ENCODER04
        
     #ifdef USE_EDITIF
       #include "EditIF.h"

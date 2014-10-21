@@ -20,6 +20,7 @@
  *   Added 1Hz VFO Resolution
  *   Added Support for PCA9546 I2C Mux
  *   Added Support for I2C LCD
+ *   Added Support for ENCODER04
  *
  * Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
  *   Added An Alternate Tuning Method, with Cursor and POT
@@ -61,6 +62,7 @@
  *   Added Option to Split 80m into 80m and 75m, 3.5 - 3.6 - 4.0
  *   Added Pin Aliases for all pins of the ATMEGA328P that are useable by the Preprocessor
  *   Simplified Cursor Display and Operation, Old Blink Cursor is now an Option
+ *   Added Option to Select Jeff's fantastic ENCODER04 routines
  *
  */
 
@@ -71,7 +73,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IK"          // Incremental Rev Code
+#define INC_REV "ERB_IL"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
