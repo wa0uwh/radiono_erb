@@ -91,6 +91,10 @@
     #ifdef USE_OPERATE_60M
       #define USE_HAMBANDS 1
     #endif
+
+    #ifdef USE_Si570_BFO
+       #define USE_PCA9546 1
+    #endif
     
     #ifdef USE_PCA9546
       #include "PCA9546.h"
