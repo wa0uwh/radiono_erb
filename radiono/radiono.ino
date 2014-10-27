@@ -64,6 +64,7 @@
  *   Simplified Cursor Display and Operation, Old Blink Cursor is now an Option
  *   Added Option to Select Jeff's fantastic ENCODER04 routines
  *   Added AutoScanner, Encoder Pushbutton (btn7) with ALT UP or DOWN, Knob set Rate and Direction
+ *   Added Second Si570 BFO support, by Jeff Whitlatch - KO7M
  *
  */
 
@@ -74,7 +75,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IN"          // Incremental Rev Code
+#define INC_REV "ERB_IN_BF01"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
