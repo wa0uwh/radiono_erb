@@ -126,6 +126,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define TX_RX   (PD3)
 #define CW_KEY  (PD4)
 
+#ifdef USE_Si570_BFO
+  Si570 *bfo;
+#endif
 
 #ifdef USE_PCA9546
   PCA9546 *mux;
@@ -398,6 +401,13 @@ void decodeSideband(){
         case LSB: isLSB = LSB; break; // Force LSB Mode   
       }
   }
+  
+  #ifdef USE_Si570_BFO
+      mux->selectChannel(PCA9546_CHANNEL_2);
+      bfo->setFrequency(isLSB ?  iFreqLSB : iFreqUSB);
+      mux->selectChannel(PCA9546_CHANNEL_1);
+  #endif
+  
   setSideband();
 }
 
@@ -963,11 +973,30 @@ void setup() {
   // If yours was calibrated for another frequency, you need to change that here
   vfo = new Si570(SI570_I2C_ADDRESS, 56.32 * MHz);
 
+  #ifdef USE_Si570_BFO
+    // Select channel 2 on the multiplexer
+    mux->selectChannel(PCA9546_CHANNEL_2);
+    if (mux->status == PCA9546_ERROR) debug(P("PCA9546 selectChannel error"));
+    bfo = new Si570(SI570_I2C_ADDRESS, 56.32 * MHz);   
+    bfo->setFrequency(isLSB ?  iFreqLSB : iFreqUSB);
+    mux->selectChannel(PCA9546_CHANNEL_1);
+    if (mux->status == PCA9546_ERROR) debug(P("PCA9546 selectChannel error"));
+  #endif // USE_Si570_BFO
+ 
+  #ifdef USE_Si570_BFO
+    if (bfo->status == SI570_ERROR) {
+       // The BFO Si570 is unreachable. Show an error for 3 seconds and continue.
+       printLineCEL(STATUS_LINE, P("BFO Si570 comm error"));
+       delay(3000);
+    }
+  #endif // USE_Si570_BFO
+  
   if (vfo->status == SI570_ERROR) {
-    // The Si570 is unreachable. Show an error for 3 seconds and continue.
-    printLineCEL(STATUS_LINE, P("Si570 comm error"));
+    // The VFO Si570 is unreachable. Show an error for 3 seconds and continue.
+    printLineCEL(STATUS_LINE, P("VFO Si570 comm error"));
     delay(3000);
   }
+ 
   
   printLineCEL(STATUS_LINE, P(" "));
  
@@ -1049,8 +1078,16 @@ void loop(){
       if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
           freq = frequency;
           if (ritOn) freq += ritVal;
-          freq += (vfoActive == VFO_A) ? vfoA : vfoB;
-          vfo->setFrequency(freq);
+          
+          #ifdef USE_Si570_BFO
+              mux->selectChannel(PCA9546_CHANNEL_2);
+              bfo->setFrequency(freq);
+              mux->selectChannel(PCA9546_CHANNEL_1);
+          #else
+              freq += (vfoActive == VFO_A) ? vfoA : vfoB;
+              vfo->setFrequency(freq);
+          #endif // USE_Si570_BFO
+          
       } else
   #endif // USE_EDITIF 
   setFreq(frequency);
