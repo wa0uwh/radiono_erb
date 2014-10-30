@@ -97,13 +97,13 @@ int getEncoderDir() {
   uint8_t oldSREG = SREG;
   cli();
  
-  #ifdef USE_DIAL_MOMENTUM
-      int val = (knob > 0) - (knob < 0);
-      knob -= val;
-  #else 
-      int val = knob;
-      knob = 0;
-  #endif // USE_DIAL_MOMENTUM
+      #ifdef USE_DIAL_MOMENTUM
+          int val = (knob > 0) - (knob < 0);
+          knob -= val;
+      #else 
+          int val = knob;
+          knob = 0;
+      #endif // USE_DIAL_MOMENTUM
   
   SREG = oldSREG;
   return val;
