@@ -163,8 +163,12 @@ int getEncoderDir()
 {
   uint8_t oldSREG = SREG;
   cli();
-  int val = encoder_count > 0 ? +1: encoder_count < 0 ? -1 : 0;
-  encoder_count -= val;
+  int val = (encoder_count > 0) - (encoder_count < 0);
+  #ifdef USE_DIAL_MOMENTUM
+      encoder_count -= val;
+  #else
+      encoder_count = 0;
+  #endif // USE_DIAL_MOMENTUM
   SREG = oldSREG;
   return val;
 } 
