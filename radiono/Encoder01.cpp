@@ -39,11 +39,12 @@ void initEncoder() {
 
 // ###############################################################################
 int getEncoderDir() {
-    
-    int val = (knob > 0) - (knob < 0);
-    #ifdef USE_DIAL_MOMENTUM
+
+    #ifdef USE_DIAL_MOMENTUM    
+        int val = (knob > 0) - (knob < 0);
         knob -= val;
-    #else
+    #else    
+        int val = knob;
         knob = 0;
     #endif // USE_DIAL_MOMENTUM
     return val;
