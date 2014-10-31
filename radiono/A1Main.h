@@ -189,6 +189,12 @@
     enum VFOs { // Available VFOs
         VFO_A = 0,
         VFO_B,
+        VFO_C,
+        VFO_D,
+        VFO_U,
+        VFO_L,
+        VFO_S,
+        MAXVFOS
     };
 
     enum LCD_DisplayLines {
@@ -204,11 +210,8 @@
  
 
     // Externally Available Variables
-    extern unsigned long frequency;
-    extern unsigned long iFreqUSB;
-    extern unsigned long iFreqLSB;
+    extern unsigned long vfos[];
     
-    extern unsigned long vfoA, vfoB;
     extern unsigned long cwTimeout;
     //extern boolean editIfMode;
     

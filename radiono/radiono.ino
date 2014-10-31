@@ -66,6 +66,7 @@
  *   Added AutoScanner, Encoder Pushbutton (btn7) with ALT UP or DOWN, Knob set Rate and Direction
  *   Added Second Si570 BFO support, by Jeff Whitlatch - KO7M
  *   Added Optional Dial Momentum
+ *   Added Multiple VFOs
  *
  */
 
@@ -144,13 +145,25 @@ Si570 *vfo;
   LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
 #endif
 
-unsigned long frequency = DEFAULT_TUNE_FREQ;
-unsigned long iFreqUSB = IF_FREQ_USB;
-unsigned long iFreqLSB = IF_FREQ_LSB;
+//unsigned long frequency = DEFAULT_TUNE_FREQ;
+//unsigned long iFreqUSB = IF_FREQ_USB;
+//unsigned long iFreqLSB = IF_FREQ_LSB;
+
+unsigned long vfos[MAXVFOS] = {
+    DEFAULT_TUNE_FREQ, // VFO_A
+    DEFAULT_TUNE_FREQ, // VFO_B
+    DEFAULT_TUNE_FREQ, // VFO_C
+    DEFAULT_TUNE_FREQ, // VFO_D
+    IF_FREQ_USB,       // VFO_U
+    IF_FREQ_LSB,       // VFO_L
+    DEFAULT_TUNE_FREQ, // VFO_S  
+};
+char const vfoLabels[] = {'A', 'B', 'C', 'D', 'U', 'L', 'S'};
+
 boolean isLSB = USB;
 byte sideBandMode = AutoSB;
 
-unsigned long vfoA = frequency, vfoB = frequency;
+//unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
@@ -182,6 +195,8 @@ byte knobMode = KNOB_CURSOR_MODE;
 boolean inTx = 0, inPtt = 0;
 boolean keyDown = 0;
 boolean vfoActive = VFO_A;
+
+byte vfoEditIfStash;
 
 /* modes */
 int ritVal = 0;
@@ -229,25 +244,25 @@ void printLineCEL(int row, char const *c){
 void updateDisplay(){
   char const *vfoStatus[] = { "ERR", "RDY", "BIG", "SML" };
   char d[6]; // Buffer for RIT Display Value
-  char *vfoLabel;
+  char vfoLabel;
 
   if (refreshDisplay) {
       if (refreshDisplay > 0) refreshDisplay--;
       
       // Create Label for Displayed VFO
-      vfoLabel = vfoActive == VFO_A ?  P2("A") : P2("B");
-      if (AltTxVFO)  *vfoLabel += 32; // Convert to Lower Case
+      vfoLabel = vfoLabels[vfoActive];
+      if (AltTxVFO)  vfoLabel += 32; // Convert to Lower Case
       #ifdef USE_EDITIF
-        if (editIfMode) vfoLabel = isLSB ? P2("L") : P2("U"); // Replace with IF Freq VFO
+        if (editIfMode) vfoLabel = isLSB ? vfoLabels[VFO_L] : vfoLabels[VFO_U] ; // Replace with IF Freq VFO
       #endif // USE_EDITIF
       
       // Build Top Line of LCD
       sprintf(d, P("%+03.3d"), ritVal);  
-      sprintf(b, P("%08ld"), frequency);
+      sprintf(b, P("%08ld"), vfos[vfoActive]);
       #ifdef USE_HIDELEAST
         if (cursorDigitPosition > 1) b[10-cursorDigitPosition] = 0;
       #endif // USE_HIDELEAST
-      sprintf(c, P("%1s:%.2s.%.6s%-4.4s%s"), vfoLabel,
+      sprintf(c, P("%1c:%.2s.%.6s%-4.4s%s"), vfoLabel,
           b,  b+2,
           inTx ? P4(" ") : ritOn ? d : P4(" "),
           #ifdef USE_DISPLAY_KNOB_MODE
@@ -278,7 +293,7 @@ void updateDisplay(){
           
               if (!inBand) editIfMode ? sprintf(b, P(" ")) :
           #endif // USE_HAMBANDS
-              sprintf(b, P("%3dm"), 300 * MHz / frequency );
+              sprintf(b, P("%3dm"), 300 * MHz / vfos[vfoActive] );
       #else
           sprintf(b, P(" "));
       #endif // USE_SHOW_WAVE_LENGTH
@@ -398,7 +413,7 @@ void decodeSideband(){
   else {
       switch(sideBandMode) {
        // This was originally set to 10.0 Meg, Changed to avoid switching Sideband while tuning around WWV
-        case AutoSB: isLSB = (frequency < 9.99 * MHz) ? LSB : USB ; break; // Automatic Side Band Mode 
+        case AutoSB: isLSB = (vfos[vfoActive] < 9.99 * MHz) ? LSB : USB ; break; // Automatic Side Band Mode 
         case USB: isLSB = USB; break; // Force USB Mode
         case LSB: isLSB = LSB; break; // Force LSB Mode   
       }
@@ -448,7 +463,7 @@ void checkTuning() {
   if (freqUnStable && freqUnStable < 5) {
       refreshDisplay++;
       #ifdef USE_HAMBANDS
-          inBandLimits(frequency);
+          inBandLimits(vfos[vfoActive]);
       #endif // USE_HAMBANDS
   }
   freqUnStable = max(freqUnStable - 1, 0);
@@ -537,7 +552,7 @@ void checkTuning() {
           cursorDigitPosition = 3;
           deltaFreq += tuningDir * 2500;
           
-          newFreq = (frequency / 2500) * 2500 + deltaFreq;
+          newFreq = (vfos[vfoActive] / 2500) * 2500 + deltaFreq;
       }
       else
   #endif // USE_TUNE2500_MODE
@@ -546,19 +561,15 @@ void checkTuning() {
       deltaFreq = tuningDir;
       for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
   
-      newFreq = frequency + deltaFreq;  // Save Least Digits Mode
-      //newFreq = (frequency / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
+      newFreq = vfos[vfoActive] + deltaFreq;  // Save Least Digits Mode
+      //newFreq = (vfos[vfoActive] / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
   }
 
-  if (newFreq != frequency) {
+  if (newFreq != vfos[vfoActive]) {
       // Update frequency if within range of limits, 
       // Avoiding Nagative underRoll of UnSigned Long, and over-run MAX_FREQ  
       if (newFreq <= MAX_FREQ) {
-        frequency = newFreq;
-        #ifdef USE_EDITIF
-           if (!editIfMode)
-        #endif // USE_EDITIF 
-           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
+        vfos[vfoActive] = newFreq;
         refreshDisplay++;
       }
       freqUnStable = 25; // Set to UnStable (non-zero) Because Freq has been changed
@@ -573,8 +584,7 @@ void toggleAltVfo() {
     
     DEBUG(P("%s %d: A,B: %lu, %lu"), __func__, __LINE__, vfoA, vfoB);
     vfoActive = (vfoActive == VFO_A) ? VFO_B : VFO_A;
-    frequency = (vfoActive == VFO_A) ? vfoA : vfoB;
-    DEBUG(P("%s %d: %s %lu"), __func__, __LINE__, vfoActive == VFO_A ? P2("A:"): P2("B:"), frequency);
+    DEBUG(P("%s %d: %s %lu"), __func__, __LINE__, vfoActive == VFO_A ? P2("A:"): P2("B:"), vfos[vfoActive]);
     refreshDisplay++;
 }
       
@@ -603,7 +613,7 @@ void checkTX() {
   
     if (!keyDown && isKeyNowClosed()) { // New KeyDown
         #ifdef USE_HAMBANDS
-            if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
+            if (!inBandLimits(vfos[vfoActive])) return; // Do nothing if TX is out-of-bounds
         #endif // USE_HAMBANDS
         DEBUG(P("\nFunc: %s %d: Start KEY Dn"), __func__, __LINE__);
         if (!inTx){
@@ -651,7 +661,7 @@ void checkTX() {
         // It is OK, to go into TX
         if (isPttPressed()) {
             #ifdef USE_HAMBANDS
-                if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
+                if (!inBandLimits(vfos[vfoActive])) return; // Do nothing if TX is out-of-bounds
             #endif // USE_HAMBANDS 
             DEBUG(P("\nFunc: %s %d: Start PTT"), __func__, __LINE__); 
             if (AltTxVFO) toggleAltVfo(); // Set Alt VFO if Needed
@@ -814,11 +824,10 @@ void decodeSideBandMode(int btn) {
     DEBUG(P("\nCurrent, isLSB %d"), isLSB);
     #ifdef USE_EDITIF
         if (editIfMode) { // Switch Sidebands
-            frequency += ritVal;
+            vfos[vfoActive] += ritVal;
             ritVal = 0;
-            isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
             isLSB = !isLSB;
-            frequency = isLSB ? iFreqLSB : iFreqUSB;
+            vfoActive = isLSB ? VFO_L : VFO_U;
             setSideband();
         }
         else
@@ -866,21 +875,12 @@ void decodeFN(int btn) {
               #ifdef USE_PARK_CURSOR
                 cursorDigitPosition = 0;
               #endif // USE_PARK_CURSOR
-              frequency = (vfoActive == VFO_A) ? vfoA : vfoB; break;
+              vfoActive = vfoEditIfStash; break;
            } 
            else
        #endif // USE_EDITIF
        { // Save Current VFO, Load Other VFO
-          if (vfoActive == VFO_A) {
-            vfoA = frequency;
-            vfoActive = VFO_B;
-            frequency = vfoB;
-          } 
-          else {
-            vfoB = frequency;
-            vfoActive = VFO_A;
-            frequency = vfoA;
-          }
+          (vfoActive == VFO_A) ? vfoActive = VFO_B : vfoActive = VFO_A;
        }
        ritOn = ritVal = 0;  
        refreshDisplay++;
@@ -892,23 +892,24 @@ void decodeFN(int btn) {
          if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
        #endif // USE_EDITIF
        switch (vfoActive) {
-           case VFO_A :
-              vfoB = frequency + ritVal;
+           case VFO_A :         
+              vfos[VFO_B] = vfos[vfoActive] + ritVal;
               sprintf(c, P("A%sB"), ritVal ? P2("+RIT>"): P2(">"));
               printLineCEL(STATUS_LINE, c);
               break;
-           default :
-              vfoA = frequency + ritVal;
+           case VFO_B :        
+              vfos[VFO_A] = vfos[vfoActive] + ritVal;
               sprintf(c, P("B%sA"), ritVal ? P2("+RIT>"): P2(">"));
               printLineCEL(STATUS_LINE, c);
               break;
+           default : ;
        }
        delay(100);
        break;
     default : return; // Do Nothing
   }
   #ifdef USE_HAMBANDS
-      inBandLimits(frequency);
+      inBandLimits(vfos[vfoActive]);
   #endif // USE_NAMBANDS
   deDounceBtnRelease(); // Wait for Release
   refreshDisplay++;
@@ -920,7 +921,7 @@ void decodeFN(int btn) {
 void setFreq(unsigned long freq) {
 
     if (!inTx && ritOn) freq += ritVal;
-    freq += isLSB ? iFreqLSB : iFreqUSB;
+    freq += isLSB ? vfos[VFO_L] : vfos[VFO_U];
     vfo->setFrequency(freq);
 }
 
@@ -1006,7 +1007,7 @@ void setup() {
   vfo->debugSi570();
 
   // Setup the initial frequency
-  vfo->setFrequency(frequency);
+  vfo->setFrequency(vfos[vfoActive]);
  
   // Setup with No SideTone
   stopSidetone();
@@ -1078,7 +1079,7 @@ void loop(){
 
   #ifdef USE_EDITIF
       if (editIfMode) {  // Set freq to Current Dial Trail IF Freq + VFO - Prev IF Freq
-          freq = frequency;
+          freq = vfos[vfoActive];
           if (ritOn) freq += ritVal;
           
           #ifdef USE_Si570_BFO
@@ -1086,20 +1087,20 @@ void loop(){
               bfo->setFrequency(freq);
               mux->selectChannel(PCA9546_CHANNEL_1);
           #else
-              freq += (vfoActive == VFO_A) ? vfoA : vfoB;
+              freq += vfos[vfoEditIfStash];
               vfo->setFrequency(freq);
           #endif // USE_Si570_BFO
           
       } else
   #endif // USE_EDITIF 
-  setFreq(frequency);
+  setFreq(vfos[vfoActive]);
   
   decodeSideband();
   
-  setBandswitch(frequency);
+  setBandswitch(vfos[vfoActive]);
   
   #ifdef USE_RF386
-    setRf386BandSignal(frequency);
+    setRf386BandSignal(vfos[vfoActive]);
   #endif
   
   updateDisplay();

@@ -30,8 +30,8 @@ boolean editIfMode = false;
 void editIf() {  // Set the IF Frequency
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
-    static int vfoActivePrev = VFO_A;
-    static boolean sbActivePrev;
+    static int vfoEditIfStash = VFO_A;
+    static boolean sbEditIfStash;
 
     DEBUG(P("%s/%d:"), __func__, __LINE__);
     
@@ -41,16 +41,14 @@ void editIf() {  // Set the IF Frequency
     #endif // USE_PARK_CURSOR
 
     if (editIfMode) {  // Save IF Freq, Reload Previous VFO
-        frequency += ritVal;
-        isLSB ? iFreqLSB = frequency : iFreqUSB = frequency;
-        isLSB = sbActivePrev;
-        frequency = (vfoActivePrev == VFO_A) ? vfoA : vfoB;
+        vfos[vfoActive] += ritVal;
+        vfoActive = vfoEditIfStash;
+        isLSB = sbEditIfStash;
     }
-    else {  // Save Current VFO, Load IF Freq 
-        vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
-        vfoActivePrev = vfoActive;
-        sbActivePrev = isLSB;
-        frequency = isLSB ? iFreqLSB : iFreqUSB;
+    else {  // Save Current VFO, Load IF Freq
+        vfoEditIfStash = vfoActive;
+        sbEditIfStash = isLSB;
+        vfoActive = isLSB ? VFO_L : VFO_U;
     }
     editIfMode = !editIfMode;  // Toggle Edit IF Mode    
     #ifdef USE_PARK_CURSOR
