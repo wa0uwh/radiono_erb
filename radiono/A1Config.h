@@ -22,6 +22,7 @@
     //#define USE_DISPLAY_KNOB_MODE      1  //   52b - Option, A Training Mode, to Display Knob Mode for: Cursor/Digit/Band as C/D/B
       #define USE_TUNE2500_MODE          1  //   30b - Option to Include Tune2500Hz Mode
       #define USE_EDITIF                 1  //  842b - Option to Include Edit IF Frequency Function
+    //#define USE_DIAL_MOMENTUM          1  //    6b - Option to Enable Dial Momentum, Spin the Dial watch the Digits Catch up (is slower).
     //#define USE_POT_KNOB               1  // 2304b - Option to Include Tuning POT support
     //#define USE_ENCODER01              1  // 2220b - Option to Include Simple analog pin Encoder01 support
     //#define USE_ENCODER02              1  // 2610b - Option to Include FULL Two Digital Pin ISR Encoder02 support

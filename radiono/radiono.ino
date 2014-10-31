@@ -65,6 +65,7 @@
  *   Added Option to Select Jeff's fantastic ENCODER04 routines
  *   Added AutoScanner, Encoder Pushbutton (btn7) with ALT UP or DOWN, Knob set Rate and Direction
  *   Added Second Si570 BFO support, by Jeff Whitlatch - KO7M
+ *   Added Optional Dial Momentum
  *
  */
 
@@ -75,7 +76,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IO"          // Incremental Rev Code
+#define INC_REV "ERB_IODM01"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that

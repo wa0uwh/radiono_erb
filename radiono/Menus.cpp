@@ -77,18 +77,20 @@ void checkKnob(int menu) {
     dir = 0;
       
     #ifdef USE_POT_KNOB
-        dir += getPotDir(); // Get Tuning Direction from POT Knob
+        dir = getPotDir(); // Get Tuning Direction from POT Knob
     #endif // USE_POT_KNOB
       
     #ifdef USE_ENCODER
-        dir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
+        dir = getEncoderDir(); // Get Tuning Direction from Encoder Knob
     #endif // USE_ENCODER
+
     
     if (!dir) return;
  
     menuIdleTimer = 0;
     
-    if (menuCycle) { // Cycle or Page Through Menus
+    if (menuCycle) { // Cycle or Page Through Menus    
+        dir = (dir > 0) - (dir < 0); // Remove Magnitude, save +/- Direciton
         menuActive = constrain (menuActive + dir, 1, MENUS-1);
         refreshDisplay++;
         updateDisplayMenu(menuActive);
@@ -122,9 +124,8 @@ void checkKnob(int menu) {
               parkTimeOut = max(parkTimeOut, 1 * MINs);
           }
           else  parkTimeOut += dir * 5 * SECs;
-          if (parkTimeOut > 3 * 60 * MINs) parkTimeOut = 0;
           parkTimeOut = parkTimeOut / SECs * SECs;
-          parkTimeOut = constrain (parkTimeOut, 0, 60 * MINs); //MSECs
+          parkTimeOut = constrain (parkTimeOut, 0, 240 * MINs); //MSECs
           break;
           
         #ifdef USE_BLINK_DIGIT_MODE 
