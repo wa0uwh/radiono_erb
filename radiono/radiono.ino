@@ -66,7 +66,7 @@
  *   Added AutoScanner, Encoder Pushbutton (btn7) with ALT UP or DOWN, Knob set Rate and Direction
  *   Added Second Si570 BFO support, by Jeff Whitlatch - KO7M
  *   Added Optional Dial Momentum
- *   Added Multiple VFOs
+ *   Added Multiple VFOs, A & B, C & D, U & L, and S
  *
  */
 
@@ -77,7 +77,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IOMV01"          // Incremental Rev Code
+#define INC_REV "ERB_IP"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -159,7 +159,6 @@ char const vfoLabels[] = {'A', 'B', 'C', 'D', 'U', 'L', 'S'};
 boolean isLSB = USB;
 byte sideBandMode = AutoSB;
 
-//unsigned long vfoA = frequency, vfoB = frequency;
 unsigned long cwTimeout = 0;
 
 char b[LCD_COL+6], c[LCD_COL+6];  // General Buffers, used mostly for Formating message for LCD
@@ -190,8 +189,8 @@ boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable bef
 byte knobMode = KNOB_CURSOR_MODE;
 boolean inTx = 0, inPtt = 0;
 boolean keyDown = 0;
-boolean vfoActive = VFO_A;
 
+boolean vfoActive = VFO_A;
 byte vfoEditIfStash;
 
 /* modes */
