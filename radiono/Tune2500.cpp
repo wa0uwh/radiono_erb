@@ -30,10 +30,10 @@ void decodeTune2500Mode() {
     
     if (editIfMode) return; // Do Nothing if in Edit-IF-Mode   
     if (ritOn) return; // Do Nothing if in RIT Mode
-    
+
+    tune2500Mode = !tune2500Mode;    
     cursorDigitPosition = 3; // Set default Tuning Digit
-    tune2500Mode = !tune2500Mode;
-    knobMode = KNOB_CURSOR_MODE;
+    knobMode = KNOB_DIGIT_MODE;
     if (tune2500Mode) vfos[vfoActive] = (vfos[vfoActive] / 2500) * 2500;
 }
 

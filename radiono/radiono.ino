@@ -77,7 +77,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IODM01"          // Incremental Rev Code
+#define INC_REV "ERB_IOMV01"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -145,18 +145,14 @@ Si570 *vfo;
   LiquidTWI lcd(0);   // I2C backpack display on 20x4 or 16x2 LCD display
 #endif
 
-//unsigned long frequency = DEFAULT_TUNE_FREQ;
-//unsigned long iFreqUSB = IF_FREQ_USB;
-//unsigned long iFreqLSB = IF_FREQ_LSB;
-
 unsigned long vfos[MAXVFOS] = {
-    DEFAULT_TUNE_FREQ, // VFO_A
-    DEFAULT_TUNE_FREQ, // VFO_B
-    DEFAULT_TUNE_FREQ, // VFO_C
-    DEFAULT_TUNE_FREQ, // VFO_D
-    IF_FREQ_USB,       // VFO_U
-    IF_FREQ_LSB,       // VFO_L
-    DEFAULT_TUNE_FREQ, // VFO_S  
+    DEFAULT_TUNE_FREQ,   // VFO_A, Normal VFO_A
+    DEFAULT_TUNE_FREQ,   // VFO_B, Normal VFO_B
+    DEFAULT_TUNE_FREQ,   // VFO_C
+    DEFAULT_TUNE_FREQ,   // VFO_D
+    IF_FREQ_USB,         // VFO_U, USB IF
+    IF_FREQ_LSB,         // VFO_L, LSB IF
+    DEFAULT_TUNE_FREQ,   // VFO_S, Scanner  
 };
 char const vfoLabels[] = {'A', 'B', 'C', 'D', 'U', 'L', 'S'};
 
@@ -421,7 +417,7 @@ void decodeSideband(){
   
   #ifdef USE_Si570_BFO
       mux->selectChannel(PCA9546_CHANNEL_2);
-      bfo->setFrequency(isLSB ?  iFreqLSB : iFreqUSB);
+      bfo->setFrequency(isLSB ?  vfos[VFO_L] : vfos[VFO_U]);
       mux->selectChannel(PCA9546_CHANNEL_1);
   #endif
   
@@ -550,20 +546,21 @@ void checkTuning() {
       if (tune2500Mode) {
           // Inc or Dec Freq by 2.5K, useful when tuning between SSB stations
           cursorDigitPosition = 3;
+          knobMode = KNOB_DIGIT_MODE;
           deltaFreq += tuningDir * 2500;
           
           newFreq = (vfos[vfoActive] / 2500) * 2500 + deltaFreq;
       }
       else
   #endif // USE_TUNE2500_MODE
-  {
-      // Compute deltaFreq based on current Cursor Position Digit
-      deltaFreq = tuningDir;
-      for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
-  
-      newFreq = vfos[vfoActive] + deltaFreq;  // Save Least Digits Mode
-      //newFreq = (vfos[vfoActive] / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
-  }
+      {
+          // Compute deltaFreq based on current Cursor Position Digit
+          deltaFreq = tuningDir;
+          for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
+      
+          newFreq = vfos[vfoActive] + deltaFreq;  // Save Least Digits Mode
+          //newFreq = (vfos[vfoActive] / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
+      }
 
   if (newFreq != vfos[vfoActive]) {
       // Update frequency if within range of limits, 
@@ -598,7 +595,7 @@ void checkTX() {
       if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
     #endif // USE_EDITIF
     
-    // DEBUG(P("%s %d:  Start Loop"), __func__, __LINE__);
+    DEBUG(P("%s %d:  Start Loop"), __func__, __LINE__);
     
     //if we have keyup for a longish time while in CW and PTT tx mode
     if (inTx && cwTimeout < millis()) {
@@ -832,11 +829,11 @@ void decodeSideBandMode(int btn) {
         }
         else
     #endif // USE_EDITIF 
-    {
-        sideBandMode++;
-        sideBandMode %= 3; // Limit to Three Modes
-        decodeSideband();
-    }
+        {
+            sideBandMode++;
+            sideBandMode %= 3; // Limit to Three Modes
+            decodeSideband();
+        }
 
     DEBUG(P("Toggle, isLSB %d"), isLSB);
     refreshDisplay++;
@@ -879,9 +876,9 @@ void decodeFN(int btn) {
            } 
            else
        #endif // USE_EDITIF
-       { // Save Current VFO, Load Other VFO
-          (vfoActive == VFO_A) ? vfoActive = VFO_B : vfoActive = VFO_A;
-       }
+           { // Save Current VFO, Load Other VFO
+              (vfoActive == VFO_A) ? vfoActive = VFO_B : vfoActive = VFO_A;
+           }
        ritOn = ritVal = 0;  
        refreshDisplay++;
        updateDisplay();
@@ -940,11 +937,11 @@ void setup() {
   Serial.begin(115200);
   debug(P("%s Radiono - Rev: %s"), __func__, P2(RADIONO_VERSION));
 
-#ifdef USE_PCA9546
-  // Initialize the PCA9546 multiplexer and select channel 1 
-  mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
-  if (mux->status == PCA9546_ERROR) debug(P("PCA9546 init error"));
-#endif
+  #ifdef USE_PCA9546
+      // Initialize the PCA9546 multiplexer and select channel 1 
+      mux = new PCA9546(PCA9546_I2C_ADDRESS, PCA9546_CHANNEL_1);
+      if (mux->status == PCA9546_ERROR) debug(P("PCA9546 init error"));
+  #endif
 
   lcd.begin(LCD_COL, LCD_ROW);
   cursorOff();
@@ -981,7 +978,7 @@ void setup() {
     mux->selectChannel(PCA9546_CHANNEL_2);
     if (mux->status == PCA9546_ERROR) debug(P("PCA9546 selectChannel error"));
     bfo = new Si570(SI570_I2C_ADDRESS, 56.32 * MHz);   
-    bfo->setFrequency(isLSB ?  iFreqLSB : iFreqUSB);
+    bfo->setFrequency(isLSB ?  vfos[VFO_L] : vfos[VFO_U]);
     mux->selectChannel(PCA9546_CHANNEL_1);
     if (mux->status == PCA9546_ERROR) debug(P("PCA9546 selectChannel error"));
   #endif // USE_Si570_BFO

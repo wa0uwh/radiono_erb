@@ -213,7 +213,6 @@
     extern unsigned long vfos[];
     
     extern unsigned long cwTimeout;
-    //extern boolean editIfMode;
     
     extern char b[], c[];  // General Buffers, used mostly for Formating message for LCD
     
