@@ -53,14 +53,14 @@ void sendBit(int mode, int freqShift, int mult) {
     
     switch (mode) {
     case MOD_CW:   startSidetone(); break;
-    case MOD_QRSS: setFreq(frequency + freqShift); break;
+    case MOD_QRSS: setFreq(vfos[vfoActive] + freqShift); break;
     }
     
     bitTimer(ditLen * mult);
     
     switch (mode) {
     case MOD_CW:   stopSidetone(); break;
-    case MOD_QRSS: setFreq(frequency); break;
+    case MOD_QRSS: setFreq(vfos[vfoActive]); break;
     }
 }
 
@@ -81,7 +81,7 @@ void sendMesg(int mode, int freqShift, char *msg) {
     if (AltTxVFO) return; // Macros and Beacons not allowed in Split Mode, for now.
     if (editIfMode) return; // Do Nothing if in Edit-IF-Mode 
     #ifdef USE_HAMBANDS   
-        if (!inBandLimits(frequency)) return; // Do nothing if TX is out-of-bounds
+        if (!inBandLimits(vfos[vfoActive])) return; // Do nothing if TX is out-of-bounds
     #endif // USE_HAMBANDS
     if (isKeyNowClosed()) return; // Abort Message
     

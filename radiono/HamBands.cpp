@@ -164,7 +164,7 @@ int inBandLimits(unsigned long freq){
 
     int upper, lower = 0;
     
-       if (AltTxVFO) freq = (vfoActive == VFO_A) ? vfoB : vfoA;
+       if (AltTxVFO) freq = vfos[vfoActive];
        DEBUG(P("%s %d: A,B: %lu, %lu, %lu"), __func__, __LINE__, freq, vfoA, vfoB);
             
        inBand = 0;
@@ -200,19 +200,18 @@ void decodeBandUpDown(int dir) {
        for (int i = 0; i < BANDS; i++) {
          if (!operate60m) while(hamBands[i] > 6000 && hamBands[i] < 6010) i++;
          j = i*2 + vfoActive;
-         if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
-           if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
+         if (vfos[vfoActive] <= pgm_read_dword(&bandLimits[i*2+1])) {
+           if (vfos[vfoActive] >= pgm_read_dword(&bandLimits[i*2])) {
              // Save Current Ham frequency and sideBandMode
-             freqCache[j] = frequency;
+             freqCache[j] = vfos[vfoActive];
              sideBandModeCache[j] = sideBandMode;
              i++;
            }
            if (!operate60m) while(hamBands[i] > 6000 && hamBands[i] < 6010) i++;
            // Load From Next Cache Up Band
            j = i*2 + vfoActive;
-           frequency = freqCache[min(j,BANDS*2-1)];
+           vfos[vfoActive] = freqCache[min(j,BANDS*2-1)];
            sideBandMode = sideBandModeCache[min(j,BANDS*2-1)];
-           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
            break;
          }
        }
@@ -222,26 +221,25 @@ void decodeBandUpDown(int dir) {
        for (int i = BANDS-1; i > 0; i--) {
          if (!operate60m) while(hamBands[i] > 6000 && hamBands[i] < 6010) i--;
          j = i*2 + vfoActive;
-         if (frequency >= pgm_read_dword(&bandLimits[i*2])) {
-           if (frequency <= pgm_read_dword(&bandLimits[i*2+1])) {
+         if (vfos[vfoActive] >= pgm_read_dword(&bandLimits[i*2])) {
+           if (vfos[vfoActive] <= pgm_read_dword(&bandLimits[i*2+1])) {
              // Save Current Ham frequency and sideBandMode
-             freqCache[j] = frequency;
+             freqCache[j] = vfos[vfoActive];
              sideBandModeCache[j] = sideBandMode;
              i--;
            }
            if (!operate60m) while(hamBands[i] > 6000 && hamBands[i] < 6010) i--;
            // Load From Next Cache Down Band
            j = i*2 + vfoActive;
-           frequency = freqCache[max(j,vfoActive)];
+           vfos[vfoActive] = freqCache[max(j,vfoActive)];
            sideBandMode = sideBandModeCache[max(j,vfoActive)];
-           vfoActive == VFO_A ? vfoA = frequency : vfoB = frequency;
            break;
          }
        }
      } // End else
   
    freqUnStable = 100; // Set to UnStable (non-zero) Because Freq has been changed
-   inBandLimits(frequency);
+   inBandLimits(vfos[vfoActive]);
    #ifdef USE_PARK_CURSOR
       cursorDigitPosition = 0;
    #endif // USE_PARK_CURSOR
