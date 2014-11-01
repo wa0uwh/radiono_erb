@@ -29,7 +29,7 @@
 #include "NonVol.h"
 #include "debug.h"
 
-#define ID_FLAG (1410172042L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1410311444L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
 // Local Varibles
@@ -45,12 +45,8 @@ void eePromIO(int mode) {
    
    struct config_t {
         long idFlag;
-        unsigned long frequency;
+        unsigned long vfos[MAXVFOS];
         int editIfMode;
-        unsigned long iFreqUSB;
-        unsigned long iFreqLSB;
-        unsigned long vfoA;
-        unsigned long vfoB;
         boolean isLSB;
         byte vfoActive;
         unsigned long freqCache[BANDS*2];
@@ -85,13 +81,9 @@ void eePromIO(int mode) {
         if (checkSum != 0) { sprintf(c, P("Load Failed CSum")); break; }
         
         // Assign Values to Working Variables from eeProm Structure
-        idFlag = E.idFlag; 
-        frequency = E.frequency;
+        idFlag = E.idFlag;
+        memcpy(vfos, E.vfos, sizeof(E.vfos));
         editIfMode = E.editIfMode;
-        iFreqUSB = E.iFreqUSB;
-        iFreqLSB = E.iFreqLSB;
-        vfoA = E.vfoA;
-        vfoB = E.vfoB;
         isLSB = E.isLSB;
         vfoActive = E.vfoActive;
         memcpy(freqCache, E.freqCache, sizeof(E.freqCache));
@@ -111,12 +103,8 @@ void eePromIO(int mode) {
     case EEP_SAVE :
         // Assign Working Variables to the eeProm Structure
         E.idFlag = ID_FLAG;
-        E.frequency = frequency;
+        memcpy(E.vfos, vfos, sizeof(E.vfos)); 
         E.editIfMode = editIfMode;
-        E.iFreqUSB = iFreqUSB;
-        E.iFreqLSB = iFreqLSB;
-        E.vfoA = vfoA;
-        E.vfoB = vfoB;
         E.isLSB = isLSB;
         E.vfoActive = vfoActive;
         memcpy(E.freqCache, freqCache, sizeof(E.freqCache));
