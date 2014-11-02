@@ -29,9 +29,9 @@
 char autoScanMode = 0;
 int autoScanRate = 0;
 
-char vfoScanStash = 0;
-char vfoHiLimit = 0;
-char vfoLoLimit = 0;
+byte vfoScanStash = 0;
+byte vfoHiLimit = 0;
+byte vfoLoLimit = 0;
 
 
 // ####################################################################

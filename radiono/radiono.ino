@@ -473,7 +473,7 @@ void checkTuning() {
   // Allow Tuning knob to be recentered without changing Frequency
   if (tuningLocked) {
       #ifdef USE_AUTOSCANNER
-          autoScanStop(SCAN_STOP_ON_CURRENT_FREQ); // Stop Scan on Current Freq
+          if (autoScanMode) autoScanStop(SCAN_STOP_ON_CURRENT_FREQ); // Stop Scan on Current Freq
       #endif // USE_AUTOSCANNER
       knobPositionPrevious = knobPosition;
       return;
