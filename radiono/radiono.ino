@@ -67,6 +67,7 @@
  *   Added Second Si570 BFO support, by Jeff Whitlatch - KO7M
  *   Added Optional Dial Momentum
  *   Added Multiple VFOs, A & B, C & D, U & L, and S
+ *   Added AutoScan Between A and B VFOs, Breakout Scanner into Scanner.cpp
  *
  */
 
@@ -77,7 +78,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IP"          // Incremental Rev Code
+#define INC_REV "ERB_IQ"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -111,11 +112,14 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 // Default Tune Frequency
 #define DEFAULT_TUNE_FREQ (14.285 * MHz) //  20m - QRP SSB Calling Freq
+
 // USB and LSB IF frequencies
 #define IF_FREQ_USB   (19.997 * MHz)
 #define IF_FREQ_LSB   (19.992 * MHz)
 
-#define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
+// In milliseconds, this is the parameter that determines how long
+// the TX will hold between cw key downs
+#define CW_TIMEOUT (600L)
 
 // Define MAX Tuning Range
 #define MAX_FREQ (32.0 * MHz)
@@ -180,11 +184,6 @@ int cursorDigitPosition = DEFAULT_CURSOR_POSITION;
 int knobPositionPrevious = 0;
 int cursorCol, cursorRow, cursorMode;
 
-boolean autoScanMode = false;
-int autoScanRate = 0;
-unsigned long autoScanTimer = 0;
-unsigned long autoScanTimeout = 0;
-
 boolean tuningLocked = 0; //the tuning can be locked: wait until Freq Stable before unlocking it
 byte knobMode = KNOB_CURSOR_MODE;
 boolean inTx = 0, inPtt = 0;
@@ -247,6 +246,9 @@ void updateDisplay(){
       // Create Label for Displayed VFO
       vfoLabel = vfoLabels[vfoActive];
       if (AltTxVFO)  vfoLabel += 32; // Convert to Lower Case
+      #ifdef USE_AUTOSCANNER
+        if(autoScanMode) vfoLabel = vfoLabels[VFO_S];
+      #endif //USE_AUTOSCANNER
       #ifdef USE_EDITIF
         if (editIfMode) vfoLabel = isLSB ? vfoLabels[VFO_L] : vfoLabels[VFO_U] ; // Replace with IF Freq VFO
       #endif // USE_EDITIF
@@ -278,6 +280,15 @@ void updateDisplay(){
       saveCursor(11 - (cursorDigitPosition + (cursorDigitPosition>6) ), 0);
       blinkChar = c[cursorCol];
       
+       // Create Auto Scanner Label and Direction Indicatior
+      #ifdef USE_AUTOSCANNER
+          if (autoScanMode) {
+               sprintf(d, P4(">%1.1d<"), abs(autoScanRate));
+               if (autoScanRate  > 0) d[2] = ' '; // Blank right most char
+               if (autoScanRate  < 0) d[0] = ' '; // Blank  left most char
+          }
+      #endif // USE_AUTOSCANNER     
+      
       #ifdef USE_SHOW_WAVE_LENGTH
           #ifdef USE_HAMBANDS
               byte iBand = inBand -1;
@@ -299,11 +310,9 @@ void updateDisplay(){
           isLSB ? P2("LSB") : P2("USB") :
           isLSB ? P2("Lsb") : P2("Usb"),
           inTx ? (inPtt ? P3("PT") : P3("CW")) : P3("RX"),
-          #ifdef USE_AUTOSCAN
-              autoScanMode && autoScanRate  > 0 ? P4(">>>") :
-              autoScanMode && autoScanRate == 0 ? P4("<->") :
-              autoScanMode && autoScanRate  < 0 ? P4("<<<") :
-          #endif // USE_AUTOSCAN
+          #ifdef USE_AUTOSCANNER
+              autoScanMode ? d :
+          #endif // USE_AUTOSCANNER
           freqUnStable || editIfMode ? P4(" ") :
           #ifdef USE_HAMBANDS
               inBand ? vfoStatus[vfo->status] : P4("SWL"),
@@ -466,7 +475,9 @@ void checkTuning() {
   // Do Not Change Freq while in Transmit or button opperation
   // Allow Tuning knob to be recentered without changing Frequency
   if (tuningLocked) {
-      autoScanMode = false;
+      #ifdef USE_AUTOSCANNER
+          if (autoScanMode) autoScanStop(SCAN_STOP_ON_CURRENT_FREQ); // Stop Scan on Current Freq
+      #endif // USE_AUTOSCANNER
       knobPositionPrevious = knobPosition;
       return;
   }
@@ -474,30 +485,12 @@ void checkTuning() {
   tuningDir = 0;
 
   #ifdef USE_POT_KNOB
-      tuningDir += getPotDir(); // Get Tuning Direction from POT Knob
+      tuningDir = getPotDir(); // Get Tuning Direction from POT Knob
   #endif // USE_POT_KNOB
   
   #ifdef USE_ENCODER
-      tuningDir += getEncoderDir(); // Get Tuning Direction from Encoder Knob
+      tuningDir = getEncoderDir(); // Get Tuning Direction from Encoder Knob
   #endif // USE_ENCODER
-  
-  #ifdef USE_AUTOSCAN
-  // AutoScan Frequency Mode
-  if(autoScanMode) {
-      if(!cursorDigitPosition) { autoScanMode = false; return; }  
-      knobMode = KNOB_DIGIT_MODE;
-      if (tuningDir) {
-          autoScanRate = constrain (autoScanRate + tuningDir, -8, +8);
-          autoScanTimer = 0;
-      }
-      if (autoScanTimer > millis()) return;
-      autoScanTimer = millis() + 50 + 200 * (8 - abs(autoScanRate));
-      tuningDir = (autoScanRate>0) - (autoScanRate<0);
-      refreshDisplay++;
-  }
-  #endif USE_AUTOSCAN
-  
-  if (!tuningDir) return;
   
   // Decode and implement RIT Tuning
   if (ritOn) {
@@ -506,9 +499,15 @@ void checkTuning() {
       knobMode = KNOB_DIGIT_MODE;
       refreshDisplay++;
       updateDisplay();
-      return;
+      tuningDir = 0;
   }
  
+  #ifdef USE_AUTOSCANNER
+      if (autoScanMode) tuningDir = getAutoScanDir();
+  #endif // USE_AUTOSCANNER
+  
+  if (!tuningDir) return;
+  
   blinkTimer = 0;  
    
   #ifdef USE_KNOB_CAN_CHANGE_BANDS
@@ -728,7 +727,15 @@ void checkButton() {
   
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   
-  if(btn && autoScanMode) { autoScanMode = false; btn = 0;}  // Any button cancels Auto Scan Mode
+  #ifdef USE_AUTOSCANNER
+      if(btn != FN_BTN && 
+         btn != LT_CUR_BTN && 
+         btn != RT_CUR_BTN && 
+         autoScanMode) { // Most buttons cancels Auto Scan Mode
+            autoScanStop(SCAN_STOP_USE_PREV_VFO);
+            btn = 0;
+      }
+  #endif // USE_AUTOSCANNER
   
   switch (btn) {
     case 0: break;
@@ -780,10 +787,12 @@ void checkButton() {
                 case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
                 case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
             #endif // USE_BEACONS
-            #ifdef USE_AUTOSCAN
-                case ALT_PRESS_UP: autoScanMode = true; autoScanRate = +1; break;
-                case ALT_PRESS_DN: autoScanMode = true; autoScanRate = -1; break;
-            #endif // USE_AUTOSCAN
+            #ifdef USE_AUTOSCANNER
+                case ALT_PRESS_UP: autoScanInit(SCAN_SIMPLE, +1); break;
+                case ALT_PRESS_DN: autoScanInit(SCAN_BETWEEN_AB, +1); break;
+                //case ALT_PRESS_UP: autoScanMode = true; autoScanRate = +1; break;
+                //case ALT_PRESS_DN: autoScanMode = true; autoScanRate = -1; break;
+            #endif // USE_AUTOSCANNER
             default: break; // Do Nothing
             }
         break;
