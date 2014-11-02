@@ -37,14 +37,16 @@ byte vfoLoLimit = 0;
 // ####################################################################
 void autoScanStop(int vfo) {
     
-    if (vfo == SCAN_STOP_ON_CURRENT_FREQ) { // Stop on Scanned Freq
-        vfos[vfoScanStash] = vfos[vfoActive];
-        vfoActive = vfoScanStash;
+    if (autoScanMode) {
+        if (vfo == SCAN_STOP_ON_CURRENT_FREQ) { // Stop on Scanned Freq
+            vfos[vfoScanStash] = vfos[vfoActive];
+            vfoActive = vfoScanStash;
+        }
+        else if (vfo == SCAN_STOP_USE_PREV_VFO) vfoActive = vfoScanStash; // Use Previous VFO     
+        else vfoActive = vfo;  // Use Specified VFO
+        autoScanMode = 0;
+        refreshDisplay++;
     }
-    else if (vfo == SCAN_STOP_USE_PREV_VFO) vfoActive = vfoScanStash; // Use Previous VFO     
-    else vfoActive = vfo;  // Use Specified VFO
-    autoScanMode = 0;
-    refreshDisplay++;
     return;
 }
 
@@ -63,32 +65,25 @@ int autoScanInit(int scanMode, int dir) {
               autoScanStop(SCAN_STOP_USE_PREV_VFO);
               return false;
               break;
-              
-          case SCAN_SIMPLE:
-              vfoScanStash = vfoActive;
-              vfoActive = VFO_S;
-              if (!autoScanRate) autoScanRate = dir;
-              autoScanRate = abs(autoScanRate) * dir;
-              autoScanMode = scanMode;
-              return true;
-              break;
-              
+  
           case SCAN_UP_AB:
           case SCAN_DN_AB:
           case SCAN_BETWEEN_AB: // Scan loop between VFO_A and VFO_B
               if (vfos[VFO_A] == vfos[VFO_B]) { autoScanStop(SCAN_STOP_USE_PREV_VFO); return false; }
-              
-              vfoScanStash = vfoActive;
-              vfos[VFO_S] = vfos[vfoActive];
-              vfoActive = VFO_S;
-              
+      
               if (vfos[VFO_A] < vfos[VFO_B]) {
-                  vfoLoLimit = VFO_A; vfoHiLimit = VFO_B;
+                   vfoLoLimit = VFO_A; vfoHiLimit = VFO_B;
               }
               else {
                   vfoLoLimit = VFO_B; vfoHiLimit = VFO_A;
               }
-              
+              // Continue on into SCAN_SIMPLE
+                      
+          case SCAN_SIMPLE:         
+              vfoScanStash = vfoActive;
+              vfos[VFO_S] = vfos[vfoActive];
+              vfoActive = VFO_S;
+                   
               if (!autoScanRate) autoScanRate = dir;
               autoScanRate = abs(autoScanRate) * dir;
               autoScanMode = scanMode;
