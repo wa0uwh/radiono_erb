@@ -67,7 +67,7 @@
  *   Added Second Si570 BFO support, by Jeff Whitlatch - KO7M
  *   Added Optional Dial Momentum
  *   Added Multiple VFOs, A & B, C & D, U & L, and S
- *   Added AutoScan Between A and B VFOs, Breakout Scnner int Scanner.cpp
+ *   Added AutoScan Between A and B VFOs, Breakout Scanner into Scanner.cpp
  *
  */
 
@@ -78,7 +78,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IP"          // Incremental Rev Code
+#define INC_REV "ERB_IQ"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -112,11 +112,14 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 // Default Tune Frequency
 #define DEFAULT_TUNE_FREQ (14.285 * MHz) //  20m - QRP SSB Calling Freq
+
 // USB and LSB IF frequencies
 #define IF_FREQ_USB   (19.997 * MHz)
 #define IF_FREQ_LSB   (19.992 * MHz)
 
-#define CW_TIMEOUT (600L) // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
+// In milliseconds, this is the parameter that determines how long
+// the TX will hold between cw key downs
+#define CW_TIMEOUT (600L)
 
 // Define MAX Tuning Range
 #define MAX_FREQ (32.0 * MHz)
