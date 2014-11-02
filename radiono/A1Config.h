@@ -14,7 +14,7 @@
       #define USE_EEPROM                 1  // 1454b - Option to Include Load and Store to NonVolatile Memory (EEPROM) support
     //#define USE_AUTOSAVE_FACTORY_RESET 1  //    8b - Option to Automatically Save Factory Reset Values to NonVolatile Memory on Reset
       #define USE_MENUS                  1  // 4626b - Option to Include Menu support
-      #define USE_AUTOSCAN               1  //  362b - Option to Include Auto Freq Scan Mode; btn7 with Alt UP or DOWN, Knob sets rate
+    //#define USE_AUTOSCANNER            1  //  362b - Option to Include Auto Freq Scan Mode; btn7 with Alt UP or DOWN, Knob sets rate
       #define USE_SHOW_WAVE_LENGTH       1  //  364b - Option to Display Wave Length, Computed (m) or Contrived (M) for Ham Bands
       #define USE_HAMBANDS               1  // 1552b - Option to Include Ham Band and Ham Band Limits
     //#define USE_BLINK_DIGIT_MODE       1  //  346b - Option to Bink Digit for Cursor, use when Hardware does not support an Underline Cursor

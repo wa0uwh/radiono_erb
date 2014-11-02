@@ -124,6 +124,10 @@
     #ifdef USE_MENUS
       #include "Menus.h"
     #endif // USE_MENUS
+        
+    #ifdef USE_AUTOSCANNER
+      #include "Scanner.h"
+    #endif // USE_AUTOSCANNER
     
     #ifdef USE_ENCODER01
       #define USE_ENCODER 1
@@ -225,7 +229,7 @@
     extern unsigned long menuIdleTimeOut;
 
     /* tuning pot stuff */  
-    //extern int tuningDir;
+    extern int tuningDir;
     extern int knobPosition;
     extern int freqUnStable;
     extern int knobPositionDelta;
