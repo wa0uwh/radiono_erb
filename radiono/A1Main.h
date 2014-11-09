@@ -127,7 +127,11 @@
         
     #ifdef USE_AUTOSCANNER
       #include "Scanner.h"
-    #endif // USE_AUTOSCANNER
+    #endif // USE_AUTOSCANNER 
+    
+    #ifdef USE_DIAL_CAL
+      #include "DialCal.h"
+    #endif // USE_DIAL_CAL
     
     #ifdef USE_ENCODER01
       #define USE_ENCODER 1
@@ -251,7 +255,11 @@
     extern boolean ritOn;
     extern boolean AltTxVFO;
     //extern boolean isAltVFO;
-
+    
+    // Dial Calibration
+    extern byte vfoDialCalStash;
+    extern boolean dialCalEditMode;
+    extern long dialCalPPB;
 
     // Externally Available Functions
     extern void updateDisplay();   
@@ -267,6 +275,7 @@
     extern  int isKeyNowClosed();
     extern  int isPttPressed();
     extern void setFreq(unsigned long freq);
+    extern void dialCalEditModeCancel();
     
     // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
     #define PBUFSIZE (66)

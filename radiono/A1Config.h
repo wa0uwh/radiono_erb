@@ -33,6 +33,7 @@
       #define USE_OPERATE_60M            1  //    6b - Will Include USE_HAMBANDS, Option to Operate and Support 60m Band Selection
       #define USE_10M_SECTIONS           1  //   40b - Split 10m into three subbands: 28.0 - 28.3 - 29.0 - 29.7MHz, Note: Change this Option, Forces Factory Reset
       #define USE_80M_SECTIONS           1  //   20b - Split 80m into 75m and 80m Bands. Note: Change this Option, Forces Factory Reset
+      #define USE_DIAL_CAL               1  //   ??b - Dial Calibration
 
 #endif
 

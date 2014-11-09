@@ -576,6 +576,10 @@ void checkTuning() {
 void toggleAltVfo() {
 #define DEBUG(x...)
 //#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
+
+    #ifdef USE_DIAL_CAL
+      if (dialCalEditMode) {dialCalEditModeCancel(); return; }
+    #endif // USE_DIAL_CAL
     
     DEBUG(P("%s %d: A,B: %lu, %lu"), __func__, __LINE__, vfoA, vfoB);
     vfoActive = (vfoActive == VFO_A) ? VFO_B : VFO_A;
@@ -607,6 +611,9 @@ void checkTX() {
     }
   
     if (!keyDown && isKeyNowClosed()) { // New KeyDown
+        #ifdef USE_DIAL_CAL
+          if (dialCalEditMode) {dialCalEditModeCancel(); return; }
+        #endif // USE_DIAL_CAL
         #ifdef USE_HAMBANDS
             if (!inBandLimits(vfos[vfoActive])) return; // Do nothing if TX is out-of-bounds
         #endif // USE_HAMBANDS
@@ -655,6 +662,9 @@ void checkTX() {
         DEBUG(P("%s %d: RX Idle"), __func__, __LINE__);
         // It is OK, to go into TX
         if (isPttPressed()) {
+            #ifdef USE_DIAL_CAL
+               if (dialCalEditMode) {dialCalEditModeCancel(); return; }
+            #endif // USE_DIAL_CAL
             #ifdef USE_HAMBANDS
                 if (!inBandLimits(vfos[vfoActive])) return; // Do nothing if TX is out-of-bounds
             #endif // USE_HAMBANDS 
@@ -728,10 +738,10 @@ void checkButton() {
   if (btn) DEBUG(P("%s %d: btn %d"), __func__, __LINE__, btn);
   
   #ifdef USE_AUTOSCANNER
-      if(btn != FN_BTN && 
-         btn != LT_CUR_BTN && 
-         btn != RT_CUR_BTN && 
-         autoScanMode) { // Most buttons cancels Auto Scan Mode
+      if (btn != FN_BTN && 
+          btn != LT_CUR_BTN && 
+          btn != RT_CUR_BTN && 
+          autoScanMode) { // Most buttons cancels Auto Scan Mode
             autoScanStop(SCAN_STOP_USE_PREV_VFO);
             btn = 0;
       }
@@ -787,8 +797,11 @@ void checkButton() {
                 case ALT_PRESS_LT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG1));  break;
                 case ALT_PRESS_RT_CUR: sendQrssMesg(qrssDitTime, QRSS_SHIFT, P(QRSS_MSG2));  break;
             #endif // USE_BEACONS
+            #ifdef USE_DIAL_CAL
+                case ALT_PRESS_UP: toggleDialCal(); break;
+            #endif // USE_DIAL_CAL
             #ifdef USE_AUTOSCANNER
-                case ALT_PRESS_UP: autoScanInit(SCAN_SIMPLE, +1); break;
+                //case ALT_PRESS_UP: autoScanInit(SCAN_SIMPLE, +1); break;
                 case ALT_PRESS_DN: autoScanInit(SCAN_BETWEEN_AB, +1); break;
                 //case ALT_PRESS_UP: autoScanMode = true; autoScanRate = +1; break;
                 //case ALT_PRESS_DN: autoScanMode = true; autoScanRate = -1; break;
@@ -817,6 +830,10 @@ void toggleAltTxVFO() {
       if (editIfMode) return; // Do Nothing if in Edit-IF-Mode
     #endif // USE_EDITIF
     
+    #ifdef USE_DIAL_CAL
+      if (dialCalEditMode) {dialCalEditModeCancel(); return; }
+    #endif // USE_DIAL_CAL
+    
     AltTxVFO = !AltTxVFO;
 }
 
@@ -825,7 +842,7 @@ void toggleAltTxVFO() {
 void decodeSideBandMode(int btn) {
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
-
+    
     DEBUG(P("\nCurrent, isLSB %d"), isLSB);
     #ifdef USE_EDITIF
         if (editIfMode) { // Switch Sidebands
@@ -868,6 +885,10 @@ void decodeMoveCursor(int dir) {
 // ###############################################################################
 void decodeFN(int btn) {
 
+  #ifdef USE_DIAL_CAL
+    if (dialCalEditMode) {dialCalEditModeCancel(); return; }
+  #endif // USE_DIAL_CAL
+    
   switch (getButtonPushMode(btn)) { 
     case MOMENTARY_PRESS:
        ritOn = !ritOn; ritVal = 0;
