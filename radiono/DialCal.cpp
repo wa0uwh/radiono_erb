@@ -36,7 +36,7 @@ long dialCalPP100M = 0;
 // ###############################################################################
 void toggleDialCal() {
 #define DEBUG(x...)
-#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
+//#define DEBUG(x...) debugUnique(x)    // UnComment for Debug
     
     #ifdef USE_EDITIF
         if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
@@ -59,7 +59,7 @@ void toggleDialCal() {
         DEBUG("DialCalPP100M= %ld", dialCalPP100M);
         
         dialCalPP100M *= Delta;
-        DEBUG("DialCalPP100M= %ld", dialCalPP100M);
+        debug("DialCalPP100M= %ld", dialCalPP100M);
         
         vfoActive = vfoDialCalStash;
         dialCalEditMode = false;
