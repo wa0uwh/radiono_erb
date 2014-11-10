@@ -41,6 +41,7 @@ void toggleDialCal() {
     #ifdef USE_EDITIF
         if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
     #endif // USE_EDITIF
+    
     if (inTx) return; // Do Nothing
     if (ritOn) return; // Do Nothing
     if (freqUnStable) return;  // Don't Change Modes if Frequency is UnStable
