@@ -48,29 +48,27 @@ void toggleDialCal() {
     if (!dialCalEditMode) { // Initiate Dial Cal Mode
         vfoDialCalStash = vfoActive;
         vfoActive = VFO_C;
-        vfos[vfoActive] = vfos[vfoDialCalStash];
-        if (dialCalPP100M) vfos[vfoActive] += vfos[vfoActive] * dialCalPP100M / 100 / MHz;
+        vfos[vfoActive] = vfos[vfoDialCalStash];       
+        if (dialCalPP100M) vfos[vfoActive] += dialCalPP100M / long (100 * MHz / vfos[vfoActive]);
         dialCalPP100M = 0;
         dialCalEditMode = true;
     }
-    else { // Compute Dial Cal PPB
-        long Delta = (vfos[vfoActive] - vfos[vfoDialCalStash]);
-        DEBUG("\nDelta= %ld", Delta);
-        
-        dialCalPP100M = ((100 * MHz) / vfos[vfoDialCalStash]);
-        DEBUG("DialCalPP100M= %ld", dialCalPP100M);
-        
-        dialCalPP100M *= Delta;
+    else { // Compute Dial Cal PP100M
+    
+        dialCalPP100M = (vfos[vfoActive] - vfos[vfoDialCalStash]);
         DEBUG("DialCalPP100M= %ld", dialCalPP100M);
         
         vfoActive = vfoDialCalStash;
+        dialCalPP100M *= long (100 * MHz / vfos[vfoActive]);
+        debug("DialCalPP100M= %ld", dialCalPP100M);
+        
         dialCalEditMode = false;
         
          
         // To be used as follows:
-        //unsigned long Freq = vfos[vfoActive];
-        //if (dialCalPP100M) Freq += Freq * dialCalPP100M / 100 / MHz;
-        //debug("Freq= %lu", Freq);
+        // unsigned long Freq = vfos[vfoActive];
+        // if (dialCalPP100M) Freq += dialCalPP100M / long (100 * MHz / Freq);
+        // debug("Freq= %lu", Freq);
         
     }
 }
