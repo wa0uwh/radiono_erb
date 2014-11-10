@@ -947,6 +947,9 @@ void decodeFN(int btn) {
 void setFreq(unsigned long freq) {
 
     if (!inTx && ritOn) freq += ritVal;
+    #ifdef USE_DIAL_CAL
+      if (dialCalPP100M) freq += freq * dialCalPP100M / 100 / MHz;
+    #endif // USE_DIAL_CAL
     freq += isLSB ? vfos[VFO_L] : vfos[VFO_U];
     vfo->setFrequency(freq);
 }
