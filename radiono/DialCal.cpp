@@ -59,15 +59,16 @@ void toggleDialCal() {
         DEBUG("DialCalPP100M= %ld", dialCalPP100M);
         
         dialCalPP100M *= Delta;
-        debug("DialCalPP100M= %ld", dialCalPP100M);
+        DEBUG("DialCalPP100M= %ld", dialCalPP100M);
         
         vfoActive = vfoDialCalStash;
         dialCalEditMode = false;
         
          
         // To be used as follows:
-        //long delta = (vfos[vfoActive] / KHz) * dialCalPP100M; delta /= 100 * KHz; unsigned long Freq = vfos[vfoActive] + delta;
-        //DEBUG("Freq= %lu", Freq);
+        //unsigned long Freq = vfos[vfoActive];
+        //if (dialCalPP100M) Freq += Freq * dialCalPP100M / 100 / MHz;
+        //debug("Freq= %lu", Freq);
         
     }
 }
