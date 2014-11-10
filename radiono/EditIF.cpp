@@ -35,7 +35,9 @@ void editIf() {  // Set the IF Frequency
 
     DEBUG(P("%s/%d:"), __func__, __LINE__);
     
-    if (dialCalEditMode) {dialCalEditModeCancel(); return; }
+    #ifdef USE_DIAL_CAL
+      if (dialCalEditMode) {dialCalEditModeCancel(); return; }
+    #endif // USE_DIAL_CAL
     
     #ifdef USE_PARK_CURSOR
         cursorDigitPosition = 0;
