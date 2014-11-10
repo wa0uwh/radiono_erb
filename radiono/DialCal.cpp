@@ -49,6 +49,8 @@ void toggleDialCal() {
         vfoDialCalStash = vfoActive;
         vfoActive = VFO_C;
         vfos[vfoActive] = vfos[vfoDialCalStash];
+        if (dialCalPP100M) vfos[vfoActive] += vfos[vfoActive] * dialCalPP100M / 100 / MHz;
+        dialCalPP100M = 0;
         dialCalEditMode = true;
     }
     else { // Compute Dial Cal PPB
