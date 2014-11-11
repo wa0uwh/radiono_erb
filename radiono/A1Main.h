@@ -45,13 +45,15 @@
     #include "A1Config.h"
     
     // Set up Units to make coding large Frequency Numbers easier
+    #define KILO  (1000UL)
+    #define MEG  (KILO * KILO)
     #define Hz   (1UL)
-    #define KHz  (1000 * Hz)
-    #define MHz  (1000 * KHz)
+    #define KHz  (KILO * Hz)
+    #define MHz  (MEG  * Hz)
     
     // Set up Units for Timers
     #define MSECs  (1UL) // Milli Seconds
-    #define SECs  (1000 * MSECs) 
+    #define SECs  (KILO * MSECs) 
     #define MINs  (60   * SECs)
     #define HRs   (60   * MINs)
     #define DAYs  (24   * HRs)

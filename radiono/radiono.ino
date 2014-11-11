@@ -78,7 +78,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IR_DC05"          // Incremental Rev Code
+#define INC_REV "ERB_IR_DC09"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -299,7 +299,7 @@ void updateDisplay(){
           
               if (!inBand) editIfMode ? sprintf(b, P(" ")) :
           #endif // USE_HAMBANDS
-              sprintf(b, P("%3dm"), 300 * MHz / vfos[vfoActive] );
+              sprintf(b, P("%3dm"), 300 * MEG / vfos[vfoActive] );
       #else
           sprintf(b, P(" "));
       #endif // USE_SHOW_WAVE_LENGTH
@@ -559,6 +559,10 @@ void checkTuning() {
           newFreq = vfos[vfoActive] + deltaFreq;  // Save Least Digits Mode
           //newFreq = (vfos[vfoActive] / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
       }
+
+  #ifdef USE_DIAL_CAL
+     if (dialCalEditMode) newFreq = dialCalLimits(newFreq);
+  #endif // USE_DIAL_CAL
 
   if (newFreq != vfos[vfoActive]) {
       // Update frequency if within range of limits, 
@@ -948,7 +952,7 @@ void setFreq(unsigned long freq) {
 
     if (!inTx && ritOn) freq += ritVal;
     #ifdef USE_DIAL_CAL
-      if (dialCalPP100M) freq += freq * dialCalPP100M / 100 / MHz;
+      if (dialCalPP100M) freq += freq * dialCalPP100M / 100 / MEG;
     #endif // USE_DIAL_CAL
     freq += isLSB ? vfos[VFO_L] : vfos[VFO_U];
     vfo->setFrequency(freq);

@@ -50,7 +50,7 @@ void toggleDialCal() {
         vfoDialCalStash = vfoActive;
         vfoActive = VFO_C;
         vfos[vfoActive] = vfos[vfoDialCalStash];       
-        if (dialCalPP100M) vfos[vfoActive] += dialCalPP100M / long (100 * MHz / vfos[vfoActive]);
+        if (dialCalPP100M) vfos[vfoActive] += dialCalPP100M / (long) (100 * MEG / vfos[vfoActive]);
         dialCalPP100M = 0;
         dialCalEditMode = true;
     }
@@ -60,7 +60,7 @@ void toggleDialCal() {
         DEBUG("DialCalPP100M= %ld", dialCalPP100M);
         
         vfoActive = vfoDialCalStash;
-        dialCalPP100M *= long (100 * MHz / vfos[vfoActive]);
+        dialCalPP100M *= (long) (100 * MEG / vfos[vfoActive]);
         debug("DialCalPP100M= %ld", dialCalPP100M);
         
         dialCalEditMode = false;
@@ -68,7 +68,7 @@ void toggleDialCal() {
          
         // To be used as follows:
         // unsigned long Freq = vfos[vfoActive];
-        // if (dialCalPP100M) Freq += dialCalPP100M / long (100 * MHz / Freq);
+        // if (dialCalPP100M) Freq += dialCalPP100M / (long) (100 * MEG / Freq);
         // debug("Freq= %lu", Freq);
         
     }
@@ -80,6 +80,22 @@ void dialCalEditModeCancel() { // Cancel/Abort Dial Cal Mode
         vfoActive = vfoDialCalStash;
         dialCalEditMode = false;
     }
+}
+
+
+// ###############################################################################
+unsigned long dialCalLimits(unsigned long Freq) {
+    //#define Delta (2.5 * KHz)
+    #define RANGE_PP100M (1 * MEG)
+    long Delta = RANGE_PP100M / (long) (100 * MEG / vfos[vfoDialCalStash]);  // Or, compute as PP100M
+    //Delta = (Delta / 1000) * 1000; // Round Down
+    debug("Delta= %ld", Delta);
+    unsigned long loLimit = vfos[vfoDialCalStash] - Delta;
+    unsigned long hiLimit = vfos[vfoDialCalStash] + Delta;
+    
+    if (Freq < loLimit) return loLimit;        
+    if (Freq > hiLimit) return hiLimit;
+    return Freq;
 }
 
 #endif // USE_DIAL_CAL
