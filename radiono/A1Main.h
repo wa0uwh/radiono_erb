@@ -261,7 +261,7 @@
     // Dial Calibration
     extern byte vfoDialCalStash;
     extern boolean dialCalEditMode;
-    extern long dialCalPPB;
+    extern long dialCalPP100M;
 
     // Externally Available Functions
     extern void updateDisplay();   

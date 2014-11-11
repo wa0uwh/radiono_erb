@@ -31,7 +31,6 @@
 byte vfoDialCalStash;
 
 boolean dialCalEditMode = false;
-long dialCalPP100M = 0;
 
 // ###############################################################################
 void toggleDialCal() {

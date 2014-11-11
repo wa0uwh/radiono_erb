@@ -5,7 +5,6 @@
 
     // Externally Available Variables
     extern boolean dialCalEditMode;
-    extern long dialCalPP100M;
     
     // Externally Available Functions
     extern void toggleDialCal();
