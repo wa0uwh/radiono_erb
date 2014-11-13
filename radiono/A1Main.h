@@ -47,9 +47,18 @@
     // Set up Units to make coding large Frequency Numbers easier
     #define KILO  (1000UL)
     #define MEG  (KILO * KILO)
+    #define GIG  (KILO *  MEG)
+    
+    // Parts Per ...
+    #define PPM    (MEG)
+    #define PP100M (100 * MEG)
+    #define PPB    (GIG)
+    
+    // Frequencies in Hertz
     #define Hz   (1UL)
     #define KHz  (KILO * Hz)
     #define MHz  (MEG  * Hz)
+    #define GHz  (GIG  * Hz)
     
     // Set up Units for Timers
     #define MSECs  (1UL) // Milli Seconds
