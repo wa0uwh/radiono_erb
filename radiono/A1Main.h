@@ -45,13 +45,24 @@
     #include "A1Config.h"
     
     // Set up Units to make coding large Frequency Numbers easier
+    #define KILO  (1000UL)
+    #define MEG  (KILO * KILO)
+    #define GIG  (KILO *  MEG)
+    
+    // Parts Per ...
+    #define PPM    (MEG)
+    #define PP100M (100 * MEG)
+    #define PPB    (GIG)
+    
+    // Frequencies in Hertz
     #define Hz   (1UL)
-    #define KHz  (1000 * Hz)
-    #define MHz  (1000 * KHz)
+    #define KHz  (KILO * Hz)
+    #define MHz  (MEG  * Hz)
+    #define GHz  (GIG  * Hz)
     
     // Set up Units for Timers
     #define MSECs  (1UL) // Milli Seconds
-    #define SECs  (1000 * MSECs) 
+    #define SECs  (KILO * MSECs) 
     #define MINs  (60   * SECs)
     #define HRs   (60   * MINs)
     #define DAYs  (24   * HRs)
@@ -127,7 +138,11 @@
         
     #ifdef USE_AUTOSCANNER
       #include "Scanner.h"
-    #endif // USE_AUTOSCANNER
+    #endif // USE_AUTOSCANNER 
+    
+    #ifdef USE_DIAL_CAL
+      #include "DialCal.h"
+    #endif // USE_DIAL_CAL
     
     #ifdef USE_ENCODER01
       #define USE_ENCODER 1
@@ -251,7 +266,11 @@
     extern boolean ritOn;
     extern boolean AltTxVFO;
     //extern boolean isAltVFO;
-
+    
+    // Dial Calibration
+    extern byte vfoDialCalStash;
+    extern boolean dialCalEditMode;
+    extern long dialCalPP100M;
 
     // Externally Available Functions
     extern void updateDisplay();   
@@ -267,6 +286,7 @@
     extern  int isKeyNowClosed();
     extern  int isPttPressed();
     extern void setFreq(unsigned long freq);
+    extern void dialCalEditModeCancel();
     
     // ERB - Buffers that Stores "const stings" to, and Reads from FLASH Memory via P()
     #define PBUFSIZE (66)
