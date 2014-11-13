@@ -29,7 +29,7 @@
 #include "NonVol.h"
 #include "debug.h"
 
-#define ID_FLAG (1410311444L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
+#define ID_FLAG (1411111305L)  // YYMMDDHHMM, Used for EEPROM Structure Revision Flag
 
 
 // Local Varibles
@@ -46,6 +46,7 @@ void eePromIO(int mode) {
    struct config_t {
         long idFlag;
         unsigned long vfos[MAXVFOS];
+        long dialCalPP100M;
         int editIfMode;
         boolean isLSB;
         byte vfoActive;
@@ -83,6 +84,7 @@ void eePromIO(int mode) {
         // Assign Values to Working Variables from eeProm Structure
         idFlag = E.idFlag;
         memcpy(vfos, E.vfos, sizeof(E.vfos));
+        dialCalPP100M = E.dialCalPP100M;
         editIfMode = E.editIfMode;
         isLSB = E.isLSB;
         vfoActive = E.vfoActive;
@@ -103,7 +105,8 @@ void eePromIO(int mode) {
     case EEP_SAVE :
         // Assign Working Variables to the eeProm Structure
         E.idFlag = ID_FLAG;
-        memcpy(E.vfos, vfos, sizeof(E.vfos)); 
+        memcpy(E.vfos, vfos, sizeof(E.vfos));
+        E.dialCalPP100M = dialCalPP100M; 
         E.editIfMode = editIfMode;
         E.isLSB = isLSB;
         E.vfoActive = vfoActive;
