@@ -7,7 +7,7 @@
     //==========================================================================================
     //#define USE_PCA9546                1  //  214b - Option to Include PCA9546 support
     //#define USE_Si570_BFO              1  //  580b - Use second Si570 for BFO
-      #define USE_DIAL_CAL               1  //  908b - Dial Calibration, use only with USE_Si570_BFO, otherwize use USE_EDITIF for DialCal
+    //#define USE_DIAL_CAL               1  //  908b - Dial Calibration, use only with USE_Si570_BFO, otherwize use USE_EDITIF for DialCal
     //#define USE_I2C_LCD                1  //  ???b - Option to Include i2c LCD support
       #define USE_RF386                  1  //  272b - Option to Include RF386 support
       #define USE_BANDPASS               1  //  104b - Option to Include Band Pass Filter Output Pins
