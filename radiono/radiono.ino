@@ -78,7 +78,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IS          // Incremental Rev Code
+#define INC_REV "ERB_IT"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
