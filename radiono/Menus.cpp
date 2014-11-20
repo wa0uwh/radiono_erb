@@ -26,6 +26,7 @@
 #include "Encoder01.h"
 #include "ButtonUtil.h"
 #include "MorseCode.h"
+#include "DDS.h"
 #include "debug.h"
 
 byte menuActive = 0;
@@ -116,8 +117,13 @@ void checkKnob(int menu) {
           }
           else qrssDitTime += dir * 10;       
           qrssDitTime = constrain (qrssDitTime, 250, 60 * SECs); //MSECs
-          break;
-          
+          break;  
+            
+        #ifdef USE_DDS_SIDETONE
+          case M_DDS_TONE: dds_Menu_Freq_Adj(dir); break;
+          case M_DDS_AMPLITUDE: dds_Menu_Amplitude_Adj(dir); break;
+        #endif // USE_DDS_SIDETONE       
+        
         case M_PARK_TIMEOUT:
           if (parkTimeOut > MINs) {
               parkTimeOut = (parkTimeOut + dir * MINs) / MINs * MINs;  // Truncate to Minutes
@@ -182,7 +188,7 @@ void updateDisplayMenu(int menu) {
              
           #ifdef USE_OPERATE_60M
               case M_OPT60M:
-                 sprintf(c, P("%0.2dOPTION 60M"), menu);
+                 sprintf(c, P("%0.2d: Option 60M"), menu);
                  printLineCEL(MENU_PROMPT_LINE, c);
                  sprintf(c, P("INCLUDE: %s"), operate60m ? P2("YES") : P2("NO"));
                  if (!menuCycle) sprintf(c, P2("%s<"), c);
@@ -191,23 +197,28 @@ void updateDisplayMenu(int menu) {
           #endif // USE_OPERATE_60M
           
           case M_CW_WPM:
-             sprintf(c, P("%0.2dMACRO CW SPD"), menu);
+             sprintf(c, P("%0.2d: Bcn CW SPD"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              sprintf(c, P("WPM: %0.2d"), cw_wpm);
              if (!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
           case M_QRSS_DIT_TIME:
-             sprintf(c, P("%0.2dMACRO QRSS DIT"), menu);
+             sprintf(c, P("%0.2d: Bcn QRSS DIT"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              if (qrssDitTime > SECs) sprintf(c, P(" SECs: %0.2d"), qrssDitTime / SECs);
              else sprintf(c, P("MSECs: %d"), qrssDitTime);
              if (!menuCycle) sprintf(c, P2("%s<"), c);
              printLineCEL(MENU_ITEM_LINE, c);
              break;
+              
+            #ifdef USE_DDS_SIDETONE
+              case M_DDS_TONE: dds_Menu_Freq_Display(menu, !menuCycle); break;
+              case M_DDS_AMPLITUDE: dds_Menu_Amplitude_Display(menu, !menuCycle); break;
+            #endif // USE_DDS_SIDETONE
 
           case M_PARK_TIMEOUT:
-             sprintf(c, P("%0.2dPark TimeOut"), menu);
+             sprintf(c, P("%0.2d: Park TimeOut"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              if (parkTimeOut > MINs) sprintf(c, P("MINs: %0.2d"), parkTimeOut / MINs);
              else sprintf(c, P("SECs: %d"), parkTimeOut / SECs);
@@ -218,7 +229,7 @@ void updateDisplayMenu(int menu) {
              
           #ifdef USE_BLINK_DIGIT_MODE
               case M_BLINK_PERIOD:
-                 sprintf(c, P("%0.2dBlink Period"), menu);
+                 sprintf(c, P("%0.2d: Blink Period"), menu);
                  printLineCEL(MENU_PROMPT_LINE, c);
                  if (blinkPeriod > SECs) sprintf(c, P("SECs: %0.2d"), blinkPeriod / SECs);
                  else sprintf(c, P("MSECs: %d"), blinkPeriod);
@@ -226,7 +237,7 @@ void updateDisplayMenu(int menu) {
                  printLineCEL(MENU_ITEM_LINE, c);
                  break;
               case M_BLINK_RATIO:
-                 sprintf(c, P("%0.2dBlink"), menu);
+                 sprintf(c, P("%0.2d: Blink"), menu);
                  printLineCEL(MENU_PROMPT_LINE, c);
                  sprintf(c, P("Ratio: %d%%"), blinkRatio);
                  if (!menuCycle) sprintf(c, P2("%s<"), c);
@@ -235,7 +246,7 @@ void updateDisplayMenu(int menu) {
           #endif // USE_BLINK_DIGIT_MODE 
           
           case M_TIMEOUT:
-             sprintf(c, P("%0.2dMenu TimeOut"), menu);
+             sprintf(c, P("%0.2d: Menu TimeOut"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              if (menuIdleTimeOut > MINs) sprintf(c, P("MINs: %0.2d"), menuIdleTimeOut / MINs);
              else sprintf(c, P("SECs: %d%"), menuIdleTimeOut / SECs);
@@ -245,7 +256,7 @@ void updateDisplayMenu(int menu) {
              break;
 
           default: // A Blank Menu Item
-             sprintf(c, P("%0.2dMenu:"), menu);
+             sprintf(c, P("%0.2d: Menu"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              printLineCEL(MENU_ITEM_LINE, P(" -"));
              break;

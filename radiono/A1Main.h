@@ -84,19 +84,24 @@
     };
  
     // Pin Numbers for analog inputs
-    #define FN_PIN (A3)
+    #define FN_PIN        (A3)
     #define ANALOG_TUNING (A2)
-    #define ANALOG_KEYER (A1)
+    #define ANALOG_KEYER  (A1)
+
+    // Pin Number for the digital output controls
+    #define LSB_PIN      (PD2) // SideBand Control
+  //#define TR_PIN       (PD3) // Minima 1.0, TR Relay Control
+  //#define SIDETONE_PIN (PD4) // Minima 1.0, SideTone Enable
+    #define TR_PIN       (PD4) // Minima 2.0, TR Relay Control
+    #define SIDETONE_PIN (PD3) // Minima 2.0, Can be used for SideTone DDS Output, NOTE: DDS Requires PD3 or PD5
+    #define BAND_HI_PIN  (PD5) // Selects LP Filter
     
-    // Original Output Filter Control Lines
-    #define BAND_HI_PIN (PD5) // Currently being used for LP Filter
-    
-    // Originally these to pin were allocated for control of a PA Filters
-    //#define BAND_MD_PIN (PD6)
-    //#define BAND_LO_PIN (PD7) 
+    // Originally these to pin were allocated for control of a PA Filters, now used for Encoder
+  //#define BAND_MD_PIN  (PD6)
+  //#define BAND_LO_PIN  (PD7) 
     
     // New - Pin for single wire Rf386 PA Filter Selector
-    #define PA_BAND_CLK (PC0)
+    #define PA_BAND_CLK  (PC0)
       
     // Set the following Conditional Compile Flags Above
     #ifdef USE_OPERATE_60M
@@ -186,7 +191,10 @@
     #ifdef USE_TUNE2500_MODE
       #include "Tune2500.h"
     #endif // USE_TUNE2500_MODE
-
+   
+    #ifdef USE_DDS_SIDETONE
+      #include "DDS.h"
+    #endif // USE_DDS_SIDETONE
 
 
     #ifdef USE_PARK_CURSOR

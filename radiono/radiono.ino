@@ -68,6 +68,7 @@
  *   Added Optional Dial Momentum
  *   Added Multiple VFOs, A & B, C & D, U & L, and S
  *   Added AutoScan Between A and B VFOs, Breakout Scanner into Scanner.cpp
+ *   Added SideTone DDS, which requires Exchange of PD3 and PD4, Starting at REV: 2.0.erb
  *
  */
 
@@ -76,9 +77,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 
 //#define RADIONO_VERSION "0.4"
-#define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
+#define RADIONO_VERSION "2.0.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IT"          // Incremental Rev Code
+#define INC_REV "ERB_JA_DD05"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -128,10 +129,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define DEAD_ZONE (40)
 
 
-// Pin Number for the digital output controls
-#define PIN_LSB (PD2)
-#define TX_RX   (PD3)
-#define CW_KEY  (PD4)
 
 #ifdef USE_Si570_BFO
   Si570 *bfo;
@@ -437,7 +434,7 @@ void decodeSideband(){
 
 // -------------------------------------------------------------------------------
 void setSideband(){  
-  pinMode(PIN_LSB, OUTPUT); digitalWrite(PIN_LSB, isLSB);
+  pinMode(LSB_PIN, OUTPUT); digitalWrite(LSB_PIN, isLSB);
 }
 
 // ###############################################################################
@@ -626,7 +623,7 @@ void checkTX() {
         #endif // USE_HAMBANDS
         DEBUG(P("\nFunc: %s %d: Start KEY Dn"), __func__, __LINE__);
         if (!inTx){
-            //put the  TX_RX line to transmit
+            //put the  TR_PIN line to transmit
             changeToTransmit();
             if (AltTxVFO) toggleAltVfo(); // Set Alt VFI if Needed
             refreshDisplay++;
@@ -691,20 +688,20 @@ void checkTX() {
 // -------------------------------------------------------------
 int isPttPressed() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    return !digitalRead(TX_RX); // Is PTT pushed  
+    return !digitalRead(TR_PIN); // Is PTT pushed  
 }
 
 void changeToReceive() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
     stopSidetone();
-    pinMode(TX_RX, OUTPUT); digitalWrite(TX_RX, 1); //set the TX_RX pin back to input mode
-    pinMode(TX_RX, INPUT_PULLUP); // Enable the built-in pull-ups
+    pinMode(TR_PIN, OUTPUT); digitalWrite(TR_PIN, 1); //set the TR_PIN pin back to input mode
+    pinMode(TR_PIN, INPUT_PULLUP); // Enable the built-in pull-ups
 }
 
 void changeToTransmit() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    pinMode(TX_RX, OUTPUT);
-    digitalWrite(TX_RX, 0);
+    pinMode(TR_PIN, OUTPUT);
+    digitalWrite(TR_PIN, 0);
 }
 
 int isKeyNowClosed() {
@@ -719,13 +716,20 @@ int isKeyNowOpen() {
 
 void startSidetone() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    digitalWrite(CW_KEY, 1); // start the side-tone
+    #ifdef USE_DDS_SIDETONE
+      ddsTone(dds_frequency);
+    #else
+      digitalWrite(SIDETONE_PIN, 1); // start the side-tone
+    #endif // USE_DDS_SIDETONE
 }
 
 void stopSidetone() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
-    pinMode(CW_KEY, OUTPUT);
-    digitalWrite(CW_KEY, 0); // stop the side-tone
+    #ifdef USE_DDS_SIDETONE
+      ddsTone(0);
+    #else
+      digitalWrite(SIDETONE_PIN, 0); // stop the side-tone
+    #endif // USE_DDS_SIDETONE
 }
 
 
@@ -1046,6 +1050,7 @@ void setup() {
   vfo->setFrequency(vfos[vfoActive]);
  
   // Setup with No SideTone
+  pinMode(SIDETONE_PIN, OUTPUT);
   stopSidetone();
 
   // Setup in Receive Mode
