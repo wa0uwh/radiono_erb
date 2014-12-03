@@ -62,7 +62,7 @@
     
     // Set up Units for Timers
     #define MSECs  (1UL) // Milli Seconds
-    #define SECs  (KILO * MSECs) 
+    #define SECs  (1000 * MSECs) 
     #define MINs  (60   * SECs)
     #define HRs   (60   * MINs)
     #define DAYs  (24   * HRs)

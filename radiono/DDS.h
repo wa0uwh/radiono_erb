@@ -11,6 +11,7 @@
     extern void ddsInit();
     extern void dddShutdown();
     extern void ddsPause();
+    extern void ddsPhaseShift();
         
     extern void ddsAdjFreq(int freq);
     extern void ddsAdjAmplitude(byte amp);

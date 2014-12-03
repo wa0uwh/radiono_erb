@@ -77,9 +77,9 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 
 //#define RADIONO_VERSION "0.4"
-#define RADIONO_VERSION "2.0.erb" // Modifications by: Eldon R. Brown - WA0UWH
+#define RADIONO_VERSION "PNW 2.0"   // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_JA_DD05"          // Incremental Rev Code
+#define INC_REV "ERB_JA_DD20"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -124,10 +124,6 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 // Define MAX Tuning Range
 #define MAX_FREQ (32.0 * MHz)
-
-// Tuning POT Dead Zone
-#define DEAD_ZONE (40)
-
 
 
 #ifdef USE_Si570_BFO
@@ -717,7 +713,7 @@ int isKeyNowOpen() {
 void startSidetone() {
     DEBUG(P("\nFunc: %s %d"), __func__, __LINE__);
     #ifdef USE_DDS_SIDETONE
-      ddsTone(dds_frequency);
+      ddsTone(600);
     #else
       digitalWrite(SIDETONE_PIN, 1); // start the side-tone
     #endif // USE_DDS_SIDETONE
@@ -1145,6 +1141,16 @@ void loop(){
   #endif
   
   updateDisplay();
+  
+  // The following if for DDS DEBUG only.
+  startSidetone();
+  delay(16);
+  for (int i=0; i<2; i++) {
+      ddsPhaseShift();
+      delay(32);
+  }
+  stopSidetone();
+  delay(100);
   
 }
 

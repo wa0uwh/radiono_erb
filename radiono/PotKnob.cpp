@@ -43,7 +43,7 @@ int getPotDir() {
   
   if (AutoTimer > millis()) return 0; // Auto Inc/Dec Timer
   
-  if (knobPosition < DEAD_ZONE * 2 && AutoTimer < millis()) { // We must be at the Low end of the Tuning POT
+  if (knobPosition <  DEAD_ZONE * 2 && AutoTimer < millis()) { // We must be at the Low end of the Tuning POT
       knobPositionDelta = -DEAD_ZONE;
       AutoTimer = millis() + AUTOTIMER_RATE_MS;
       if (knobPosition > DEAD_ZONE ) AutoTimer += AUTOTIMER_RATE_MS*3/2; // At very end of Tuning POT
