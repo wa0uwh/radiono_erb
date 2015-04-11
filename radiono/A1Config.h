@@ -39,8 +39,6 @@
       #define USE_OPERATE_4M             1  //    6b - Option to Include 4m Band Selection
       #define USE_OPERATE_2M             1  //    6b - Option to Include 2m Band Selection
       #define USE_2M_SECTIONS            1  //   40b - Split 2mFM into two subbands: 144.0 - 145.0 - 146.0MHz, Note: Change this Option, Forces Factory Reset
-      #define USE_OPERATE_2M_FM          1  //    6b - Option to Include 2m FM Band Selection
-      #define USE_2M_FM_SECTIONS         1  //   40b - Split 2mFM into two subbands: 146.0 - 147.0 - 148.0MHz, Note: Change this Option, Forces Factory Reset
 
 #endif
 
