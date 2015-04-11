@@ -56,8 +56,29 @@ const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Lim
          UPPER_FREQ_10M_SECTION_01, UPPER_FREQ_10M_SECTION_02-1,
          UPPER_FREQ_10M_SECTION_02, UPPER_FREQ_10M_SECTION_03,
      #endif // USE_10M_SECTIONS
+  
+     #ifdef USE_OPERATE_6M
+       #ifndef USE_6M_SECTIONS
+           50.00  * MHz,  52.0  * MHz, //  6m
+       #else // USE_6M_SECTIONS
+           LOWER_FREQ_6M_SECTION_01, UPPER_FREQ_6M_SECTION_01-1,
+           UPPER_FREQ_6M_SECTION_01, UPPER_FREQ_6M_SECTION_02-1,
+       #endif // USE_6M_SECTIONS
+     #endif // USE_OPERATE_6M 
+   
+     #ifdef USE_OPERATE_4M
+         70.00  * MHz,  70.2  * MHz, //  4m
+     #endif // USE_OPERATE_4M 
      
-   //50.00  * MHz,  54.00  * MHz, //   6m - Will need New Low Pass Filter Support
+     #ifdef USE_OPERATE_2M
+       #ifndef USE_2M_SECTIONS
+           144.00  * MHz,  146.0  * MHz, //  2m
+       #else // USE_2M_SECTIONS
+           LOWER_FREQ_2M_SECTION_01, UPPER_FREQ_2M_SECTION_01-1,
+           UPPER_FREQ_2M_SECTION_01, UPPER_FREQ_2M_SECTION_02,
+       #endif // USE_2M_SECTIONS
+     #endif // USE_OPERATE_2M  
+
    };
 
 // An Array to save: A-VFO & B-VFO
@@ -82,15 +103,37 @@ unsigned long freqCache[BANDS*2] = { // Set Default Values for Cache
      21.385  * MHz, 21.385  * MHz,  //  15m - QRP SSB Calling Freq
      24.950  * MHz, 24.950  * MHz,  //  12m - QRP SSB Calling Freq
      
-     #ifndef USE_10M_SECTIONS
-         28.385  * MHz, 28.385  * MHz,  //  10m - QRP SSB Calling Freq
-     #else // USE_10M_SECTIONS
+     #ifdef USE_10M_SECTIONS
          (28.030  * MHz), (28.030  * MHz),
          (28.385  * MHz), (28.385  * MHz),  //  10m - QRP SSB Calling Freq
          (29.030  * MHz), (29.030  * MHz),
+     #else // USE_10M_SECTIONS
+         (28.385  * MHz), (28.385  * MHz),  //  10m - QRP SSB Calling Freq
      #endif // USE_10M_SECTIONS
      
-   //50.20   * MHz, 50.20   * MHz,  //   6m - QRP SSB Calling Freq
+            
+     #ifdef USE_OPERATE_6M        
+       #ifdef USE_6M_SECTIONS
+           (50.20  * MHz), (50.20  * MHz),
+           (51.20  * MHz), (51.20  * MHz),
+       #else // USE_6M_SECTIONS
+           50.20  * MHz, 50.20  * MHz,  //  6m - QRP SSB Calling Freq
+       #endif // USE_10M_SECTIONS
+     #endif // USE_OPERATE_6M 
+         
+     #ifdef USE_OPERATE_4M    
+       (70.20  * MHz), (70.20  * MHz),  //  4m - QRP SSB Calling Freq
+     #endif // USE_OPERATE_4M         
+           
+     #ifdef USE_OPERATE_2M 
+       #ifdef USE_2M_SECTIONS
+           (144.20  * MHz), (144.20  * MHz),
+           (145.20  * MHz), (145.20  * MHz),
+       #else // USE_2M_SECTIONS
+           144.20  * MHz, 144.2  * MHz,  //  2m - QRP SSB Calling Freq
+       #endif // USE_2M_SECTIONS
+     #endif // USE_OPERATE_2M 
+     
    };
    
 byte sideBandModeCache[BANDS*2] = {
@@ -115,18 +158,41 @@ byte sideBandModeCache[BANDS*2] = {
       AutoSB,  AutoSB, //  12m
       AutoSB,  AutoSB, //  10m, and Section 1
       #ifdef USE_10M_SECTIONS
-          AutoSB,  AutoSB, //  10m Section 2
-          AutoSB,  AutoSB, //  10m Section 3
+         AutoSB,  AutoSB, //  10m Section 2
+         AutoSB,  AutoSB, //  10m Section 3
       #endif // USE_10M_SECTIONS
-   // AutoSB,  AutoSB, //   6m - Will need New Low Pass Filter Support
+      
+                 
+     #ifdef USE_OPERATE_6M 
+        AutoSB,  AutoSB, //  6m, and Section 1
+        #ifdef USE_6M_SECTIONS
+            AutoSB,  AutoSB, //  6m Section 2
+            AutoSB,  AutoSB, //  6m Section 3
+        #endif // USE_6M_SECTIONS
+     #endif // USE_OPERATE_6M 
+                   
+     #ifdef USE_OPERATE_4M 
+        AutoSB,  AutoSB, //  4m
+     #endif // USE_OPERATE_4M     
+                  
+     #ifdef USE_OPERATE_2M 
+        AutoSB,  AutoSB, //  2m, and Section 1
+        #ifdef USE_6M_SECTIONS
+            AutoSB,  AutoSB, //  2m Section 2
+            AutoSB,  AutoSB, //  2m Section 3
+        #endif // USE_2M_SECTIONS
+     #endif // USE_OPERATE_2M      
+      
 };
 
 int hamBands[BANDS]  = {
      160,
      
-      80,
       #ifdef USE_80M_SECTIONS
+          80, // 80m
           75, //  75m
+      #else
+          80, // 80m
       #endif // USE_80M_SECTIONS
       
       6001, // 60m Channel 1, Note: Channel Number is encoded as least digit
@@ -142,15 +208,39 @@ int hamBands[BANDS]  = {
       15,
       12,
       
-      #ifndef USE_10M_SECTIONS
-         10,
-      #else
+      #ifdef USE_10M_SECTIONS
          1001, // 10m Section 1
          1002, // 10m Section 2
          1003, // 10m Section 3
+      #else
+         10,
       #endif // USE_10M_SECTIONS
+
+    
+     #ifdef USE_OPERATE_6M   
+        #ifdef USE_6M_SECTIONS
+           601, // 6m Section 1
+           602, // 6m Section 2
+        #else
+           6,
+        #endif // USE_6M_SECTIONS
+     #endif // USE_OPERATE_6M
+   
+    
+     #ifdef USE_OPERATE_4M 
+        4,
+     #endif // USE_OPERATE_4M
+     
+     
+     #ifdef USE_OPERATE_2M 
+        #ifdef USE_2M_SECTIONS
+           201, // 2m Section 1
+           202, // 2m Section 2
+        #else
+           2,
+        #endif // USE_2M_SECTIONS 
+     #endif // USE_OPERATE_2M    
       
-   //  6, // Will need New Low Pass Filter Support
 };
 
 boolean operate60m = false;  // Operate on 60m Band

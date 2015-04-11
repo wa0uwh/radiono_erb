@@ -37,12 +37,18 @@ void setRf386BandSignal(unsigned long freq){
 
   if (freq == prevFreq) return;
   prevFreq = freq;
-   
-  if      (freq <  4.0 * MHz) band = 4; //   3.5 MHz
-  else if (freq < 10.2 * MHz) band = 3; //  7-10 MHz
-  else if (freq < 18.2 * MHz) band = 2; // 14-18 MHz
-  else if (freq < 30.0 * MHz) band = 1; // 21-28 MHz
-  else band = 1;
+  
+  
+  // Note: This is revese of the Original Proposed band switching order 
+  band = 0;
+  if      (freq <   4.0 * MHz) band = 1; //   3.5 MHz
+  else if (freq <  10.2 * MHz) band = 2; //  7-10 MHz
+  else if (freq <  18.2 * MHz) band = 3; // 14-18 MHz
+  else if (freq <  30.0 * MHz) band = 4; // 21-28 MHz
+  else if (freq <  60.0 * MHz) band = 5; // 50-52 MHz
+  else if (freq < 100.0 * MHz) band = 6; // 70-71 MHz
+  else if (freq < 150.0 * MHz) band = 7; // 144-148 MHz
+  else band = 7;
 
   //debug("Band Index = %d", band);
   

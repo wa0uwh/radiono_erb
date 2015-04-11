@@ -68,6 +68,7 @@
  *   Added Optional Dial Momentum
  *   Added Multiple VFOs, A & B, C & D, U & L, and S
  *   Added AutoScan Between A and B VFOs, Breakout Scanner into Scanner.cpp
+ *   Added 6m, 4m and 2m Support
  *
  */
 
@@ -122,7 +123,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 #define CW_TIMEOUT (600L)
 
 // Define MAX Tuning Range
-#define MAX_FREQ (32.0 * MHz)
+#define MAX_FREQ (150.0 * MHz)
 
 // Tuning POT Dead Zone
 #define DEAD_ZONE (40)
@@ -262,7 +263,7 @@ void updateDisplay(){
       #ifdef USE_HIDELEAST
         if (cursorDigitPosition > 1) b[10-cursorDigitPosition] = 0;
       #endif // USE_HIDELEAST
-      sprintf(c, P("%1c:%.2s.%.6s%-4.4s%s"), vfoLabel,
+      sprintf(c, P("%1c%.3s.%.6s%-4.4s%s"), vfoLabel,
           b,  b+2,
           inTx ? P4(" ") : ritOn ? d : P4(" "),
           #ifdef USE_DISPLAY_KNOB_MODE
@@ -277,6 +278,7 @@ void updateDisplay(){
           #endif // USE_TUNE2500_MODE 
           P8(" ")
           );
+      if (vfos[vfoActive] < 100 * MHz) c[1] = ':';
       // OK, now display Top Line
       printLineCEL(FIRST_LINE, c);
       
