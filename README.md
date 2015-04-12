@@ -54,5 +54,6 @@ Modified by: Eldon R. Brown (ERB) - WA0UWH - Copyright (C) 2014
 	
 	14). Added Optional User Menus 
 
+	14). Added Optional 6m, 4m and 2m Support
 
 --
