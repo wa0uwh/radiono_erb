@@ -297,7 +297,7 @@ void updateDisplay(){
       #ifdef USE_SHOW_WAVE_LENGTH
           #ifdef USE_HAMBANDS
               byte iBand = inBand -1;
-              if (hamBands[iBand] > 1000) {   // Decoded as BXS, B=Band, S=BandSection, X=PlaceHolder
+              if (hamBands[iBand] >= 200) {   // Decoded as BXS, B=Band, S=BandSection, X=PlaceHolder
                        sprintf(b, P("%3dM%d"), hamBands[iBand]/100, hamBands[iBand] % 10);
                }
               else sprintf(b, P("%3dM"), hamBands[iBand]);
