@@ -58,24 +58,24 @@ const unsigned long bandLimits[BANDS*2] PROGMEM = {  // Lower and Upper Band Lim
      #endif // USE_10M_SECTIONS
   
      #ifdef USE_OPERATE_6M
-       #ifndef USE_6M_SECTIONS
-           50.00  * MHz,  52.0  * MHz, //  6m
-       #else // USE_6M_SECTIONS
+       #ifdef USE_6M_SECTIONS
            LOWER_FREQ_6M_SECTION_01, UPPER_FREQ_6M_SECTION_01-1,
-           UPPER_FREQ_6M_SECTION_01, UPPER_FREQ_6M_SECTION_02-1,
+           UPPER_FREQ_6M_SECTION_01, UPPER_FREQ_6M_SECTION_02,
+       #else // USE_6M_SECTIONS
+           50.00  * MHz,  52.0  * MHz, //  6m
        #endif // USE_6M_SECTIONS
      #endif // USE_OPERATE_6M 
    
      #ifdef USE_OPERATE_4M
-         70.00  * MHz,  70.2  * MHz, //  4m
+         70.00  * MHz,  70.5  * MHz, //  4m
      #endif // USE_OPERATE_4M 
      
      #ifdef USE_OPERATE_2M
-       #ifndef USE_2M_SECTIONS
-           144.00  * MHz,  146.0  * MHz, //  2m
-       #else // USE_2M_SECTIONS
+       #ifdef USE_2M_SECTIONS
            LOWER_FREQ_2M_SECTION_01, UPPER_FREQ_2M_SECTION_01-1,
            UPPER_FREQ_2M_SECTION_01, UPPER_FREQ_2M_SECTION_02,
+       #else // USE_2M_SECTIONS
+           144.00  * MHz,  146.0  * MHz, //  2m
        #endif // USE_2M_SECTIONS
      #endif // USE_OPERATE_2M  
 
@@ -167,7 +167,6 @@ byte sideBandModeCache[BANDS*2] = {
         AutoSB,  AutoSB, //  6m, and Section 1
         #ifdef USE_6M_SECTIONS
             AutoSB,  AutoSB, //  6m Section 2
-            AutoSB,  AutoSB, //  6m Section 3
         #endif // USE_6M_SECTIONS
      #endif // USE_OPERATE_6M 
                    
@@ -177,9 +176,8 @@ byte sideBandModeCache[BANDS*2] = {
                   
      #ifdef USE_OPERATE_2M 
         AutoSB,  AutoSB, //  2m, and Section 1
-        #ifdef USE_6M_SECTIONS
+        #ifdef USE_2M_SECTIONS
             AutoSB,  AutoSB, //  2m Section 2
-            AutoSB,  AutoSB, //  2m Section 3
         #endif // USE_2M_SECTIONS
      #endif // USE_OPERATE_2M      
       

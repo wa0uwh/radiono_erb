@@ -34,11 +34,13 @@
       #define USE_OPERATE_60M            1  //    6b - Will Include USE_HAMBANDS, Option to Operate and Support 60m Band Selection
       #define USE_10M_SECTIONS           1  //   40b - Split 10m into three subbands: 28.0 - 28.3 - 29.0 - 29.7MHz, Note: Change this Option, Forces Factory Reset
       #define USE_80M_SECTIONS           1  //   20b - Split 80m into 75m and 80m Bands. Note: Change this Option, Forces Factory Reset
-      #define USE_OPERATE_6M             1  //    6b - Option to Include 6m Band Selection
-      #define USE_6M_SECTIONS            1  //   40b - Split 6m into two subbands: 50.0 - 51.0 - 52.0MHz, Note: Change this Option, Forces Factory Reset
-      #define USE_OPERATE_4M             1  //    6b - Option to Include 4m Band Selection
-      #define USE_OPERATE_2M             1  //    6b - Option to Include 2m Band Selection
-      #define USE_2M_SECTIONS            1  //   40b - Split 2mFM into two subbands: 144.0 - 145.0 - 146.0MHz, Note: Change this Option, Forces Factory Reset
+      
+      // Some VHF Options
+      #define USE_OPERATE_6M             1  //   20b - Option to Include 6m Band Selection
+      #define USE_6M_SECTIONS            1  //   20b - Split 6m into two subbands: 50.0 - 51.0 - 52.0MHz, Note: Change this Option, Forces Factory Reset
+      #define USE_OPERATE_4M             1  //   20b - Option to Include 4m Band Selection
+      #define USE_OPERATE_2M             1  //   20b - Option to Include 2m Band Selection
+      #define USE_2M_SECTIONS            1  //   30b - Split 2mFM into two subbands: 144.0 - 145.0 - 146.0MHz, Note: Change this Option, Forces Factory Reset
 
 #endif
 

@@ -245,7 +245,7 @@ void updateDisplayMenu(int menu) {
              break;
 
           default: // A Blank Menu Item
-             sprintf(c, P("%0.2dMenu:"), menu);
+             sprintf(c, P("%0.2dMenu"), menu);
              printLineCEL(MENU_PROMPT_LINE, c);
              printLineCEL(MENU_ITEM_LINE, P(" -"));
              break;

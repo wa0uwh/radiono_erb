@@ -16,7 +16,8 @@
     #else
         #define ADDITIONAL_SECTIONS_IN_80M (0)
     #endif
-    
+        
+
     #ifdef USE_10M_SECTIONS
         #define LOWER_FREQ_10M_SECTION_01 (28.0 * MHz) // Bottom of Band
         #define UPPER_FREQ_10M_SECTION_01 (28.3 * MHz)
@@ -26,41 +27,43 @@
     #else
         #define ADDITIONAL_SECTIONS_IN_10M (0)
     #endif
-    
+
     
     #define BANDS_FOR_6M (0)  // Set Default to 0
     #ifdef USE_OPERATE_6M
       #ifdef USE_6M_SECTIONS
           #define LOWER_FREQ_6M_SECTION_01 (50.0 * MHz) // Bottom of Band
           #define UPPER_FREQ_6M_SECTION_01 (51.0 * MHz)
-          #define UPPER_FREQ_6M_SECTION_04 (52.0 * MHz) // Top of Band
-          #define BANDS_FOR_6M (2) // Additional 6m Sections
+          #define UPPER_FREQ_6M_SECTION_02 (52.0 * MHz) // Top of Band
+          #define BANDS_FOR_6M (2)
       #else
           #define BANDS_FOR_6M (1)
       #endif 
     #endif 
-    
+ 
+   
     
     #define BANDS_FOR_4M (0)  // Set Default to 0
     #ifdef USE_OPERATE_4M
         #define BANDS_FOR_4M (1)
     #endif  
     
-    
+       
     #define BANDS_FOR_2M (0)  // Set Default to 0
-    #ifdef USE_2M_SECTIONS
-        #define LOWER_FREQ_2M_SECTION_01 (144.0 * MHz) // Bottom of Band
-        #define UPPER_FREQ_2M_SECTION_01 (145.0 * MHz)
-        #define UPPER_FREQ_2M_SECTION_04 (146.0 * MHz) // Top of Band
-        #define BANDS_FOR_2M (2) // Additional 2m Sections
-    #else
-        #define BANDS_FOR_2M (1)
-    #endif
-    
+    #ifdef USE_OPERATE_2M
+      #ifdef USE_2M_SECTIONS
+          #define LOWER_FREQ_2M_SECTION_01 (144.0 * MHz) // Bottom of Band
+          #define UPPER_FREQ_2M_SECTION_01 (145.0 * MHz)
+          #define UPPER_FREQ_2M_SECTION_02 (146.0 * MHz) // Top of Band
+          #define BANDS_FOR_2M (2)
+      #else
+          #define BANDS_FOR_2M (1)
+      #endif 
+    #endif 
     
     
     // BANDS is used many places in the code
-    #define BANDS (BANDS_BASE + BANDS_60M + ADDITIONAL_SECTIONS_IN_10M + ADDITIONAL_SECTIONS_IN_80M + BANDS_FOR_6M + BANDS_FOR_4M + BANDS_FOR_2M)   
+    #define BANDS (BANDS_BASE + BANDS_60M + ADDITIONAL_SECTIONS_IN_10M + ADDITIONAL_SECTIONS_IN_80M + BANDS_FOR_6M + BANDS_FOR_4M + BANDS_FOR_2M)  
     
     
     

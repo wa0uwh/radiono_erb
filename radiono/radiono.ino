@@ -78,8 +78,8 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
-//#define INC_REV "ko7m-AC"         // Incremental Rev Code
-#define INC_REV "ERB_IT"          // Incremental Rev Code
+//#define INC_REV "ko7m-AC"       // Incremental Rev Code
+#define INC_REV "ERB_JA"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -259,12 +259,12 @@ void updateDisplay(){
       
       // Build Top Line of LCD
       sprintf(d, P("%+03.3d"), ritVal);  
-      sprintf(b, P("%08ld"), vfos[vfoActive]);
+      sprintf(b, P("%09ld"), vfos[vfoActive]);
       #ifdef USE_HIDELEAST
         if (cursorDigitPosition > 1) b[10-cursorDigitPosition] = 0;
       #endif // USE_HIDELEAST
       sprintf(c, P("%1c%.3s.%.6s%-4.4s%s"), vfoLabel,
-          b,  b+2,
+          b,  b+3,
           inTx ? P4(" ") : ritOn ? d : P4(" "),
           #ifdef USE_DISPLAY_KNOB_MODE
               knobMode == KNOB_CURSOR_MODE ? P8("C") :
@@ -559,7 +559,8 @@ void checkTuning() {
       {
           // Compute deltaFreq based on current Cursor Position Digit
           deltaFreq = tuningDir;
-          for (int i = cursorDigitPosition; i > 1; i-- ) deltaFreq *= 10;
+          int i = cursorDigitPosition;
+          while (i-- > 1) deltaFreq *= 10;
       
           newFreq = vfos[vfoActive] + deltaFreq;  // Save Least Digits Mode
           //newFreq = (vfos[vfoActive] / abs(deltaFreq)) * abs(deltaFreq) + deltaFreq; // Zero Lesser Digits Mode
@@ -887,7 +888,7 @@ void decodeMoveCursor(int dir) {
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
       freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable
       blinkTimer = 0;
-      if (!cursorDigitPosition) knobMode = KNOB_CURSOR_MODE;
+      if (cursorDigitPosition > 1) knobMode = KNOB_CURSOR_MODE;
       refreshDisplay++;
 }
 

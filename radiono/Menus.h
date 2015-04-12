@@ -14,8 +14,10 @@
         M_QRSS_DIT_TIME,
         //M_Blank1,
         M_PARK_TIMEOUT,   // Cursor Park Time Out
-        M_BLINK_PERIOD,
-        M_BLINK_RATIO,
+        #ifdef USE_BLINK_DIGIT_MODE
+          M_BLINK_PERIOD,
+          M_BLINK_RATIO,
+        #endif
         //M_Blank2,
         MENUS
     };
