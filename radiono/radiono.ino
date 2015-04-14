@@ -79,7 +79,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"       // Incremental Rev Code
-#define INC_REV "ERB_JA"          // Incremental Rev Code
+#define INC_REV "ERB_JB"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -113,6 +113,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 
 // Default Tune Frequency
 #define DEFAULT_TUNE_FREQ (14.285 * MHz) //  20m - QRP SSB Calling Freq
+//#define DEFAULT_TUNE_FREQ (7.0 * MHz)  //  40m for DEBUG Mode
 
 // USB and LSB IF frequencies
 #define IF_FREQ_USB   (19.997 * MHz)
@@ -438,23 +439,35 @@ void decodeSideband(){
 }
 
 // -------------------------------------------------------------------------------
-void setSideband(){  
+void setSideband(){ 
+  static int prevMode = -1;
+  
+  if (isLSB == prevMode) return;
+  
   pinMode(PIN_LSB, OUTPUT); digitalWrite(PIN_LSB, isLSB);
+  prevMode = isLSB;
 }
 
 // ###############################################################################
 void setBandswitch(unsigned long freq){
+  static int prevPinState = -1;
+  static int PinState = 0;
 
   #ifdef USE_EDITIF
       if (editIfMode) return;    // Do Nothing if in Edit-IF-Mode
   #endif // USE_EDITIF
   
+  if (PinState == prevPinState) return;
+  
   #ifdef USE_BANDPASS
       pinMode(BAND_HI_PIN, OUTPUT);
       // This was originally set to 15.0 Meg, Changed to avoid switching while tuning around WWV
-      if (freq > 14.99 * MHz) digitalWrite(BAND_HI_PIN, 1);
-      else digitalWrite(BAND_HI_PIN, 0);
+      if (freq > 14.99 * MHz) PinState = 1;
+      else PinState = 0;
+      digitalWrite(BAND_HI_PIN, PinState);
   #endif // USE_BANDPASS
+  
+  prevPinState = PinState;
 }
 
 
@@ -888,7 +901,6 @@ void decodeMoveCursor(int dir) {
       cursorDigitPosition = constrain(cursorDigitPosition, 0, 7);
       freqUnStable = 0;  // Set Freq is NOT UnStable, as it is Stable
       blinkTimer = 0;
-      if (cursorDigitPosition > 1) knobMode = KNOB_CURSOR_MODE;
       refreshDisplay++;
 }
 

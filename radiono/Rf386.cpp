@@ -27,20 +27,21 @@
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
 
 void setRf386BandSignal(unsigned long freq){
-  // This setup is compatable with the Minima RF386 RF Power Amplifier
+  // This setup is similar to the Minima RF386 RF Power Amplifier
+  // Except now Reset (i.e., Filter 0) is "No Filter"
   // See: http://www.hfsignals.org/index.php/RF386
 
   // Bitbang Clock Pulses to Change PA Band Filter
   int band;
-  static int prevBand;
-  static unsigned long prevFreq;
+  static int prevBand = -1;
+  static unsigned long prevFreq = 0;
 
   if (freq == prevFreq) return;
   prevFreq = freq;
   
   
-  // Note: This is revese of the Original Proposed band switching order 
-  band = 0;
+  // Note: This is reverse of the Original Proposed band switching order, see above link 
+  band = 0;                              // Assumes Null Filter
   if      (freq <   4.0 * MHz) band = 1; //   3.5 MHz
   else if (freq <  10.2 * MHz) band = 2; //  7-10 MHz
   else if (freq <  18.2 * MHz) band = 3; // 14-18 MHz
@@ -62,7 +63,7 @@ void setRf386BandSignal(unsigned long freq){
   delay(10);
   digitalWrite(PA_BAND_CLK, 0);
 
-  while (band > 1) { // Output Selector Pulses to Change PA Band Filter
+  while (band > 0) { // Output Selector Pulses to Change PA Band Filter
      delay(2);
      digitalWrite(PA_BAND_CLK, 1);
      band--;
