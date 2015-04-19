@@ -295,20 +295,22 @@ void updateDisplay(){
           }
       #endif // USE_AUTOSCANNER     
       
-      #ifdef USE_SHOW_WAVE_LENGTH
-          #ifdef USE_HAMBANDS
-              byte iBand = inBand -1;
-              if (hamBands[iBand] >= 200) {   // Decoded as BXS, B=Band, S=BandSection, X=PlaceHolder
-                       sprintf(b, P("%3dM%d"), hamBands[iBand]/100, hamBands[iBand] % 10);
-               }
-              else sprintf(b, P("%3dM"), hamBands[iBand]);
-          
-              if (!inBand) editIfMode ? sprintf(b, P(" ")) :
-          #endif // USE_HAMBANDS
-              sprintf(b, P("%3dm"), 300 * MEG / vfos[vfoActive] );
-      #else
-          sprintf(b, P(" "));
-      #endif // USE_SHOW_WAVE_LENGTH
+      
+      sprintf(b, P(" ")); // Set Default to: no wave length displayed
+      if (!editIfMode) {
+        #ifdef USE_SHOW_WAVE_LENGTH
+            #ifdef USE_HAMBANDS
+                byte iBand = inBand -1;
+                if (hamBands[iBand] >= 200) {   // Decoded as BXS, B=Band, S=BandSection, X=PlaceHolder
+                         sprintf(b, P("%3dM%d"), hamBands[iBand]/100, hamBands[iBand] % 10);
+                 }
+                else sprintf(b, P("%3dM"), hamBands[iBand]);
+            
+                if (!inBand) editIfMode ? sprintf(b, P(" ")) :
+            #endif // USE_HAMBANDS
+                sprintf(b, P("%3dm"), 300 * MEG / vfos[vfoActive] );
+        #endif // USE_SHOW_WAVE_LENGTH
+      }
      
       // Build Lower Line of LCD 
       sprintf(c, P("%3s %-2s %3.3s %s"),
