@@ -30,6 +30,7 @@ boolean editIfMode = false;
 void editIf() {  // Set the IF Frequency
 #define DEBUG(x ...)
 //#define DEBUG(x ...) debugUnique(x)    // UnComment for Debug
+#define DEBUG(x ...) debug(x)    // UnComment for Debug
     static int vfoEditIfStash = VFO_A;
     static boolean sbEditIfStash;
 
@@ -53,7 +54,9 @@ void editIf() {  // Set the IF Frequency
         sbEditIfStash = isLSB;
         vfoActive = isLSB ? VFO_L : VFO_U;
     }
-    editIfMode = !editIfMode;  // Toggle Edit IF Mode    
+    
+    editIfMode = !editIfMode;  // Toggle Edit IF Mode  
+    
     #ifdef USE_PARK_CURSOR
         cursorDigitPosition = 0;
     #endif // USE_PARK_CURSOR

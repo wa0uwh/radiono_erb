@@ -259,7 +259,7 @@
     extern boolean inTx, inPtt;
     extern boolean keyDown0;
     extern boolean isLSB;
-    extern boolean vfoActive;
+    extern byte vfoActive;
     
     /* modes */
     extern int ritVal;
