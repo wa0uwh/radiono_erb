@@ -78,7 +78,7 @@ void setup(); // # A Hack, An Arduino IED Compiler Preprocessor Fix
 //#define RADIONO_VERSION "0.4"
 #define RADIONO_VERSION "0.4.erb" // Modifications by: Eldon R. Brown - WA0UWH
 //#define INC_REV "ko7m-AC"       // Incremental Rev Code
-#define INC_REV "ERB_KA"          // Incremental Rev Code
+#define INC_REV "ERB_KA01"          // Incremental Rev Code
 
 /*
  * Wire is only used from the Si570 module but we need to list it here so that
@@ -189,7 +189,7 @@ byte knobMode = KNOB_CURSOR_MODE;
 boolean inTx = 0, inPtt = 0;
 boolean keyDown = 0;
 
-boolean vfoActive = VFO_A;
+byte vfoActive = VFO_A;
 byte vfoEditIfStash;
 
 /* modes */
